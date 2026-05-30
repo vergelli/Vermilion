@@ -173,6 +173,11 @@ local ABILITY_OVERRIDES = {
 -- Runtime cache (abilityId → group string); populated on first encounter.
 local ability_cache = {}
 
+-- User-defined overrides, persisted in SavedVars (set via /vermilion tag and
+-- /vermilion basic). Highest precedence — lets any user fix ANY classification
+-- (including a wrong auto-guess) without a code edit or reload.
+local USER_OVERRIDES = {}
+
 -- IDs that fell through every classifier: { [abilityId] = "name | icon" }.
 -- Printed by M.print_unknown() so the user can add an override / extend a
 -- pattern / mark it basic.
@@ -203,7 +208,11 @@ local function lookup_group(abilityId)
   local g = ability_cache[abilityId]
   if g then return g end
 
-  -- 0. Basic (light/heavy) attack — highest precedence (SPEC §10.2 approach c).
+  -- 0a. User override (persisted /vermilion tag) — highest precedence of all.
+  g = USER_OVERRIDES[abilityId]
+  if g then ability_cache[abilityId] = g return g end
+
+  -- 0b. Basic (light/heavy) attack (SPEC §10.2 approach c).
   if BASIC_ABILITY_IDS[abilityId] then
     ability_cache[abilityId] = "basic"
     return "basic"
@@ -247,20 +256,43 @@ end
 
 -- Manually tag an abilityId as a basic (light/heavy) attack at runtime. Lets
 -- the capture workflow promote a discovered LA/HA ID without an addon reload.
-function M.mark_basic(abilityId)
-  if not abilityId or abilityId <= 0 then return end
-  BASIC_ABILITY_IDS[abilityId] = true
-  ability_cache[abilityId]     = "basic"
-  unknown_log[abilityId]       = nil
+-- Sorted list of valid group names (for the /vermilion tag usage hint).
+function M.group_names()
+  local out = {}
+  for k in pairs(GROUP_COLORS) do out[#out + 1] = k end
+  table.sort(out)
+  return out
 end
 
--- Merge user-captured basic-attack IDs persisted in SavedVars (populated by
--- the `/vermilion basic <id>` command). Called once at addon load, after the
--- SavedVars table is opened.
+function M.is_group(group)
+  return GROUP_COLORS[group] ~= nil
+end
+
+-- Assign abilityId -> group at runtime. Returns false on an unknown group.
+function M.set_override(abilityId, group)
+  if not abilityId or abilityId <= 0 or not GROUP_COLORS[group] then return false end
+  USER_OVERRIDES[abilityId] = group
+  ability_cache[abilityId]  = group
+  unknown_log[abilityId]    = nil
+  return true
+end
+
+-- Convenience: tag as a light/heavy (basic) attack.
+function M.mark_basic(abilityId)
+  return M.set_override(abilityId, "basic")
+end
+
+-- Replay user classifications persisted in SavedVars. Called once at load.
 function M.load_persisted(sv)
-  if not sv or type(sv.skill_basic_ids) ~= "table" then return end
-  for _, id in ipairs(sv.skill_basic_ids) do
-    M.mark_basic(id)
+  if not sv then return end
+  if type(sv.skill_overrides) == "table" then
+    for id, group in pairs(sv.skill_overrides) do
+      if type(id) == "number" then M.set_override(id, group) end
+    end
+  end
+  -- Legacy array form (basic-only), from before /vermilion tag existed.
+  if type(sv.skill_basic_ids) == "table" then
+    for _, id in ipairs(sv.skill_basic_ids) do M.set_override(id, "basic") end
   end
 end
 

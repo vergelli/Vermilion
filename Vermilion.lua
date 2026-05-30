@@ -61,22 +61,32 @@ local function on_slash(input)
     elseif cmd == "skills" then
       Vermilion.SkillColors.print_unknown() ; return
     elseif cmd == "basic" then
-      -- Tag an abilityId as a light/heavy attack (white `basic` stripe) and
-      -- persist it to SavedVars so it survives reloads. Use after /vermilion
-      -- skills reports a grey weapon attack you want classified.
+      -- Shortcut for `tag <id> basic` (the common case): mark a grey weapon
+      -- attack white and persist it. Survives reloads.
       local id = tonumber(string_match(input, "^%s*%S+%s+(%d+)"))
       if id and id > 0 then
-        Vermilion.SkillColors.mark_basic(id)
+        Vermilion.SkillColors.set_override(id, "basic")
         local sv = Vermilion.SavedVars
-        if sv then
-          sv.skill_basic_ids = sv.skill_basic_ids or {}
-          local seen = false
-          for _, v in ipairs(sv.skill_basic_ids) do if v == id then seen = true break end end
-          if not seen then sv.skill_basic_ids[#sv.skill_basic_ids + 1] = id end
-        end
-        d("[Vm] marked " .. id .. " as basic (light/heavy attack)")
+        if sv then sv.skill_overrides = sv.skill_overrides or {} ; sv.skill_overrides[id] = "basic" end
+        d("[Vm] tagged " .. id .. " -> basic (light/heavy attack)")
       else
         d("[Vm] usage: /vermilion basic <abilityId>")
+      end
+      return
+    elseif cmd == "tag" then
+      -- Assign ANY grey ability to ANY colour group, persisted to SavedVars.
+      -- Turns colour discovery into a 2-second user action (no code, no reload):
+      --   /vermilion skills        -> lists grey abilityIds + names
+      --   /vermilion tag 12345 item
+      local id    = tonumber(string_match(input, "^%s*%S+%s+(%d+)"))
+      local group = string_match(input, "^%s*%S+%s+%d+%s+(%S+)")
+      if id and id > 0 and group and Vermilion.SkillColors.set_override(id, group) then
+        local sv = Vermilion.SavedVars
+        if sv then sv.skill_overrides = sv.skill_overrides or {} ; sv.skill_overrides[id] = group end
+        d("[Vm] tagged " .. id .. " -> " .. group)
+      else
+        d("[Vm] usage: /vermilion tag <abilityId> <group>")
+        d("[Vm] groups: " .. table.concat(Vermilion.SkillColors.group_names(), ", "))
       end
       return
     elseif cmd == "clear" then
@@ -115,7 +125,7 @@ local function on_addon_loaded()
   local world = GetWorldName()
   Vermilion.SavedVars = Vermilion.zenimax.savedvars.new_account_wide(
     C.SV_TABLE, C.SV_VERSION, world,
-    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_basic_ids = {} })
+    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {} })
 
   -- Replay user-captured light/heavy attack IDs (via /vermilion basic <id>).
   Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)
