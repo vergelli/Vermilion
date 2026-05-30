@@ -165,7 +165,9 @@ local ABILITY_OVERRIDES = {
   [46743]  = "item",        -- Absorb Magicka (weapon enchant glyph proc)
   [148797] = "status",      -- Overcharged (shock status-effect damage)
   [148800] = "status",      -- Sundered (physical status-effect damage)
+  [21481]  = "status",      -- Chill (frost status-effect damage)
   [126895] = "soul_magic",  -- Soul Splitting Trap (Soul Magic line)
+  [45445]  = "dualwield",   -- Forceful (Dual Wield passive cleave; generic ability_weapon_ art)
 }
 
 -- Runtime cache (abilityId → group string); populated on first encounter.

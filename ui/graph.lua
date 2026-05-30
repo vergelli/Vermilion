@@ -68,10 +68,30 @@ local function fmt_secs(ms)
   return s .. "s"
 end
 
--- One-decimal compact form for the corner readout (e.g. 12345 -> "12.3k").
+-- One-decimal compact form for the header readout (e.g. 12345 -> "12.3k").
 local function fmt_readout(v)
   if v >= 1000 then return string_format("%.1fk", v / 1000) end
   return tostring(math_floor(v + 0.5))
+end
+
+-- Header DPS readout: weapons tree icon (idle when no damage, "active" while
+-- damage is flowing) + the current EOS value.
+local DPS_ICON_IDLE   = "/esoui/art/treeicons/collection_indexicon_weapons_up.dds"
+local DPS_ICON_ACTIVE = "/esoui/art/treeicons/collection_indexicon_weapons_down.dds"
+
+local function update_header(eos)
+  controls.readout:SetText(fmt_readout(eos))
+  controls.dps_icon:SetTexture(eos > 0 and DPS_ICON_ACTIVE or DPS_ICON_IDLE)
+end
+
+-- Always-on 1 Hz header refresh. The metric buffers are live whenever the
+-- player is in combat (the pipeline ingests continuously, independent of the
+-- record/stop lifecycle), so the header shows live DPS even before Record is
+-- pressed. Cheap; skips all work while the window is hidden.
+local function header_tick()
+  if controls.window:IsHidden() then return end
+  local now = GetGameTimeMilliseconds()
+  update_header(Vermilion.Metrics.eDPS(now) + Vermilion.Metrics.ShDPS(now))
 end
 
 -- ── pool factories (lib/plot/Pool wrappers) ───────────────────────────────
@@ -452,7 +472,7 @@ local function on_sample_update()
   local eg    = Vermilion.Metrics.eos_groups(now)
   Vermilion.TemporalBuffer.push(now, edps, shdps, eg)
 
-  controls.readout:SetText(fmt_readout(edps + shdps))
+  update_header(edps + shdps)
 
   local elapsed = math_floor((now - recording_start_ms) / 1000)
   controls.status:SetText(string_format("%d:%02d", math_floor(elapsed / 60), elapsed % 60))
@@ -502,7 +522,7 @@ function M.on_flush_click()
   hide_grid(controls.grid)
   refresh_button_colors()
   controls.status:SetText("")
-  controls.readout:SetText("")
+  update_header(0)
   controls.no_data:SetHidden(false)
 end
 
@@ -575,7 +595,8 @@ function M.init()
   controls.viewport      = VermilionGraphWindowViewport
   controls.canvas        = VermilionGraphWindowViewportCanvas
   controls.no_data       = VermilionGraphWindowViewportNoDataLabel
-  controls.readout       = VermilionGraphWindowViewportReadoutLabel
+  controls.readout       = VermilionGraphWindowReadoutLabel
+  controls.dps_icon      = VermilionGraphWindowDpsIcon
 
   -- Restore saved view, position and size.
   local sv = Vermilion.SavedVars
@@ -627,9 +648,12 @@ function M.init()
   controls.view_label:SetText(VIEW_LABELS[current_view])
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
 
-  -- Live EOS readout: bright, padded top-right corner.
-  controls.readout:SetText("")
+  -- Live EOS readout in the header (weapons icon + value).
   controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
+  update_header(0)
+  -- Always-on 1 Hz refresh so the header tracks live DPS independent of the
+  -- record/stop lifecycle.
+  zev.register_update("VermilionHeaderTick", 1000, header_tick)
 
   refresh_button_colors()
 end

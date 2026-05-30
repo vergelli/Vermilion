@@ -68,9 +68,25 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="14"  offsetY="6"/>
-          <Anchor point="TOPRIGHT" offsetX="-90" offsetY="6"/>
+          <Anchor point="TOPLEFT"  offsetX="14"   offsetY="6"/>
+          <Anchor point="TOPRIGHT" offsetX="-150" offsetY="6"/>
           <Dimensions y="14"/>
+        </Label>
+
+        <!-- Live DPS readout in the header chrome: weapons icon (idle/active)
+             + current EOS value. Sits left of the gear / close buttons. -->
+        <Texture name="$(parent)DpsIcon"
+                 textureFile="/esoui/art/treeicons/collection_indexicon_weapons_up.dds">
+          <Anchor point="TOPRIGHT" offsetX="-126" offsetY="3"/>
+          <Dimensions x="20" y="20"/>
+        </Texture>
+
+        <Label name="$(parent)ReadoutLabel"
+               font="ZoFontGame"
+               horizontalAlignment="RIGHT"
+               verticalAlignment="CENTER">
+          <Anchor point="TOPRIGHT" offsetX="-62" offsetY="5"/>
+          <Dimensions x="60" y="18"/>
         </Label>
 
         <!-- Settings toggle — 28x28 gear. -->
@@ -193,16 +209,6 @@
                    horizontalAlignment="CENTER"
                    verticalAlignment="CENTER">
               <AnchorFill/>
-            </Label>
-
-            <!-- Live numerical readout (current EOS = bar height). Padded into
-                 the top-right corner where the bars rarely reach. -->
-            <Label name="$(parent)ReadoutLabel"
-                   font="ZoFontWinH3"
-                   horizontalAlignment="RIGHT"
-                   verticalAlignment="TOP">
-              <Anchor point="TOPRIGHT" offsetX="-12" offsetY="8"/>
-              <Dimensions x="180" y="30"/>
             </Label>
 
           </Controls>
