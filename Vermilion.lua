@@ -60,6 +60,25 @@ local function on_slash(input)
       return
     elseif cmd == "skills" then
       Vermilion.SkillColors.print_unknown() ; return
+    elseif cmd == "basic" then
+      -- Tag an abilityId as a light/heavy attack (white `basic` stripe) and
+      -- persist it to SavedVars so it survives reloads. Use after /vermilion
+      -- skills reports a grey weapon attack you want classified.
+      local id = tonumber(string_match(input, "^%s*%S+%s+(%d+)"))
+      if id and id > 0 then
+        Vermilion.SkillColors.mark_basic(id)
+        local sv = Vermilion.SavedVars
+        if sv then
+          sv.skill_basic_ids = sv.skill_basic_ids or {}
+          local seen = false
+          for _, v in ipairs(sv.skill_basic_ids) do if v == id then seen = true break end end
+          if not seen then sv.skill_basic_ids[#sv.skill_basic_ids + 1] = id end
+        end
+        d("[Vm] marked " .. id .. " as basic (light/heavy attack)")
+      else
+        d("[Vm] usage: /vermilion basic <abilityId>")
+      end
+      return
     elseif cmd == "clear" then
       Vermilion.Probe.clear()
       Vermilion.Metrics.reset()
@@ -96,7 +115,10 @@ local function on_addon_loaded()
   local world = GetWorldName()
   Vermilion.SavedVars = Vermilion.zenimax.savedvars.new_account_wide(
     C.SV_TABLE, C.SV_VERSION, world,
-    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {} })
+    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_basic_ids = {} })
+
+  -- Replay user-captured light/heavy attack IDs (via /vermilion basic <id>).
+  Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)
 
   Log:info("savedvars opened: world=", world, "version=", C.SV_VERSION)
 

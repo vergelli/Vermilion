@@ -195,6 +195,16 @@
               <AnchorFill/>
             </Label>
 
+            <!-- Live numerical readout (current EOS = bar height). Padded into
+                 the top-right corner where the bars rarely reach. -->
+            <Label name="$(parent)ReadoutLabel"
+                   font="ZoFontWinH3"
+                   horizontalAlignment="RIGHT"
+                   verticalAlignment="TOP">
+              <Anchor point="TOPRIGHT" offsetX="-12" offsetY="8"/>
+              <Dimensions x="180" y="30"/>
+            </Label>
+
           </Controls>
         </Control>
 

@@ -68,6 +68,12 @@ local function fmt_secs(ms)
   return s .. "s"
 end
 
+-- One-decimal compact form for the corner readout (e.g. 12345 -> "12.3k").
+local function fmt_readout(v)
+  if v >= 1000 then return string_format("%.1fk", v / 1000) end
+  return tostring(math_floor(v + 0.5))
+end
+
 -- ── pool factories (lib/plot/Pool wrappers) ───────────────────────────────
 local Pool = Vermilion.lib.plot.Pool
 
@@ -446,6 +452,8 @@ local function on_sample_update()
   local eg    = Vermilion.Metrics.eos_groups(now)
   Vermilion.TemporalBuffer.push(now, edps, shdps, eg)
 
+  controls.readout:SetText(fmt_readout(edps + shdps))
+
   local elapsed = math_floor((now - recording_start_ms) / 1000)
   controls.status:SetText(string_format("%d:%02d", math_floor(elapsed / 60), elapsed % 60))
 
@@ -494,6 +502,7 @@ function M.on_flush_click()
   hide_grid(controls.grid)
   refresh_button_colors()
   controls.status:SetText("")
+  controls.readout:SetText("")
   controls.no_data:SetHidden(false)
 end
 
@@ -566,6 +575,7 @@ function M.init()
   controls.viewport      = VermilionGraphWindowViewport
   controls.canvas        = VermilionGraphWindowViewportCanvas
   controls.no_data       = VermilionGraphWindowViewportNoDataLabel
+  controls.readout       = VermilionGraphWindowViewportReadoutLabel
 
   -- Restore saved view, position and size.
   local sv = Vermilion.SavedVars
@@ -616,6 +626,10 @@ function M.init()
   controls.no_data:SetHidden(false)
   controls.view_label:SetText(VIEW_LABELS[current_view])
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
+
+  -- Live EOS readout: bright, padded top-right corner.
+  controls.readout:SetText("")
+  controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
 
   refresh_button_colors()
 end

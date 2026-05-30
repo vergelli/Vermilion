@@ -29,7 +29,16 @@ local GROUP_COLORS = {
   support     = { r = 0.42, g = 0.31, b = 0.68, a = 0.95 },  -- muted purple
   vampire     = { r = 0.55, g = 0.05, b = 0.10, a = 0.95 },  -- carmesi (blood)
   mages_guild = { r = 0.10, g = 0.45, b = 0.65, a = 0.95 },  -- celeste oscuro
-  item        = { r = 0.95, g = 0.20, b = 0.80, a = 0.95 },  -- magenta
+  item        = { r = 0.95, g = 0.20, b = 0.80, a = 0.95 },  -- magenta (sets / enchants)
+  status      = { r = 0.45, g = 0.62, b = 0.60, a = 0.90 },  -- teal-grey, elemental status-effect damage
+  -- Weapon skill lines (damage domain; Verdant only ever saw destru/resto).
+  twohanded   = { r = 0.80, g = 0.42, b = 0.28, a = 0.95 },  -- burnt orange
+  dualwield   = { r = 0.78, g = 0.55, b = 0.30, a = 0.95 },  -- bronze
+  bow         = { r = 0.60, g = 0.80, b = 0.50, a = 0.95 },  -- sage green
+  onehand     = { r = 0.70, g = 0.74, b = 0.82, a = 0.95 },  -- steel blue-grey
+  -- Guild skill lines.
+  fighters_guild = { r = 0.78, g = 0.34, b = 0.30, a = 0.95 },  -- brick red
+  soul_magic     = { r = 0.60, g = 0.50, b = 0.72, a = 0.95 },  -- lavender
   other       = { r = 0.55, g = 0.55, b = 0.55, a = 0.80 },  -- unknown (grey)
 }
 
@@ -45,18 +54,39 @@ local GROUP_COLORS = {
 -- attacks on every weapon type, then add the reported IDs here. This iterative
 -- bootstrap is the process SPEC §10.3 / §14.5 describe. Seeding it empty (vs.
 -- guessing numeric IDs) avoids mis-classifying real abilities.
+-- Ranged (staff / bow) basic attacks. Melee basics are handled by the
+-- death_recap_melee_basic icon pattern below (all melee weapons share it), so
+-- only ranged basics — which share death_recap_*_ranged art with enchant
+-- glyphs and so can't be safely pattern-matched — need explicit IDs here.
+-- Verified in-session via /vermilion skills (names from GetAbilityName).
+-- Capture more (Inferno/Frost staff, Bow) with `/vermilion basic <id>` — it
+-- persists to SavedVars and survives reloads.
 local BASIC_ABILITY_IDS = {
-  -- [<lightAttackId>] = true,   -- captured via /vermilion skills
+  [18350] = true,  -- Light Attack (Lightning staff)
+  [18396] = true,  -- Heavy Attack (Lightning staff)
+  [19277] = true,  -- Heavy Attack (Lightning staff, channel tick)
+  -- Melee IDs below are also covered by the icon pattern; listed for clarity.
+  [15435] = true,  -- Light Attack (One Handed)
+  [16037] = true,  -- Light Attack (Two Handed)
+  [17162] = true,  -- Heavy Attack (Two Handed)
 }
 
--- Icon-path → group lookup. Locale-independent. The two `basic` patterns sit
--- at the TOP so weapon light/heavy attacks match before the weapon-line
--- classifiers (ability_destructionstaff_ etc.). These substrings are unlikely
--- to collide with anything else; if a live LA/HA icon doesn't match, the
--- BASIC_ABILITY_IDS set (above) is the authoritative fallback.
+-- Icon-path → group lookup. Locale-independent, matched top-to-bottom.
 local ICON_PATTERNS = {
-  { "_lightattack",              "basic"       },
-  { "_heavyattack",              "basic"       },
+  -- Melee basic (light + heavy) attacks: ALL melee weapons (1H, 2H, DW,
+  -- unarmed) share this one icon, so one pattern covers them. Ranged basics
+  -- (staff/bow) share death_recap_*_ranged with enchant glyphs and so are
+  -- handled by BASIC_ABILITY_IDS instead, not here.
+  { "death_recap_melee_basic",   "basic"          },
+  -- Weapon skill lines (the abilities themselves, not the basic attacks).
+  { "ability_2handed_",          "twohanded"      },
+  { "ability_dualwield_",        "dualwield"      },
+  { "ability_bow_",              "bow"            },
+  { "ability_1handed_",          "onehand"        },
+  -- Guild skill lines.
+  { "ability_fightersguild_",    "fighters_guild" },
+  -- Set / monster-set procs (e.g. Kra'gh) use gear_* art.
+  { "gear_",                     "item"           },
   { "ability_grimoire_",         "scribing"    },
   { "ability_templar_",          "templar"     },
   { "ability_sorcerer_",         "sorc"        },
@@ -131,6 +161,11 @@ local ABILITY_OVERRIDES = {
   [55677]  = "undaunted",
   [63511]  = "undaunted",
   [184634] = "item",
+  -- Vermilion damage-domain additions (captured via /vermilion skills):
+  [46743]  = "item",        -- Absorb Magicka (weapon enchant glyph proc)
+  [148797] = "status",      -- Overcharged (shock status-effect damage)
+  [148800] = "status",      -- Sundered (physical status-effect damage)
+  [126895] = "soul_magic",  -- Soul Splitting Trap (Soul Magic line)
 }
 
 -- Runtime cache (abilityId → group string); populated on first encounter.
@@ -215,6 +250,16 @@ function M.mark_basic(abilityId)
   BASIC_ABILITY_IDS[abilityId] = true
   ability_cache[abilityId]     = "basic"
   unknown_log[abilityId]       = nil
+end
+
+-- Merge user-captured basic-attack IDs persisted in SavedVars (populated by
+-- the `/vermilion basic <id>` command). Called once at addon load, after the
+-- SavedVars table is opened.
+function M.load_persisted(sv)
+  if not sv or type(sv.skill_basic_ids) ~= "table" then return end
+  for _, id in ipairs(sv.skill_basic_ids) do
+    M.mark_basic(id)
+  end
 end
 
 -- Print all unclassified abilities seen so far. Use /vermilion skills after a
