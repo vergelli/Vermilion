@@ -1,0 +1,243 @@
+-- Diagnostics — counters + event ring + 1Hz timeseries collector. The
+-- aggregation surface that /Vermilion diag and /Vermilion report read from.
+-- Stays partially live in release (counter bumps from pipeline.lua are
+-- always called) — the formatting/dump paths are dev-only.
+--
+-- Public surface:
+--   bump(key, n)        increment a counter
+--   log_event(cat, p)   append a categorized entry to the event ring
+--   snapshot()          structured dump for SavedVars / probe persist
+--   print_diag()        human-readable dump (CopyBox in DEBUG, chat in release)
+--   full_report()       aggregated /Vermilion report (DEBUG only)
+--   reset()             clears counters/ring; also rebuilds start_time
+--   init()              wires the 1Hz ts_sample tick
+
+Vermilion = Vermilion or {}
+local Vermilion = Vermilion
+
+Vermilion.Diagnostics = {}
+local M = Vermilion.Diagnostics
+
+local GetGameTimeMilliseconds = Vermilion.zenimax.api.GetGameTimeMilliseconds
+local d           = d
+local pairs       = pairs
+local tostring    = tostring
+local math_min    = math.min
+local table_sort  = table.sort
+
+-- ── config ────────────────────────────────────────────────────────────────
+local EVENT_CAP   = 200   -- ring buffer capacity for discrete events
+local TS_CAP      = 120   -- timeseries samples (1 Hz → 2 min of history)
+local TICK_MS     = 1000  -- sample interval
+
+-- ── state ─────────────────────────────────────────────────────────────────
+local counters    = {}    -- [key:string] = number
+local ev_buf      = {}    -- ring of { t, cat, payload }
+local ev_head     = 0     -- next write index (1-based, wraps)
+local ev_count    = 0     -- total events ever logged (for overflow detection)
+local ts_buf      = {}    -- ring of { t, snap }
+local ts_head     = 0
+local ts_count    = 0
+local start_time  = 0
+
+-- ── counters ──────────────────────────────────────────────────────────────
+function M.bump(key, n)
+  counters[key] = (counters[key] or 0) + (n or 1)
+end
+
+function M.get(key)
+  return counters[key] or 0
+end
+
+-- ── event log ─────────────────────────────────────────────────────────────
+function M.log_event(cat, payload)
+  ev_head = (ev_head % EVENT_CAP) + 1
+  ev_buf[ev_head] = { t = GetGameTimeMilliseconds(), cat = cat, p = payload }
+  ev_count = ev_count + 1
+end
+
+-- ── timeseries ────────────────────────────────────────────────────────────
+local function ts_sample()
+  local now = GetGameTimeMilliseconds()
+  local snap = {
+    t       = now,
+    -- engine ingestion totals (Vermilion: outgoing landed / shielded damage)
+    damage  = counters["engine.damage.accepted"] or 0,
+    shield  = counters["engine.shield.accepted"] or 0,
+    -- live metric snapshot (eDPS / ShDPS / EOS)
+    metric  = (function()
+      if not Vermilion.Metrics or not Vermilion.Metrics.eDPS then return nil end
+      local ok, edps = pcall(Vermilion.Metrics.eDPS, now)
+      if not ok then return nil end
+      local _, shdps = pcall(Vermilion.Metrics.ShDPS, now)
+      edps  = edps  or 0
+      shdps = shdps or 0
+      return { eDPS = edps, ShDPS = shdps, EOS = edps + shdps }
+    end)(),
+  }
+  ts_head = (ts_head % TS_CAP) + 1
+  ts_buf[ts_head] = snap
+  ts_count = ts_count + 1
+end
+
+-- ── snapshot (for SavedVars) ───────────────────────────────────────────────
+function M.snapshot()
+  -- ordered copy of event ring (oldest → newest)
+  local events = {}
+  if ev_count <= EVENT_CAP then
+    for i = 1, ev_count do events[i] = ev_buf[i] end
+  else
+    -- ring has wrapped; start from ev_head+1 (oldest)
+    local n = 0
+    for i = 1, EVENT_CAP do
+      local idx = (ev_head - 1 + i) % EVENT_CAP + 1
+      n = n + 1
+      events[n] = ev_buf[idx]
+    end
+  end
+
+  -- ordered timeseries
+  local ts = {}
+  local ts_len = math.min(ts_count, TS_CAP)
+  if ts_count <= TS_CAP then
+    for i = 1, ts_count do ts[i] = ts_buf[i] end
+  else
+    local n = 0
+    for i = 1, TS_CAP do
+      local idx = (ts_head - 1 + i) % TS_CAP + 1
+      n = n + 1
+      ts[n] = ts_buf[idx]
+    end
+  end
+
+  -- module snapshots (Vermilion drops group/coverage/shield-registry)
+  local mode_snap    = Vermilion.Mode    and Vermilion.Mode.snapshot()          or {}
+  local metrics_snap = (Vermilion.Metrics and Vermilion.Metrics.size_snapshot)
+                       and Vermilion.Metrics.size_snapshot() or {}
+
+  return {
+    start_time  = start_time,
+    counters    = counters,
+    events      = events,
+    ev_total    = ev_count,
+    timeseries  = ts,
+    ts_total    = ts_count,
+    mode        = mode_snap,
+    metrics     = metrics_snap,
+  }
+end
+
+-- ── diag dump (/Vermilion diag) ─────────────────────────────────────────────
+-- In DEBUG, output goes to the CopyBox (selectable / copyable). Otherwise
+-- chat output as before. The CopyBox itself also no-ops outside DEBUG.
+local function build_diag_lines()
+  local lines = {}
+  lines[#lines+1] = "[diag] uptime=" .. (GetGameTimeMilliseconds() - start_time)
+                    .. "ms  ev_total=" .. ev_count .. "  ts_samples=" .. ts_count
+  lines[#lines+1] = "[diag] counters:"
+  local keys = {}
+  for k in pairs(counters) do keys[#keys+1] = k end
+  table_sort(keys)
+  for _, k in ipairs(keys) do
+    lines[#lines+1] = "  " .. k .. " = " .. tostring(counters[k])
+  end
+  lines[#lines+1] = "[diag] last events (up to 10):"
+  local n_show = math_min(ev_count, 10)
+  local base   = math_min(ev_count, EVENT_CAP)
+  for i = base - n_show + 1, base do
+    local idx = (ev_head - base + i - 1 + EVENT_CAP) % EVENT_CAP + 1
+    local e = ev_buf[idx]
+    if e then
+      lines[#lines+1] = "  t=" .. e.t .. " [" .. (e.cat or "?") .. "] " .. tostring(e.p)
+    end
+  end
+  if Vermilion.Mode then
+    lines[#lines+1] = "[diag] mode=" .. tostring(Vermilion.Mode.current())
+  end
+  if Vermilion.Metrics and Vermilion.Metrics.pool_capacity then
+    lines[#lines+1] = "[diag] event_pool=" .. Vermilion.Metrics.pool_in_use()
+                      .. "/" .. Vermilion.Metrics.pool_capacity()
+  end
+  if Vermilion.Log and Vermilion.Log.size then
+    local cur, cap = Vermilion.Log.size()
+    lines[#lines+1] = "[diag] log_ring=" .. cur .. "/" .. cap
+  end
+  if Vermilion.Validation and Vermilion.Validation.run_all_checks then
+    local v = Vermilion.Validation.run_all_checks()
+    lines[#lines+1] = "[diag] validation: failures=" .. v.failure_count
+                      .. " pool_outstanding=" .. v.pool_outstanding
+  end
+  if Vermilion.Profiler and Vermilion.Profiler.report then
+    local r, window_s = Vermilion.Profiler.report()
+    local stages = {}
+    for k in pairs(r) do stages[#stages+1] = k end
+    if #stages > 0 then
+      lines[#lines+1] = "[diag] profiler window=" .. string.format("%.1fs", window_s)
+                        .. " stages=" .. #stages .. " (use /Vermilion prof for detail)"
+    end
+  end
+  return lines
+end
+
+function M.print_diag()
+  local lines = build_diag_lines()
+  if Vermilion.Constants.DEBUG and Vermilion.CopyBox then
+    Vermilion.CopyBox.show("Vermilion /diag", table.concat(lines, "\n"))
+  else
+    for _, line in ipairs(lines) do d(line) end
+  end
+end
+
+-- Unified one-shot dev report: concatenates /diag + /prof + /validate
+-- + recent log entries into a single CopyBox dump. Saves the dev from
+-- running each command separately when sharing context.
+function M.full_report()
+  if not Vermilion.Constants.DEBUG then
+    d("[report] disabled (DEBUG=false)")
+    return
+  end
+  local out = {}
+  local function section(title, lines)
+    out[#out+1] = ""
+    out[#out+1] = "═══ " .. title .. " ═══"
+    for _, l in ipairs(lines) do out[#out+1] = l end
+  end
+  out[#out+1] = "Vermilion full report — uptime "
+                .. (GetGameTimeMilliseconds() - start_time) .. "ms"
+  if Vermilion.Settings and Vermilion.Settings.report_lines then
+    section("config", Vermilion.Settings.report_lines())
+  end
+  section("diagnostics", build_diag_lines())
+  if Vermilion.Profiler and Vermilion.Profiler.report_lines then
+    section("profiler",   Vermilion.Profiler.report_lines())
+  end
+  if Vermilion.Validation and Vermilion.Validation.report_lines then
+    section("validation", Vermilion.Validation.report_lines())
+  end
+  if Vermilion.Log and Vermilion.Log.recent_lines then
+    section("log (last 20)", Vermilion.Log.recent_lines(20))
+  end
+  if Vermilion.CopyBox and Vermilion.CopyBox.show then
+    Vermilion.CopyBox.show("Vermilion /report", table.concat(out, "\n"))
+  else
+    for _, l in ipairs(out) do d(l) end
+  end
+end
+
+-- ── reset ─────────────────────────────────────────────────────────────────
+function M.reset()
+  counters = {}
+  ev_buf   = {}
+  ev_head  = 0
+  ev_count = 0
+  ts_buf   = {}
+  ts_head  = 0
+  ts_count = 0
+  start_time = GetGameTimeMilliseconds()
+end
+
+-- ── init ──────────────────────────────────────────────────────────────────
+function M.init()
+  start_time = GetGameTimeMilliseconds()
+  Vermilion.zenimax.events.register_update("Vermilion_DiagTick", TICK_MS, ts_sample)
+end

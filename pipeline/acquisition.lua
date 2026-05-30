@@ -1,0 +1,58 @@
+-- pipeline/acquisition.lua
+--
+-- Stage 1 of the pipeline. Acquires VermilionEvents from the pool and
+-- populates them from the raw ZOS combat-event tuple. No filtering (stage 2),
+-- no state mutation (stage 3). A nil return means the pool was exhausted;
+-- callers must bump engine.pool.exhausted.
+
+Vermilion = Vermilion or {}
+local Vermilion = Vermilion
+
+Vermilion.Pipeline = Vermilion.Pipeline or {}
+Vermilion.Pipeline.Acquisition = {}
+local M = Vermilion.Pipeline.Acquisition
+
+local AK = Vermilion.Constants.ABILITY_KIND
+local KIND_DAMAGE_OUT = AK.DAMAGE_OUT
+local KIND_SHIELD_OUT = AK.SHIELD_OUT
+
+local GetGameTimeMilliseconds = Vermilion.zenimax.api.GetGameTimeMilliseconds
+
+local function acquire()
+  return Vermilion.Metrics.acquire_event()
+end
+
+-- Outgoing damage that landed on enemy HP (eDPS branch).
+function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result)
+  if (hit or 0) <= 0 then return nil end
+  local ev = acquire()
+  if not ev then return nil end
+  ev.t              = t
+  ev.kind           = KIND_DAMAGE_OUT
+  ev.result         = result        or 0
+  ev.amount         = hit
+  ev.target_unit_id = targetUnitId  or 0
+  ev.target_type    = targetType    or 0
+  ev.ability_id     = abilityId     or 0
+  return ev
+end
+
+-- Outgoing damage absorbed by an enemy damage shield (ShDPS branch).
+-- result is always ACTION_RESULT_DAMAGE_SHIELDED here (enforced at subscription).
+function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result)
+  if (hit or 0) <= 0 then return nil end
+  local ev = acquire()
+  if not ev then return nil end
+  ev.t              = t
+  ev.kind           = KIND_SHIELD_OUT
+  ev.result         = result        or 0
+  ev.amount         = hit
+  ev.target_unit_id = targetUnitId  or 0
+  ev.target_type    = targetType    or 0
+  ev.ability_id     = abilityId     or 0
+  return ev
+end
+
+function M.now()
+  return GetGameTimeMilliseconds()
+end
