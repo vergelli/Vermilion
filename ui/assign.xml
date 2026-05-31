@@ -111,7 +111,7 @@
                      hidden="true"
                      clampedToScreen="true"
                      mouseEnabled="true">
-      <Dimensions x="360" y="200"/>
+      <Dimensions x="420" y="220"/>
       <Anchor point="CENTER" relativeTo="GuiRoot" relativePoint="CENTER"/>
 
       <Controls>

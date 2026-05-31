@@ -199,7 +199,13 @@ function M.refresh()
 end
 
 -- ── confirm dialog ──────────────────────────────────────────────────────────
-local CONFIRM_MAX_LINES = 6
+-- Confirm-window geometry. Height is computed from the pick count so the dialog
+-- grows with the list instead of clipping (the previous fixed height did).
+local CONFIRM_W       = 420
+local CONFIRM_LINE_H  = 26   -- ZoFontGame line, with slack to avoid clipping
+local CONFIRM_TOP_H   = 44   -- title strip above the message
+local CONFIRM_BTM_H   = 44   -- button strip below the message
+local CONFIRM_EXTRA   = 3    -- blank separator + ~2 note lines
 
 local function clear_pending()
   for id in pairs(pending) do pending[id] = nil end
@@ -212,22 +218,25 @@ local function pending_count()
 end
 
 -- Builds the review text ("AbilityName → Category", colored) and shows the
--- confirm panel. The note states the assignment is reversible — because it is.
+-- confirm window, sized to fit every pick. The note states the assignment is
+-- reversible — because it is.
 local function show_confirm()
   controls.flyout:SetHidden(true)
-  local lines, n = {}, 0
+
+  local lines = {}
   for id, key in pairs(pending) do
-    n = n + 1
-    if n <= CONFIRM_MAX_LINES then
-      local name = GetAbilityName(id)
-      if not name or name == "" then name = "#" .. id end
-      lines[#lines + 1] = name .. "  \226\134\146  " .. colored_label(key)  -- " → "
-    end
+    local name = GetAbilityName(id)
+    if not name or name == "" then name = "#" .. id end
+    lines[#lines + 1] = name .. "  \226\134\146  " .. colored_label(key)  -- " → "
   end
-  if n > CONFIRM_MAX_LINES then
-    lines[#lines + 1] = "\226\128\166 and " .. (n - CONFIRM_MAX_LINES) .. " more"
-  end
+  table.sort(lines)  -- stable, readable order (by ability name)
+
   controls.confirm_msg:SetText(table_concat(lines, "\n") .. "\n\n" .. GetString(VERMILION_ASSIGN_CONFIRM_NOTE))
+
+  -- One row per pick + separator + note, bracketed by the title/button strips.
+  local h = CONFIRM_TOP_H + (#lines + CONFIRM_EXTRA) * CONFIRM_LINE_H + CONFIRM_BTM_H
+  controls.confirm:SetDimensions(CONFIRM_W, h)
+
   controls.window:SetHidden(true)   -- hide the list window so the two never overlap
   controls.confirm:SetHidden(false)
 end
