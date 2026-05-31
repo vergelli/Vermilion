@@ -139,6 +139,7 @@ local function on_addon_loaded()
   Vermilion.Pipeline.init()
   Vermilion.Settings.init()
   Vermilion.Graph.init()
+  Vermilion.Assign.init()
   Vermilion.Visibility.init()
 
   SLASH_COMMANDS[C.SLASH_COMMAND] = on_slash

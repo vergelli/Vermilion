@@ -1,0 +1,246 @@
+Vermilion = Vermilion or {}
+Vermilion.Assign = {}
+local M = Vermilion.Assign
+
+local api = Vermilion.zenimax.api
+local zui = Vermilion.zenimax.ui
+local zc  = Vermilion.zenimax.constants
+local GetString               = api.GetString
+local WINDOW_MANAGER          = zui.WINDOW_MANAGER
+local CreateControlFromVirtual = zui.CreateControlFromVirtual
+local math_floor              = math.floor
+local math_ceil               = math.ceil
+
+local log = Vermilion.Log.for_module("assign")
+
+-- anchor / type constants
+local TOPLEFT     = zc.TOPLEFT
+local TOPRIGHT    = zc.TOPRIGHT
+local BOTTOMRIGHT = zc.BOTTOMRIGHT
+local LEFT        = zc.LEFT
+local RIGHT       = zc.RIGHT
+local CENTER      = zc.CENTER
+local GuiRoot     = zc.GuiRoot
+local CT_TEXTURE  = zc.CT_TEXTURE
+local CT_LABEL    = zc.CT_LABEL
+local CT_CONTROL  = zc.CT_CONTROL
+local TEXT_ALIGN_LEFT   = zc.TEXT_ALIGN_LEFT
+local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
+
+local SkillColors = Vermilion.SkillColors
+
+-- ── layout constants ───────────────────────────────────────────────────────
+local ROW_H            = 30   -- per-unknown row height
+local FALLBACK_MAXROWS = 8    -- used if the list height isn't measurable yet
+local FLYOUT_PAD       = 6
+local FLYOUT_ENTRY_H   = 16
+local FLYOUT_COL_W     = 158
+local FLYOUT_COLS      = 2
+
+-- ── state ───────────────────────────────────────────────────────────────────
+local controls  = {}
+local row_pool
+local active_id          -- abilityId the flyout is currently choosing for
+local open_flyout_for    -- forward declarations (used inside row_factory)
+local assign_active
+
+-- ── row pool ────────────────────────────────────────────────────────────────
+-- Each row is a CT_CONTROL holding: [icon] [name] ............ [pick category].
+-- The pick button reads row.vm_id at click time, so a recycled row always acts
+-- on whatever ability it currently displays.
+local function row_factory(row, counter)
+  local nm = "VermilionAssignRow" .. counter
+  row:SetMouseEnabled(false)
+
+  local icon = WINDOW_MANAGER:CreateControl(nm .. "Icon", row, CT_TEXTURE)
+  icon:SetDimensions(24, 24)
+  icon:SetAnchor(LEFT, row, LEFT, 2, 0)
+  row.vm_icon = icon
+
+  local pick = CreateControlFromVirtual(nm .. "Pick", row, "ZO_DefaultButton")
+  pick:SetDimensions(130, 24)
+  pick:SetAnchor(RIGHT, row, RIGHT, 0, 0)
+  pick:SetHandler("OnClicked", function() open_flyout_for(row) end)
+  row.vm_pick = pick
+
+  local name = WINDOW_MANAGER:CreateControl(nm .. "Name", row, CT_LABEL)
+  name:SetFont("ZoFontGame")
+  name:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+  name:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  name:SetAnchor(LEFT,  icon, RIGHT, 8, 0)
+  name:SetAnchor(RIGHT, pick, LEFT, -8, 0)
+  name:SetColor(0.92, 0.92, 0.92, 1)
+  row.vm_name = name
+end
+
+local function row_reset(row)
+  row:SetHidden(true)
+  row:ClearAnchors()
+end
+
+-- ── category flyout ─────────────────────────────────────────────────────────
+-- Built once: a 2-column grid of category labels, each painted in its own
+-- group color (the name IS the swatch). Clicking one assigns it to active_id.
+local function build_flyout()
+  local fly    = controls.flyout
+  local groups = SkillColors.groups_ordered()
+  local n      = #groups
+  local rows_per_col = math_ceil(n / FLYOUT_COLS)
+
+  for i = 1, n do
+    local g   = groups[i]
+    local col = math_floor((i - 1) / rows_per_col)
+    local r   = (i - 1) % rows_per_col
+    local e = WINDOW_MANAGER:CreateControl("VermilionAssignFlyoutE" .. i, fly, CT_LABEL)
+    e:SetFont("ZoFontGameSmall")
+    e:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+    e:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    e:SetDimensions(FLYOUT_COL_W, FLYOUT_ENTRY_H)
+    e:SetAnchor(TOPLEFT, fly, TOPLEFT, FLYOUT_PAD + col * FLYOUT_COL_W, FLYOUT_PAD + r * FLYOUT_ENTRY_H)
+    e:SetText(g.label)
+    e:SetColor(g.r, g.g, g.b, 1)
+    e:SetMouseEnabled(true)
+
+    local key = g.key
+    local cr, cg, cb = g.r, g.g, g.b
+    e:SetHandler("OnMouseUp",    function() assign_active(key) end)
+    e:SetHandler("OnMouseEnter", function(self) self:SetColor(1, 1, 1, 1) end)
+    e:SetHandler("OnMouseExit",  function(self) self:SetColor(cr, cg, cb, 1) end)
+  end
+
+  fly:SetDimensions(FLYOUT_PAD * 2 + FLYOUT_COLS * FLYOUT_COL_W,
+                    FLYOUT_PAD * 2 + rows_per_col * FLYOUT_ENTRY_H)
+end
+
+open_flyout_for = function(row)
+  active_id = row.vm_id
+  local fly = controls.flyout
+  local btn = row.vm_pick
+  fly:ClearAnchors()
+  -- Flip the flyout above the button when it would spill off the screen bottom.
+  local _, screen_h = GuiRoot:GetDimensions()
+  if btn:GetBottom() + fly:GetHeight() > screen_h then
+    fly:SetAnchor(BOTTOMRIGHT, btn, TOPRIGHT, 0, -2)
+  else
+    fly:SetAnchor(TOPRIGHT, btn, BOTTOMRIGHT, 0, 2)
+  end
+  fly:SetHidden(false)
+end
+
+assign_active = function(key)
+  local id = active_id
+  controls.flyout:SetHidden(true)
+  active_id = nil
+  if not id then return end
+
+  SkillColors.set_override(id, key)
+  local sv = Vermilion.SavedVars
+  if sv then
+    sv.skill_overrides = sv.skill_overrides or {}
+    sv.skill_overrides[id] = key
+  end
+  log:info("assigned", id, "->", key)
+  M.refresh()
+end
+
+-- ── list refresh ────────────────────────────────────────────────────────────
+function M.refresh()
+  row_pool:ReleaseAllObjects()
+  controls.flyout:SetHidden(true)
+
+  local unknowns = SkillColors.get_unknowns()
+  if #unknowns == 0 then
+    controls.empty:SetHidden(false)
+    return
+  end
+  controls.empty:SetHidden(true)
+
+  local list   = controls.list
+  local lh      = list:GetHeight()
+  local max_rows = (lh > 0) and math_floor(lh / ROW_H) or FALLBACK_MAXROWS
+
+  local shown = 0
+  for i = 1, #unknowns do
+    if i > max_rows then break end
+    local u   = unknowns[i]
+    local row = row_pool:AcquireObject()
+    row.vm_id = u.id
+    if u.icon ~= "" then row.vm_icon:SetTexture(u.icon) end
+    row.vm_icon:SetHidden(u.icon == "")
+    row.vm_name:SetText(u.name)
+    row.vm_pick:SetText(GetString(VERMILION_ASSIGN_PICK))
+    row:ClearAnchors()
+    row:SetAnchor(TOPLEFT,  list, TOPLEFT,  0, (i - 1) * ROW_H)
+    row:SetAnchor(TOPRIGHT, list, TOPRIGHT, 0, (i - 1) * ROW_H)
+    row:SetHeight(ROW_H - 2)
+    row:SetHidden(false)
+    shown = shown + 1
+  end
+
+  if #unknowns > shown then
+    log:warn("unknown list truncated:", shown, "of", #unknowns, "shown")
+  end
+end
+
+-- ── public API ──────────────────────────────────────────────────────────────
+function M.show()
+  controls.window:SetHidden(false)
+  M.refresh()
+end
+
+function M.hide()
+  controls.flyout:SetHidden(true)
+  controls.window:SetHidden(true)
+  row_pool:ReleaseAllObjects()
+end
+
+function M.toggle()
+  if controls.window:IsHidden() then M.show() else M.hide() end
+end
+
+function M.on_close_click()  M.hide() end
+function M.on_assign_click() M.hide() end
+
+function M.on_move_stop()
+  controls.flyout:SetHidden(true)
+  local sv = Vermilion.SavedVars
+  if not sv or not controls.window then return end
+  sv.assign = sv.assign or {}
+  sv.assign.x = controls.window:GetLeft()
+  sv.assign.y = controls.window:GetTop()
+end
+
+-- ── init ────────────────────────────────────────────────────────────────────
+function M.init()
+  controls.window     = VermilionAssignPanel
+  controls.title      = VermilionAssignPanelWindowTitle
+  controls.help       = VermilionAssignPanelHelpLabel
+  controls.list       = VermilionAssignPanelList
+  controls.empty      = VermilionAssignPanelListEmpty
+  controls.assign_btn = VermilionAssignPanelAssignBtn
+  controls.flyout     = VermilionAssignPanelFlyout
+
+  controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
+  controls.title:SetColor(0.75, 0.75, 0.75, 1)
+  controls.help:SetText(GetString(VERMILION_ASSIGN_HELP))
+  controls.help:SetColor(0.62, 0.62, 0.62, 1)
+  controls.empty:SetText(GetString(VERMILION_ASSIGN_EMPTY))
+  controls.empty:SetColor(0.45, 0.45, 0.45, 1)
+  controls.empty:SetHidden(true)
+  controls.assign_btn:SetText(GetString(VERMILION_ASSIGN_DONE))
+
+  row_pool = Vermilion.lib.plot.Pool.new("VermilionAssignRowC", controls.list, CT_CONTROL, row_factory, row_reset)
+  build_flyout()
+
+  -- Restore window position (centered fallback).
+  local sv = Vermilion.SavedVars
+  sv.assign = sv.assign or {}
+  controls.window:ClearAnchors()
+  if sv.assign.x and sv.assign.y then
+    controls.window:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, sv.assign.x, sv.assign.y)
+  else
+    controls.window:SetAnchor(CENTER, GuiRoot, CENTER, 0, 0)
+  end
+
+  log:info("init: categories=", #SkillColors.groups_ordered())
+end

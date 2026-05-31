@@ -42,6 +42,48 @@ local GROUP_COLORS = {
   other       = { r = 0.55, g = 0.55, b = 0.55, a = 0.80 },  -- unknown (grey)
 }
 
+-- Human-readable labels for the assignment UI (ui/assign). Internal group keys
+-- are terse; these are what the user actually reads in the category picker.
+local GROUP_LABELS = {
+  basic          = "Light / Heavy Attack",
+  templar        = "Templar",
+  dk             = "Dragonknight",
+  sorc           = "Sorcerer",
+  nb             = "Nightblade",
+  warden         = "Warden",
+  necro          = "Necromancer",
+  arcanist       = "Arcanist",
+  twohanded      = "Two Handed",
+  dualwield      = "Dual Wield",
+  bow            = "Bow",
+  onehand        = "One Hand & Shield",
+  destru         = "Destruction Staff",
+  resto          = "Restoration Staff",
+  fighters_guild = "Fighters Guild",
+  mages_guild    = "Mages Guild",
+  undaunted      = "Undaunted",
+  soul_magic     = "Soul Magic",
+  support        = "Alliance War",
+  scribing       = "Scribing",
+  vampire        = "Vampire",
+  item           = "Item Set / Enchant",
+  status         = "Status Effect",
+  other          = "Unknown (grey)",
+}
+
+-- Curated display order for the category picker — grouped by domain (basic,
+-- class, weapon, guild, world, special) rather than alphabetical, so the list
+-- reads the way a player thinks about where a hit came from.
+local GROUP_ORDER = {
+  "basic",
+  "templar", "dk", "sorc", "nb", "warden", "necro", "arcanist",
+  "twohanded", "dualwield", "bow", "onehand", "destru", "resto",
+  "fighters_guild", "mages_guild", "undaunted", "soul_magic", "support", "scribing",
+  "vampire",
+  "item", "status",
+  "other",
+}
+
 -- Light/heavy attack classification (SPEC §10.2 / §15.2).
 --
 -- VALIDATED against esoui/ source: there is NO stable API such as
@@ -270,6 +312,41 @@ end
 
 function M.is_group(group)
   return GROUP_COLORS[group] ~= nil
+end
+
+-- Human label for a group key (for the assignment UI). Falls back to the key.
+function M.group_label(key)
+  return GROUP_LABELS[key] or key
+end
+
+-- Ordered category list for the picker UI: array of { key, label, r,g,b,a } in
+-- the curated GROUP_ORDER. Cold path (built on demand when the flyout opens).
+function M.groups_ordered()
+  local out = {}
+  for _, key in ipairs(GROUP_ORDER) do
+    local c = GROUP_COLORS[key] or FALLBACK
+    out[#out + 1] = { key = key, label = GROUP_LABELS[key] or key, r = c.r, g = c.g, b = c.b, a = c.a }
+  end
+  return out
+end
+
+-- Snapshot of every ability that fell through classification, for the
+-- assignment window: array of { id, name, icon } sorted by id. Re-derives
+-- name/icon fresh (cold path) rather than parsing the unknown_log string.
+function M.get_unknowns()
+  local out = {}
+  for id in pairs(unknown_log) do
+    out[#out + 1] = { id = id, name = GetAbilityName(id) or ("#" .. id), icon = GetAbilityIcon(id) or "" }
+  end
+  table.sort(out, function(a, b) return a.id < b.id end)
+  return out
+end
+
+-- Count of currently-unclassified abilities (for a settings badge / empty state).
+function M.unknown_count()
+  local n = 0
+  for _ in pairs(unknown_log) do n = n + 1 end
+  return n
 end
 
 -- Assign abilityId -> group at runtime. Returns false on an unknown group.

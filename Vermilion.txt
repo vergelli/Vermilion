@@ -48,4 +48,6 @@ ui/settings.xml
 ui/settings.lua
 ui/graph.xml
 ui/graph.lua
+ui/assign.xml
+ui/assign.lua
 Vermilion.lua

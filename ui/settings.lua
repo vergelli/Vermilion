@@ -177,6 +177,13 @@ function M.on_move_stop()
   sv.settings.y = controls.window:GetTop()
 end
 
+-- Opens the unknown-contributions assignment window, closing Settings first so
+-- the two windows never stack on screen.
+function M.on_unknown_click()
+  controls.window:SetHidden(true)
+  Vermilion.Assign.show()
+end
+
 function M.on_sample_track_click(control)
   local cx      = GetUIMousePosition()
   local track_w = control:GetWidth()
@@ -280,9 +287,13 @@ function M.init()
   controls.label_vpalpha  = VermilionSettingsPanelVPAlphaLabel
   controls.track_vpalpha  = VermilionSettingsPanelSliderTrackVPAlpha
   controls.reset_btn      = VermilionSettingsPanelResetBtn
+  controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
+  controls.unknown_label  = VermilionSettingsPanelUnknownLabel
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
+  controls.unknown_label:SetText(GetString(VERMILION_SETTINGS_UNKNOWN))
+  controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)
 
   controls.title_sample:SetText(GetString(VERMILION_SETTING_SAMPLE_RATE))
   controls.title_sample:SetColor(0.75, 0.75, 0.75, 1)
