@@ -134,9 +134,8 @@
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER"
                mouseEnabled="true">
-          <Anchor point="LEFT"  relativeTo="$(parent)UnknownBtn" relativePoint="RIGHT" offsetX="8" offsetY="0"/>
-          <Anchor point="RIGHT" relativeTo="$(parent)"           relativePoint="RIGHT" offsetX="-14" offsetY="0"/>
-          <Dimensions y="16"/>
+          <Anchor point="LEFT" relativeTo="$(parent)UnknownBtn" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
+          <Dimensions x="210" y="28"/>
           <OnMouseUp>Vermilion.Settings.on_unknown_click()</OnMouseUp>
         </Label>
 

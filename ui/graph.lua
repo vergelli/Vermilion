@@ -37,6 +37,11 @@ local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- pink-magenta 
 local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crimson frontier
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
 
+-- Outer chrome wash — a faint crimson tint over the parchment strips, so the
+-- whole window reads as Vermilion's identity color (mirror: Verdant would use
+-- a faint green). Subtle on purpose; tune r/g/b here.
+local C_CHROME    = { r = 1.00, g = 0.74, b = 0.72, a = 0.82 }
+
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 local LINE_THICKNESS = 2
@@ -619,10 +624,10 @@ function M.init()
   -- Donut chrome layering (mirror of Verdant): outer center forced transparent;
   -- chrome strips paint parchment; inner backdrop center is the viewport bg.
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
-  VermilionGraphWindowChromeTop   :SetColor(1, 1, 1, 0.80)
-  VermilionGraphWindowChromeBottom:SetColor(1, 1, 1, 0.80)
-  VermilionGraphWindowChromeLeft  :SetColor(1, 1, 1, 0.80)
-  VermilionGraphWindowChromeRight :SetColor(1, 1, 1, 0.80)
+  VermilionGraphWindowChromeTop   :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
+  VermilionGraphWindowChromeBottom:SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
+  VermilionGraphWindowChromeLeft  :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
+  VermilionGraphWindowChromeRight :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(1, 1, 1, sv_a / 100)
 

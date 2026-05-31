@@ -19,10 +19,13 @@ ZO_CreateStringId("VERMILION_SETTINGS_UNKNOWN",       "Unknown Contributions")
 
 -- Unknown-contributions assignment window
 ZO_CreateStringId("VERMILION_ASSIGN_TITLE",  "Unknown Contributions")
-ZO_CreateStringId("VERMILION_ASSIGN_HELP",   "These hits couldn't be auto-colored. Pick a category for each — it saves instantly.")
 ZO_CreateStringId("VERMILION_ASSIGN_PICK",   "pick category")
 ZO_CreateStringId("VERMILION_ASSIGN_EMPTY",  "Nothing to classify — every contribution has a color.")
 ZO_CreateStringId("VERMILION_ASSIGN_DONE",   "Assign")
+ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_TITLE", "Confirm assignment")
+ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NOTE",  "You can re-tag these any time from this window.")
+ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_YES",   "Assign")
+ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NO",    "Cancel")
 
 -- Heavy buffer warning (chat) — args: window_s, hz, capacity
 ZO_CreateStringId("VERMILION_WARN_HEAVY_BUFFER", "%ds x %d Hz = %d samples may impact FPS. Consider a lower sample rate for long windows.")

@@ -6,10 +6,13 @@ local api = Vermilion.zenimax.api
 local zui = Vermilion.zenimax.ui
 local zc  = Vermilion.zenimax.constants
 local GetString               = api.GetString
+local GetAbilityName          = api.GetAbilityName
 local WINDOW_MANAGER          = zui.WINDOW_MANAGER
 local CreateControlFromVirtual = zui.CreateControlFromVirtual
 local math_floor              = math.floor
 local math_ceil               = math.ceil
+local string_format           = string.format
+local table_concat            = table.concat
 
 local log = Vermilion.Log.for_module("assign")
 
@@ -29,6 +32,18 @@ local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
 
 local SkillColors = Vermilion.SkillColors
 
+-- "|cRRGGBB" colour-markup prefix for a group colour, so a category name can be
+-- printed in its own colour inside a button/label (the name IS the swatch).
+local function hex(c)
+  return string_format("%02X%02X%02X",
+    math_floor(c.r * 255 + 0.5), math_floor(c.g * 255 + 0.5), math_floor(c.b * 255 + 0.5))
+end
+
+local function colored_label(key)
+  local c = SkillColors.group_color(key)
+  return "|c" .. hex(c) .. SkillColors.group_label(key) .. "|r"
+end
+
 -- ── layout constants ───────────────────────────────────────────────────────
 local ROW_H            = 30   -- per-unknown row height
 local FALLBACK_MAXROWS = 8    -- used if the list height isn't measurable yet
@@ -41,6 +56,7 @@ local FLYOUT_COLS      = 2
 local controls  = {}
 local row_pool
 local active_id          -- abilityId the flyout is currently choosing for
+local pending   = {}     -- staged picks { [abilityId] = group } not yet committed
 local open_flyout_for    -- forward declarations (used inside row_factory)
 local assign_active
 
@@ -127,19 +143,14 @@ open_flyout_for = function(row)
   fly:SetHidden(false)
 end
 
+-- Stage a pick. Nothing is committed (and nothing leaves the list) until the
+-- user confirms via Assign — so they can review and re-pick freely.
 assign_active = function(key)
   local id = active_id
   controls.flyout:SetHidden(true)
   active_id = nil
   if not id then return end
-
-  SkillColors.set_override(id, key)
-  local sv = Vermilion.SavedVars
-  if sv then
-    sv.skill_overrides = sv.skill_overrides or {}
-    sv.skill_overrides[id] = key
-  end
-  log:info("assigned", id, "->", key)
+  pending[id] = key
   M.refresh()
 end
 
@@ -168,7 +179,12 @@ function M.refresh()
     if u.icon ~= "" then row.vm_icon:SetTexture(u.icon) end
     row.vm_icon:SetHidden(u.icon == "")
     row.vm_name:SetText(u.name)
-    row.vm_pick:SetText(GetString(VERMILION_ASSIGN_PICK))
+    local chosen = pending[u.id]
+    if chosen then
+      row.vm_pick:SetText(colored_label(chosen))
+    else
+      row.vm_pick:SetText(GetString(VERMILION_ASSIGN_PICK))
+    end
     row:ClearAnchors()
     row:SetAnchor(TOPLEFT,  list, TOPLEFT,  0, (i - 1) * ROW_H)
     row:SetAnchor(TOPRIGHT, list, TOPRIGHT, 0, (i - 1) * ROW_H)
@@ -182,14 +198,51 @@ function M.refresh()
   end
 end
 
+-- ── confirm dialog ──────────────────────────────────────────────────────────
+local CONFIRM_MAX_LINES = 6
+
+local function clear_pending()
+  for id in pairs(pending) do pending[id] = nil end
+end
+
+local function pending_count()
+  local n = 0
+  for _ in pairs(pending) do n = n + 1 end
+  return n
+end
+
+-- Builds the review text ("AbilityName → Category", colored) and shows the
+-- confirm panel. The note states the assignment is reversible — because it is.
+local function show_confirm()
+  controls.flyout:SetHidden(true)
+  local lines, n = {}, 0
+  for id, key in pairs(pending) do
+    n = n + 1
+    if n <= CONFIRM_MAX_LINES then
+      local name = GetAbilityName(id)
+      if not name or name == "" then name = "#" .. id end
+      lines[#lines + 1] = name .. "  \226\134\146  " .. colored_label(key)  -- " → "
+    end
+  end
+  if n > CONFIRM_MAX_LINES then
+    lines[#lines + 1] = "\226\128\166 and " .. (n - CONFIRM_MAX_LINES) .. " more"
+  end
+  controls.confirm_msg:SetText(table_concat(lines, "\n") .. "\n\n" .. GetString(VERMILION_ASSIGN_CONFIRM_NOTE))
+  controls.confirm:SetHidden(false)
+end
+
 -- ── public API ──────────────────────────────────────────────────────────────
 function M.show()
+  controls.confirm:SetHidden(true)
+  clear_pending()
   controls.window:SetHidden(false)
   M.refresh()
 end
 
 function M.hide()
   controls.flyout:SetHidden(true)
+  controls.confirm:SetHidden(true)
+  clear_pending()
   controls.window:SetHidden(true)
   row_pool:ReleaseAllObjects()
 end
@@ -198,8 +251,37 @@ function M.toggle()
   if controls.window:IsHidden() then M.show() else M.hide() end
 end
 
-function M.on_close_click()  M.hide() end
-function M.on_assign_click() M.hide() end
+function M.on_close_click() M.hide() end
+
+-- Assign: with staged picks, open the review dialog; with none, it's just a
+-- friendly close (the user looked and left nothing to do).
+function M.on_assign_click()
+  if pending_count() == 0 then
+    M.hide()
+  else
+    show_confirm()
+  end
+end
+
+function M.on_confirm_no()
+  controls.confirm:SetHidden(true)
+end
+
+-- Commit every staged pick to SkillColors + SavedVars, then close. Colors apply
+-- live on the next sample tick (no /reloadui).
+function M.on_confirm_yes()
+  local sv = Vermilion.SavedVars
+  for id, key in pairs(pending) do
+    SkillColors.set_override(id, key)
+    if sv then
+      sv.skill_overrides = sv.skill_overrides or {}
+      sv.skill_overrides[id] = key
+    end
+    log:info("committed", id, "->", key)
+  end
+  controls.confirm:SetHidden(true)
+  M.hide()
+end
 
 function M.on_move_stop()
   controls.flyout:SetHidden(true)
@@ -219,15 +301,25 @@ function M.init()
   controls.empty      = VermilionAssignPanelListEmpty
   controls.assign_btn = VermilionAssignPanelAssignBtn
   controls.flyout     = VermilionAssignPanelFlyout
+  controls.confirm       = VermilionAssignPanelConfirm
+  controls.confirm_title = VermilionAssignPanelConfirmTitle
+  controls.confirm_msg   = VermilionAssignPanelConfirmMsg
+  controls.confirm_yes   = VermilionAssignPanelConfirmYesBtn
+  controls.confirm_no    = VermilionAssignPanelConfirmNoBtn
 
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
-  controls.help:SetText(GetString(VERMILION_ASSIGN_HELP))
-  controls.help:SetColor(0.62, 0.62, 0.62, 1)
   controls.empty:SetText(GetString(VERMILION_ASSIGN_EMPTY))
   controls.empty:SetColor(0.45, 0.45, 0.45, 1)
   controls.empty:SetHidden(true)
   controls.assign_btn:SetText(GetString(VERMILION_ASSIGN_DONE))
+
+  controls.confirm_title:SetText(GetString(VERMILION_ASSIGN_CONFIRM_TITLE))
+  controls.confirm_title:SetColor(0.92, 0.55, 0.50, 1)
+  controls.confirm_msg:SetColor(0.90, 0.90, 0.90, 1)
+  controls.confirm_yes:SetText(GetString(VERMILION_ASSIGN_CONFIRM_YES))
+  controls.confirm_no:SetText(GetString(VERMILION_ASSIGN_CONFIRM_NO))
+  controls.confirm:SetHidden(true)
 
   row_pool = Vermilion.lib.plot.Pool.new("VermilionAssignRowC", controls.list, CT_CONTROL, row_factory, row_reset)
   build_flyout()
