@@ -23,7 +23,7 @@ ZO_CreateStringId("VERMILION_ASSIGN_PICK",   "pick category")
 ZO_CreateStringId("VERMILION_ASSIGN_EMPTY",  "Nothing to classify — every contribution has a color.")
 ZO_CreateStringId("VERMILION_ASSIGN_DONE",   "Assign")
 ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_TITLE", "Confirm assignment")
-ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NOTE",  "You can re-tag these any time from this window.")
+ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NOTE",  "These assignments are irreversible. Review them before confirming.")
 ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_YES",   "Assign")
 ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NO",    "Cancel")
 
