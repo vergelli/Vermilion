@@ -50,4 +50,6 @@ ui/graph.xml
 ui/graph.lua
 ui/assign.xml
 ui/assign.lua
+ui/logo.xml
+ui/logo.lua
 Vermilion.lua

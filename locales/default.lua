@@ -16,6 +16,9 @@ ZO_CreateStringId("VERMILION_SETTING_SAMPLE_RATE",    "Sampling Rate")
 ZO_CreateStringId("VERMILION_SETTING_TIME_WINDOW",    "Time Window")
 ZO_CreateStringId("VERMILION_SETTING_VIEWPORT_ALPHA", "Viewport Alpha")
 ZO_CreateStringId("VERMILION_SETTINGS_UNKNOWN",       "Unknown Contributions")
+ZO_CreateStringId("VERMILION_SETTINGS_LOGO_ON",       "Logo: Visible")
+ZO_CreateStringId("VERMILION_SETTINGS_LOGO_OFF",      "Logo: Hidden")
+ZO_CreateStringId("VERMILION_LOGO_HINT",              "Logo hidden. Bind a key to Vermilion under Settings > Controls > Keybindings (Add-Ons), or type /vermilion.")
 
 -- Unknown-contributions assignment window
 ZO_CreateStringId("VERMILION_ASSIGN_TITLE",  "Unknown Contributions")

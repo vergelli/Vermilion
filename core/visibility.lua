@@ -27,6 +27,11 @@ local function apply()
   if VermilionSettingsPanel and not in_hud then
     VermilionSettingsPanel:SetHidden(true)
   end
+  -- The floating logo shows only in the HUD while the window is closed; the
+  -- logo module ANDs this with the user's enable preference.
+  if Vermilion.Logo then
+    Vermilion.Logo.sync(in_hud and not user_visible.graph)
+  end
 end
 
 local function persist()

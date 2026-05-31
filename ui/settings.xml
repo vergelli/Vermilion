@@ -13,7 +13,7 @@
                      movable="true"
                      mouseEnabled="true">
 
-      <Dimensions x="280" y="250"/>
+      <Dimensions x="280" y="290"/>
 
       <OnMoveStop>Vermilion.Settings.on_move_stop()</OnMoveStop>
 
@@ -121,7 +121,7 @@
         <!-- ── Unknown Contributions entry (opens the assignment window) ── -->
         <Button name="$(parent)UnknownBtn" mouseEnabled="true"
                 mouseOverBlendMode="ADD" inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="BOTTOMLEFT" offsetX="14" offsetY="-44"/>
+          <Anchor point="BOTTOMLEFT" offsetX="14" offsetY="-78"/>
           <Dimensions x="28" y="28"/>
           <Textures normal="EsoUI/Art/Dye/dyes_toolIcon_fill_up.dds"
                     pressed="EsoUI/Art/Dye/dyes_toolIcon_fill_down.dds"
@@ -138,6 +138,17 @@
           <Dimensions x="210" y="28"/>
           <OnMouseUp>Vermilion.Settings.on_unknown_click()</OnMouseUp>
         </Label>
+
+        <!-- ── Logo visibility toggle ──────────────────────────────────── -->
+        <Button name="$(parent)LogoBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="BOTTOMLEFT"  offsetX="14"  offsetY="-44"/>
+          <Anchor point="BOTTOMRIGHT" offsetX="-14" offsetY="-44"/>
+          <Dimensions y="22"/>
+          <OnClicked>Vermilion.Settings.on_logo_click()</OnClicked>
+        </Button>
 
         <!-- ── Reset to Defaults button ────────────────────────────────── -->
         <Button name="$(parent)ResetBtn"

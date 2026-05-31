@@ -125,7 +125,7 @@ local function on_addon_loaded()
   local world = GetWorldName()
   Vermilion.SavedVars = Vermilion.zenimax.savedvars.new_account_wide(
     C.SV_TABLE, C.SV_VERSION, world,
-    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {} })
+    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {}, logo = {} })
 
   -- Replay user-captured light/heavy attack IDs (via /vermilion basic <id>).
   Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)
@@ -137,6 +137,7 @@ local function on_addon_loaded()
   -- even when disabled. Skipping init() in release keeps that off the hot path.
   if C.DEBUG then Vermilion.Probe.init() end
   Vermilion.Pipeline.init()
+  Vermilion.Logo.init()        -- before Settings (reads Logo.is_enabled) + Visibility (calls Logo.sync)
   Vermilion.Settings.init()
   Vermilion.Graph.init()
   Vermilion.Assign.init()

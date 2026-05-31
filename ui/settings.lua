@@ -9,6 +9,7 @@ local zui = Vermilion.zenimax.ui
 local zc  = Vermilion.zenimax.constants
 local GetUIMousePosition = api.GetUIMousePosition
 local GetString          = api.GetString
+local d                  = d
 local WINDOW_MANAGER     = zui.WINDOW_MANAGER
 local math_max           = math.max
 local math_min           = math.min
@@ -184,6 +185,17 @@ function M.on_unknown_click()
   Vermilion.Assign.show()
 end
 
+-- Toggles the floating logo. When turning it off, drop a one-time chat hint on
+-- how to reach the window without it (keybind / slash command), since there is
+-- no clean API to deep-link the addon's keybinding screen.
+function M.on_logo_click()
+  local now = not Vermilion.Logo.is_enabled()
+  Vermilion.Logo.set_enabled(now)
+  controls.logo_btn:SetText(now and GetString(VERMILION_SETTINGS_LOGO_ON)
+                                 or GetString(VERMILION_SETTINGS_LOGO_OFF))
+  if not now then d("[Vm] " .. GetString(VERMILION_LOGO_HINT)) end
+end
+
 function M.on_sample_track_click(control)
   local cx      = GetUIMousePosition()
   local track_w = control:GetWidth()
@@ -289,11 +301,14 @@ function M.init()
   controls.reset_btn      = VermilionSettingsPanelResetBtn
   controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
   controls.unknown_label  = VermilionSettingsPanelUnknownLabel
+  controls.logo_btn       = VermilionSettingsPanelLogoBtn
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
   controls.unknown_label:SetText(GetString(VERMILION_SETTINGS_UNKNOWN))
   controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)
+  controls.logo_btn:SetText(Vermilion.Logo.is_enabled()
+    and GetString(VERMILION_SETTINGS_LOGO_ON) or GetString(VERMILION_SETTINGS_LOGO_OFF))
 
   controls.title_sample:SetText(GetString(VERMILION_SETTING_SAMPLE_RATE))
   controls.title_sample:SetColor(0.75, 0.75, 0.75, 1)
