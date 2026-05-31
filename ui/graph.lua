@@ -27,11 +27,14 @@ local TEXT_ALIGN_LEFT   = zc.TEXT_ALIGN_LEFT
 local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
 local TEXT_ALIGN_BOTTOM = zc.TEXT_ALIGN_BOTTOM
 
--- View 2 (BY_OUTCOME) stripe colors (SPEC §5.2): eDPS warm ember at the
--- bottom, ShDPS cool magenta on top.
-local C_EDPS      = { r = 0.95, g = 0.55, b = 0.30, a = 0.90 }  -- ember orange (HP work)
-local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- magenta (shield work)
-local C_LINE_EDPS = { r = 1.00, g = 0.66, b = 0.40, a = 1.00 }  -- brighter eDPS frontier
+-- View 2 (BY_OUTCOME) stripe colors (SPEC §5.2): eDPS deep crimson at the
+-- bottom (HP work, Vermilion's identity color), ShDPS cool pink-magenta on
+-- top (shield work — matches the game's pink shield overlay + Verdant). The
+-- two are stacked, so contrast matters: crimson sits at low-green/low-blue,
+-- the shield magenta at high-blue (b=0.75) — opposite corners of the wheel.
+local C_EDPS      = { r = 0.88, g = 0.24, b = 0.18, a = 0.92 }  -- deep crimson (HP work)
+local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- pink-magenta (shield work)
+local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crimson frontier
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
 
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"

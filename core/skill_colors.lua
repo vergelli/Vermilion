@@ -166,8 +166,12 @@ local ABILITY_OVERRIDES = {
   [148797] = "status",      -- Overcharged (shock status-effect damage)
   [148800] = "status",      -- Sundered (physical status-effect damage)
   [21481]  = "status",      -- Chill (frost status-effect damage)
+  [18084]  = "status",      -- Burning (flame status-effect damage)
+  [21487]  = "status",      -- Concussion (shock status-effect damage)
+  [48016]  = "destru",      -- Force Pulse (Destruction Staff; secondary hit, generic AoE icon)
   [126895] = "soul_magic",  -- Soul Splitting Trap (Soul Magic line)
   [45445]  = "dualwield",   -- Forceful (Dual Wield passive cleave; generic ability_weapon_ art)
+  [21970]  = "basic",       -- Bash (universal weapon bash attack)
 }
 
 -- Runtime cache (abilityId → group string); populated on first encounter.
