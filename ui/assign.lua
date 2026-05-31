@@ -228,6 +228,7 @@ local function show_confirm()
     lines[#lines + 1] = "\226\128\166 and " .. (n - CONFIRM_MAX_LINES) .. " more"
   end
   controls.confirm_msg:SetText(table_concat(lines, "\n") .. "\n\n" .. GetString(VERMILION_ASSIGN_CONFIRM_NOTE))
+  controls.window:SetHidden(true)   -- hide the list window so the two never overlap
   controls.confirm:SetHidden(false)
 end
 
@@ -265,6 +266,8 @@ end
 
 function M.on_confirm_no()
   controls.confirm:SetHidden(true)
+  controls.window:SetHidden(false)   -- bring the list back to keep editing
+  M.refresh()
 end
 
 -- Commit every staged pick to SkillColors + SavedVars, then close. Colors apply
@@ -301,11 +304,11 @@ function M.init()
   controls.empty      = VermilionAssignPanelListEmpty
   controls.assign_btn = VermilionAssignPanelAssignBtn
   controls.flyout     = VermilionAssignPanelFlyout
-  controls.confirm       = VermilionAssignPanelConfirm
-  controls.confirm_title = VermilionAssignPanelConfirmTitle
-  controls.confirm_msg   = VermilionAssignPanelConfirmMsg
-  controls.confirm_yes   = VermilionAssignPanelConfirmYesBtn
-  controls.confirm_no    = VermilionAssignPanelConfirmNoBtn
+  controls.confirm       = VermilionAssignConfirm
+  controls.confirm_title = VermilionAssignConfirmTitle
+  controls.confirm_msg   = VermilionAssignConfirmMsg
+  controls.confirm_yes   = VermilionAssignConfirmYesBtn
+  controls.confirm_no    = VermilionAssignConfirmNoBtn
 
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
