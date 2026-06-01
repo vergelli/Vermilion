@@ -1,9 +1,9 @@
--- pipeline/processing.lua
---
--- Stage 3 of the pipeline. Routes a filtered VermilionEvent to the appropriate
--- ingestor in metrics. The event becomes the buffer's owned entry from this
--- point — the caller MUST NOT release it. Buffer trim (on_evict) returns it to
--- the pool when the time window passes.
+--* pipeline/processing.lua
+--*
+--* Stage 3 of the pipeline. Routes a filtered VermilionEvent to the appropriate
+--* ingestor in metrics. The event becomes the buffer's owned entry from this
+--* point — the caller MUST NOT release it. Buffer trim (on_evict) returns it to
+--* the pool when the time window passes.
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion

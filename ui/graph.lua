@@ -27,27 +27,16 @@ local TEXT_ALIGN_LEFT   = zc.TEXT_ALIGN_LEFT
 local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
 local TEXT_ALIGN_BOTTOM = zc.TEXT_ALIGN_BOTTOM
 
--- View 2 (BY_OUTCOME) stripe colors: eDPS deep crimson at the
--- bottom (HP work, Vermilion's identity color), ShDPS cool pink-magenta on
--- top (shield work — matches the game's pink shield overlay + Verdant). The
--- two are stacked, so contrast matters: crimson sits at low-green/low-blue,
--- the shield magenta at high-blue (b=0.75) — opposite corners of the wheel.
 local C_EDPS      = { r = 0.88, g = 0.24, b = 0.18, a = 0.92 }  -- deep crimson (HP work)
 local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- pink-magenta (shield work)
 local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crimson frontier
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
-
--- Outer chrome wash — a faint crimson tint over the parchment strips, so the
--- whole window reads as Vermilion's identity color (mirror: Verdant would use
--- a faint green). Subtle on purpose; tune r/g/b here.
 local C_CHROME    = { r = 1.00, g = 0.74, b = 0.72, a = 0.82 }
 
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 local LINE_THICKNESS = 2
 
--- Grid: 3 horizontal + 3 vertical reference lines.
--- TIME_STRIP_H: pixels reserved at canvas bottom for X-axis time labels.
 local N_HGRID      = 3
 local N_VGRID      = 3
 local TIME_STRIP_H = 18
@@ -82,8 +71,7 @@ local function fmt_readout(v)
   return tostring(math_floor(v + 0.5))
 end
 
--- Header DPS readout: weapons tree icon (idle when no damage, "active" while
--- damage is flowing) + the current EOS value.
+-- Header DPS iNDICATOR. It may change
 local DPS_ICON_IDLE   = "/esoui/art/treeicons/collection_indexicon_weapons_up.dds"
 local DPS_ICON_ACTIVE = "/esoui/art/treeicons/collection_indexicon_weapons_down.dds"
 
@@ -92,10 +80,6 @@ local function update_header(eos)
   controls.dps_icon:SetTexture(eos > 0 and DPS_ICON_ACTIVE or DPS_ICON_IDLE)
 end
 
--- Always-on 1 Hz header refresh. The metric buffers are live whenever the
--- player is in combat (the pipeline ingests continuously, independent of the
--- record/stop lifecycle), so the header shows live DPS even before Record is
--- pressed. Cheap; skips all work while the window is hidden.
 local function header_tick()
   if controls.window:IsHidden() then return end
   local now = GetGameTimeMilliseconds()
@@ -265,8 +249,6 @@ local function release_all_pools()
   controls.pool_line_eos:ReleaseAllObjects()
 end
 
--- Shared slot geometry for the capacity-based fixed-width bars. Newest sample
--- is right-aligned; empty slots sit on the left until the buffer is full.
 local function slot_geometry(cw)
   local capacity = Vermilion.TemporalBuffer.capacity()
   local n        = Vermilion.TemporalBuffer.count()
@@ -277,7 +259,6 @@ local function slot_geometry(cw)
   return slot_w, bw, offset
 end
 
--- Max EOS over the visible window (shared Y-scale for both views).
 local function window_extent()
   local max_eos = 0
   local t_first, t_last = 0, 0
@@ -621,8 +602,6 @@ function M.init()
   end
   controls.window:SetDimensionConstraints(360, 240, 1000, 700)
 
-  -- Donut chrome layering (mirror of Verdant): outer center forced transparent;
-  -- chrome strips paint parchment; inner backdrop center is the viewport bg.
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
   VermilionGraphWindowChromeTop   :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeBottom:SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)

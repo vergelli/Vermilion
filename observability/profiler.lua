@@ -1,23 +1,9 @@
--- observability/profiler.lua
---
--- Dev-only. In release (DEBUG=false) the file defines NOOP stubs and
--- returns early — the histograms, stack tracking, percentile machinery,
--- and all real implementations are not parsed at all. Only tiny stubs
--- live in memory so call sites that locally cache M.enter / M.exit
--- don't crash.
---
--- enter/exit balance via stack; mismatches log to
--- log.write("error", "profiler.unbalanced"). Time source is the only
--- millisecond clock (zenimax.api.GetGameTimeMilliseconds); sub-ms
--- stages report 0 most of the time — what matters is catching spikes.
-
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
 
 Vermilion.Profiler = {}
 local M = Vermilion.Profiler
 
--- ── public surface stubs (always defined so local caches work) ───────────
 local NOOP = function() end
 M.enter        = NOOP
 M.exit         = NOOP

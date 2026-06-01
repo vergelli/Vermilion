@@ -1,13 +1,13 @@
--- pipeline/pipeline.lua
---
--- Orchestrator for the event pipeline (acquisition → filter → processing).
--- Owns ZOS event subscriptions and per-ZOS-event bookkeeping (counters, mode
--- pre-check, profiler spans) that doesn't fit the per-event stage contract.
---
--- Entry points:
---   M.dispatch_damage_out(...)  — combat handler, player landed damage
---   M.dispatch_shield_out(...)  — combat handler, DAMAGE_SHIELDED from player
---   M.init()                    — registers ZOS subscriptions
+--* pipeline/pipeline.lua
+--*
+--* Orchestrator for the event pipeline (acquisition → filter → processing).
+--* Owns ZOS event subscriptions and per-ZOS-event bookkeeping (counters, mode
+--* pre-check, profiler spans) that doesn't fit the per-event stage contract.
+--*
+--* Entry points:
+--*   M.dispatch_damage_out(...)  — combat handler, player landed damage
+--*   M.dispatch_shield_out(...)  — combat handler, DAMAGE_SHIELDED from player
+--*   M.init()                    — registers ZOS subscriptions
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion

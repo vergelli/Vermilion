@@ -1,15 +1,3 @@
--- Time-windowed ring buffer. Holds entries with a `t` field; trims old
--- entries past `now_ms - window_ms`. Capacity-bounded: pushing past
--- capacity also evicts the oldest.
---
--- Optional `on_evict(entry)` hook fires whenever an entry leaves the
--- buffer (capacity overflow, time trim, or :reset). Used by metrics to
--- release pooled events back to a BufferPool.
---
--- API preserved from the previous core/buffer.lua so consumers don't
--- need to change beyond the constructor signature. Old constructor
--- (window_ms, capacity) still works; new constructor adds on_evict
--- as a third argument.
 
 Vermilion = Vermilion or {}
 Vermilion.lib = Vermilion.lib or {}
@@ -18,8 +6,6 @@ Vermilion.lib.mem = Vermilion.lib.mem or {}
 local RingBuffer = {}
 RingBuffer.__index = RingBuffer
 Vermilion.lib.mem.RingBuffer = RingBuffer
-
--- Back-compat alias: old code references Vermilion.Buffer.
 Vermilion.Buffer = RingBuffer
 
 function RingBuffer.new(window_ms, capacity, on_evict)

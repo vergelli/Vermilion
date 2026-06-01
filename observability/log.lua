@@ -1,20 +1,3 @@
--- Vermilion.Log — minimal logger that wraps chat (d()) and CopyBox.
---
--- Usage:
---   local log = Vermilion.Log.for_module("mem.ring_buffer")
---   log:info("acquired event", ev_id)
---   log:warn("pool pressure", in_use, "/", cap)
---   log:err("invalid state:", err)
---
--- Args after msg are tostring'd and joined with spaces.
---
--- Routing:
---   DEBUG = true  → all levels go to CopyBox
---   DEBUG = false → info/warn no-op; err goes to chat (errors stay visible)
---
--- This module is loaded at all times (~80 lines of Lua). When DEBUG is
--- false the no-ops short-circuit at the first line of each level fn.
-
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
 
@@ -25,8 +8,6 @@ local d        = d
 local tostring = tostring
 local concat   = table.concat
 
--- Tightly-bound aliases for frequent module paths. Keeps the prefix short
--- in the output without losing precision.
 local ALIAS = {
   ["observability.diagnostics"] = "diag",
   ["core.engine"]               = "engine",
@@ -39,7 +20,7 @@ local function format_line(level, source, args, n)
   if level ~= "info" then
     prefix = prefix .. " " .. level .. ":"
   end
-  -- Build the body. Up to 8 args inline; rare path uses concat.
+
   if n == 0 then return prefix end
   local body
   if n == 1 then body = tostring(args[1])
@@ -53,9 +34,7 @@ local function format_line(level, source, args, n)
 end
 
 local function emit(level, source, ...)
-  -- Gate at the very top — in DEBUG=false hot paths, info/warn must do
-  -- zero work (no select, no concat, no tostring). err still formats
-  -- because errors are rare and need to surface in chat.
+
   local debug_on = Vermilion.Constants.DEBUG
   if not debug_on and level ~= "err" then return end
   local n = select("#", ...)
@@ -86,8 +65,6 @@ function M.for_module(source)
 end
 
 -- ── structured ring buffer ──────────────────────────────────
--- Dev-only. Stubs declared here so callers can reference Vermilion.Log.write
--- safely; the real implementation only parses when DEBUG=true.
 
 local NOOP = function() end
 M.write        = NOOP
@@ -111,9 +88,6 @@ for i = 1, RING_CAPACITY do
   ring[i] = { t = 0, level = "", key = "", data = nil }
 end
 
--- Format a data payload (often a table of {k=v}) into a human-readable
--- "k=v k=v" string. Plain tostring() on a table returns its hex address,
--- which is useless in the CopyBox.
 local function format_data(data)
   if data == nil then return "" end
   if type(data) ~= "table" then return tostring(data) end
@@ -132,7 +106,6 @@ function M.write(level, key, data)
   rec.key   = key
   rec.data  = data
   ring_count = ring_count + 1
-  -- Mirror to CopyBox at warn/error so the dev sees them live.
   if (level == "warn" or level == "error") and Vermilion.CopyBox then
     local body = "[" .. level .. ":" .. key .. "]"
     if data ~= nil then

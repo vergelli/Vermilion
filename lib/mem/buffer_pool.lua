@@ -1,16 +1,3 @@
--- Generic O(1) object pool. Pre-allocates `capacity` records via `factory`
--- and maintains a free-list of indices.
---
---   pool = BufferPool.new(factory, capacity)
---   ev   = pool:acquire()      -- returns record or nil if exhausted
---   pool:release(ev)
---   pool:in_use()              -- count of records currently outstanding
---   pool:capacity()
---
--- The factory must produce a fresh record each call. The pool stamps
--- `record._pool_idx` at construction; release looks at that index to
--- return the record to the free-list.
-
 Vermilion = Vermilion or {}
 Vermilion.lib = Vermilion.lib or {}
 Vermilion.lib.mem = Vermilion.lib.mem or {}
@@ -24,13 +11,13 @@ function BufferPool.new(factory, capacity, label)
   self._capacity = capacity
   self._label    = label or "pool"
   self._records  = {}
-  self._free     = {}      -- stack of free indices
+  self._free     = {}
   self._in_use   = 0
   for i = 1, capacity do
     local rec = factory()
     rec._pool_idx = i
     self._records[i] = rec
-    self._free[i] = i      -- pushed in order; pops yield capacity, capacity-1, ...
+    self._free[i] = i
   end
   self._free_top = capacity
   return self

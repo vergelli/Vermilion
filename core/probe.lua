@@ -46,8 +46,6 @@ local ACTION_RESULT_DAMAGE_SHIELDED   = C.ACTION_RESULT_DAMAGE_SHIELDED
 
 local M = Vermilion.Probe
 
--- --- Buffer / state ------------------------------------------------------
-
 local function new_state()
   return {
     enabled       = false,
@@ -57,7 +55,7 @@ local function new_state()
     in_combat     = false,
     session_id    = (M.state and M.state.session_id or 0) + 1,
     buffers = {
-      damage = {},  -- landed damage from player (R_land results)
+      damage = {},  -- landed damage from player
       shield = {},  -- DAMAGE_SHIELDED from player
       casts  = {},  -- EVENT_ACTION_SLOT_ABILITY_USED
       combat = {},  -- combat state transitions
@@ -78,7 +76,7 @@ end
 local state = new_state()
 M.state = state
 
--- --- Helpers -------------------------------------------------------------
+--* --- Helpers -------------------------------------------------------------
 
 local function now() return GetGameTimeMilliseconds() end
 

@@ -1,6 +1,4 @@
--- Dev-only copy window. In release the file defines NOOP stubs and
--- returns early — the build/show/append machinery is not parsed and
--- the EditBox is never instantiated.
+-- The idea is to make a standalon addon "Copybox" in the future.
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
@@ -8,7 +6,6 @@ local Vermilion = Vermilion
 Vermilion.CopyBox = {}
 local M = Vermilion.CopyBox
 
--- ── public surface stubs ─────────────────────────────────────────────────
 local NOOP = function() end
 M.show       = NOOP
 M.append     = NOOP
@@ -17,8 +14,6 @@ M.hide       = NOOP
 M.is_visible = function() return false end
 
 if not Vermilion.Constants.DEBUG then return end
-
--- ── below this line: only parses when DEBUG=true ────────────────────────
 
 local zui = Vermilion.zenimax.ui
 local zc  = Vermilion.zenimax.constants
@@ -33,7 +28,7 @@ local CT_BACKDROP    = zc.CT_BACKDROP
 local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
 local GuiRoot        = zc.GuiRoot
 
-local controls   -- nil until first show()
+local controls
 local buffer = ""
 
 local function build()
@@ -67,7 +62,6 @@ local function build()
   close:SetAnchor(TOPRIGHT, win, TOPRIGHT, -8, 8)
   close:SetHandler("OnClicked", function() M.hide() end)
 
-  -- EditBox backdrop (ZO virtual gives the proper inset look)
   local ebbg = CreateControlFromVirtual("$(parent)EBBg", win, "ZO_MultiLineEditBackdrop_Keyboard")
   ebbg:SetAnchor(TOPLEFT,     win, TOPLEFT,      14, 44)
   ebbg:SetAnchor(BOTTOMRIGHT, win, BOTTOMRIGHT, -14, -54)
@@ -96,7 +90,6 @@ local function build()
 
   controls = { window = win, edit = edit }
 
-  -- Restore position from SavedVars if present.
   local sv = Vermilion.SavedVars and Vermilion.SavedVars.copybox
   if sv and sv.x and sv.y then
     win:ClearAnchors()

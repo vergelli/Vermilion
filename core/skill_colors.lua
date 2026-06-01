@@ -9,10 +9,6 @@ local GetSpecificSkillAbilityKeysByAbilityId  = api.GetSpecificSkillAbilityKeysB
 local GetSkillLineId                          = api.GetSkillLineId
 local string_find                             = string.find
 
--- One color per class / skill-line. `basic` (white) is the Vermilion addition
--- weapon light + heavy attacks render as a dedicated white
--- stripe in the skill stack. All other groups carry over from Verdant verbatim
--- (class abilities classify identically regardless of HP-vs-damage role).
 local GROUP_COLORS = {
   basic       = { r = 0.95, g = 0.95, b = 0.95, a = 0.90 },  -- white, light/heavy attacks
   templar     = { r = 0.95, g = 0.75, b = 0.15, a = 0.95 },  -- amber gold
@@ -42,8 +38,6 @@ local GROUP_COLORS = {
   other       = { r = 0.55, g = 0.55, b = 0.55, a = 0.80 },  -- unknown (grey)
 }
 
--- Human-readable labels for the assignment UI (ui/assign). Internal group keys
--- are terse; these are what the user actually reads in the category picker.
 local GROUP_LABELS = {
   basic          = "Light / Heavy Attack",
   templar        = "Templar",
@@ -71,9 +65,6 @@ local GROUP_LABELS = {
   other          = "Unknown (grey)",
 }
 
--- Curated display order for the category picker — grouped by domain (basic,
--- class, weapon, guild, world, special) rather than alphabetical, so the list
--- reads the way a player thinks about where a hit came from.
 local GROUP_ORDER = {
   "basic",
   "templar", "dk", "sorc", "nb", "warden", "necro", "arcanist",
@@ -84,25 +75,6 @@ local GROUP_ORDER = {
   "other",
 }
 
--- Light/heavy attack classification.
---
--- VALIDATED against esoui/ source: there is NO stable API such as
--- IsLightAttack(abilityId) (approach (a) is unavailable). So classification
--- falls back to approach (c) — a direct abilityId set, checked at the HIGHEST
--- precedence — plus approach (b) icon patterns as a backstop.
---
--- The exact light/heavy attack ability IDs per weapon line must be captured
--- in-game: run `/vermilion skills` after a session that uses light + heavy
--- attacks on every weapon type, then add the reported IDs here. This iterative
--- bootstrap is the process describe. Seeding it empty (vs.
--- guessing numeric IDs) avoids mis-classifying real abilities.
--- Ranged (staff / bow) basic attacks. Melee basics are handled by the
--- death_recap_melee_basic icon pattern below (all melee weapons share it), so
--- only ranged basics — which share death_recap_*_ranged art with enchant
--- glyphs and so can't be safely pattern-matched — need explicit IDs here.
--- Verified in-session via /vermilion skills (names from GetAbilityName).
--- Capture more (Inferno/Frost staff, Bow) with `/vermilion basic <id>` — it
--- persists to SavedVars and survives reloads.
 local BASIC_ABILITY_IDS = {
   [18350] = true,  -- Light Attack (Lightning staff)
   [18396] = true,  -- Heavy Attack (Lightning staff)
@@ -113,21 +85,13 @@ local BASIC_ABILITY_IDS = {
   [17162] = true,  -- Heavy Attack (Two Handed)
 }
 
--- Icon-path → group lookup. Locale-independent, matched top-to-bottom.
 local ICON_PATTERNS = {
-  -- Melee basic (light + heavy) attacks: ALL melee weapons (1H, 2H, DW,
-  -- unarmed) share this one icon, so one pattern covers them. Ranged basics
-  -- (staff/bow) share death_recap_*_ranged with enchant glyphs and so are
-  -- handled by BASIC_ABILITY_IDS instead, not here.
   { "death_recap_melee_basic",   "basic"          },
-  -- Weapon skill lines (the abilities themselves, not the basic attacks).
   { "ability_2handed_",          "twohanded"      },
   { "ability_dualwield_",        "dualwield"      },
   { "ability_bow_",              "bow"            },
   { "ability_1handed_",          "onehand"        },
-  -- Guild skill lines.
   { "ability_fightersguild_",    "fighters_guild" },
-  -- Set / monster-set procs (e.g. Kra'gh) use gear_* art.
   { "gear_",                     "item"           },
   { "ability_grimoire_",         "scribing"    },
   { "ability_templar_",          "templar"     },
@@ -146,12 +110,7 @@ local ICON_PATTERNS = {
   { "ability_vampire_",          "vampire"     },
 }
 
--- Skill-line ID → group. Third-tier fallback for cast IDs the icon classifier
--- didn't resolve. Carried over verbatim from Verdant's VerdantSkillDump output;
--- weapon lines (destru/resto) already present, the rest classify damage
--- abilities identically to their heal counterparts.
 local SKILL_LINE_TO_GROUP = {
-  -- Class lines
   [22]  = "templar",  [27]  = "templar",  [28]  = "templar",
   [35]  = "dk",       [36]  = "dk",       [37]  = "dk",
   [38]  = "nb",       [39]  = "nb",       [40]  = "nb",
@@ -159,7 +118,6 @@ local SKILL_LINE_TO_GROUP = {
   [127] = "warden",   [128] = "warden",   [129] = "warden",
   [131] = "necro",    [132] = "necro",    [133] = "necro",
   [218] = "arcanist", [219] = "arcanist", [220] = "arcanist",
-  -- Vengeance subclass lines (mirror their base class)
   [297] = "dk",       [298] = "dk",       [299] = "dk",
   [300] = "nb",       [301] = "nb",       [302] = "nb",
   [303] = "templar",  [304] = "templar",  [305] = "templar",
@@ -167,22 +125,15 @@ local SKILL_LINE_TO_GROUP = {
   [309] = "warden",   [310] = "warden",   [311] = "warden",
   [312] = "necro",    [313] = "necro",    [314] = "necro",
   [315] = "arcanist", [316] = "arcanist", [317] = "arcanist",
-  -- Weapons
   [33]  = "destru",   [34]  = "resto",
   [323] = "destru",   [324] = "resto",
-  -- Guilds
   [44]  = "mages_guild",
   [55]  = "undaunted",
-  -- Alliance War
   [48]  = "support",  [67]  = "support",
   [325] = "support",  [326] = "support",
-  -- World
   [51]  = "vampire",
 }
 
--- Direct ID → group overrides. Highest precedence after the basic-attack set.
--- Carried over from Verdant; populate over time with damage abilities that
--- fall through icon + skill-tree classification, via /vermilion skills.
 local ABILITY_OVERRIDES = {
   [186191] = "arcanist",
   [186243] = "arcanist",
@@ -203,30 +154,22 @@ local ABILITY_OVERRIDES = {
   [55677]  = "undaunted",
   [63511]  = "undaunted",
   [184634] = "item",
-  -- Vermilion damage-domain additions (captured via /vermilion skills):
-  [46743]  = "item",        -- Absorb Magicka (weapon enchant glyph proc)
-  [148797] = "status",      -- Overcharged (shock status-effect damage)
-  [148800] = "status",      -- Sundered (physical status-effect damage)
-  [21481]  = "status",      -- Chill (frost status-effect damage)
-  [18084]  = "status",      -- Burning (flame status-effect damage)
-  [21487]  = "status",      -- Concussion (shock status-effect damage)
-  [48016]  = "destru",      -- Force Pulse (Destruction Staff; secondary hit, generic AoE icon)
-  [126895] = "soul_magic",  -- Soul Splitting Trap (Soul Magic line)
-  [45445]  = "dualwield",   -- Forceful (Dual Wield passive cleave; generic ability_weapon_ art)
-  [21970]  = "basic",       -- Bash (universal weapon bash attack)
+  [46743]  = "item",
+  [148797] = "status",
+  [148800] = "status",
+  [21481]  = "status",
+  [18084]  = "status",
+  [21487]  = "status",
+  [48016]  = "destru",
+  [126895] = "soul_magic",
+  [45445]  = "dualwield",
+  [21970]  = "basic",
 }
 
--- Runtime cache (abilityId → group string); populated on first encounter.
 local ability_cache = {}
 
--- User-defined overrides, persisted in SavedVars (set via /vermilion tag and
--- /vermilion basic). Highest precedence — lets any user fix ANY classification
--- (including a wrong auto-guess) without a code edit or reload.
 local USER_OVERRIDES = {}
 
--- IDs that fell through every classifier: { [abilityId] = "name | icon" }.
--- Printed by M.print_unknown() so the user can add an override / extend a
--- pattern / mark it basic.
 local unknown_log = {}
 
 local function classify_by_icon(abilityId)
@@ -254,30 +197,23 @@ local function lookup_group(abilityId)
   local g = ability_cache[abilityId]
   if g then return g end
 
-  -- 0a. User override (persisted /vermilion tag) — highest precedence of all.
   g = USER_OVERRIDES[abilityId]
   if g then ability_cache[abilityId] = g return g end
 
- -- 0b. Basic (light/heavy) attack.
   if BASIC_ABILITY_IDS[abilityId] then
     ability_cache[abilityId] = "basic"
     return "basic"
   end
 
-  -- 1. Manual override — items, generic-icon procs, edge cases.
   g = ABILITY_OVERRIDES[abilityId]
   if g then ability_cache[abilityId] = g return g end
 
-  -- 2. Icon-path classifier — locale-independent, the bulk of the work
-  --    (also catches LA/HA via the _lightattack / _heavyattack patterns).
   g = classify_by_icon(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
-  -- 3. Skill-tree API — picks up cast IDs the API resolves.
   g = classify_by_skill_tree_api(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
-  -- 4. Give up — record for /vermilion skills.
   local name = GetAbilityName(abilityId) or "?"
   local icon = GetAbilityIcon(abilityId) or "?"
   unknown_log[abilityId] = name .. "  | icon=" .. icon
@@ -300,9 +236,6 @@ function M.get_color(abilityId)
   return GROUP_COLORS[lookup_group(abilityId)] or FALLBACK
 end
 
--- Manually tag an abilityId as a basic (light/heavy) attack at runtime. Lets
--- the capture workflow promote a discovered LA/HA ID without an addon reload.
--- Sorted list of valid group names (for the /vermilion tag usage hint).
 function M.group_names()
   local out = {}
   for k in pairs(GROUP_COLORS) do out[#out + 1] = k end
@@ -314,13 +247,11 @@ function M.is_group(group)
   return GROUP_COLORS[group] ~= nil
 end
 
--- Human label for a group key (for the assignment UI). Falls back to the key.
+
 function M.group_label(key)
   return GROUP_LABELS[key] or key
 end
 
--- Ordered category list for the picker UI: array of { key, label, r,g,b,a } in
--- the curated GROUP_ORDER. Cold path (built on demand when the flyout opens).
 function M.groups_ordered()
   local out = {}
   for _, key in ipairs(GROUP_ORDER) do
@@ -330,9 +261,6 @@ function M.groups_ordered()
   return out
 end
 
--- Snapshot of every ability that fell through classification, for the
--- assignment window: array of { id, name, icon } sorted by id. Re-derives
--- name/icon fresh (cold path) rather than parsing the unknown_log string.
 function M.get_unknowns()
   local out = {}
   for id in pairs(unknown_log) do
@@ -342,14 +270,12 @@ function M.get_unknowns()
   return out
 end
 
--- Count of currently-unclassified abilities (for a settings badge / empty state).
 function M.unknown_count()
   local n = 0
   for _ in pairs(unknown_log) do n = n + 1 end
   return n
 end
 
--- Assign abilityId -> group at runtime. Returns false on an unknown group.
 function M.set_override(abilityId, group)
   if not abilityId or abilityId <= 0 or not GROUP_COLORS[group] then return false end
   USER_OVERRIDES[abilityId] = group
@@ -358,12 +284,10 @@ function M.set_override(abilityId, group)
   return true
 end
 
--- Convenience: tag as a light/heavy (basic) attack.
 function M.mark_basic(abilityId)
   return M.set_override(abilityId, "basic")
 end
 
--- Replay user classifications persisted in SavedVars. Called once at load.
 function M.load_persisted(sv)
   if not sv then return end
   if type(sv.skill_overrides) == "table" then
@@ -371,14 +295,11 @@ function M.load_persisted(sv)
       if type(id) == "number" then M.set_override(id, group) end
     end
   end
-  -- Legacy array form (basic-only), from before /vermilion tag existed.
   if type(sv.skill_basic_ids) == "table" then
     for _, id in ipairs(sv.skill_basic_ids) do M.set_override(id, "basic") end
   end
 end
 
--- Print all unclassified abilities seen so far. Use /vermilion skills after a
--- session to discover what to add to ABILITY_OVERRIDES / BASIC_ABILITY_IDS.
 function M.print_unknown()
   local lines = {}
   local count = 0
@@ -400,9 +321,6 @@ function M.print_unknown()
   end
 end
 
--- Returns a sorted array of { r, g, b, a, share } (largest segment first) for a
--- single buffer. Retained from Verdant; the merged two-buffer breakdown for
--- View 1 lives in core/metrics.eos_groups.
 function M.group_shares(buf, now_ms, predicate)
   buf:trim(now_ms)
   local buckets = {}

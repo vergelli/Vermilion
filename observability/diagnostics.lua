@@ -1,16 +1,3 @@
--- Diagnostics — counters + event ring + 1Hz timeseries collector. The
--- aggregation surface that /Vermilion diag and /Vermilion report read from.
--- Stays partially live in release (counter bumps from pipeline.lua are
--- always called) — the formatting/dump paths are dev-only.
---
--- Public surface:
---   bump(key, n)        increment a counter
---   log_event(cat, p)   append a categorized entry to the event ring
---   snapshot()          structured dump for SavedVars / probe persist
---   print_diag()        human-readable dump (CopyBox in DEBUG, chat in release)
---   full_report()       aggregated /Vermilion report (DEBUG only)
---   reset()             clears counters/ring; also rebuilds start_time
---   init()              wires the 1Hz ts_sample tick
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
@@ -61,10 +48,8 @@ local function ts_sample()
   local now = GetGameTimeMilliseconds()
   local snap = {
     t       = now,
-    -- engine ingestion totals (Vermilion: outgoing landed / shielded damage)
     damage  = counters["engine.damage.accepted"] or 0,
     shield  = counters["engine.shield.accepted"] or 0,
-    -- live metric snapshot (eDPS / ShDPS / EOS)
     metric  = (function()
       if not Vermilion.Metrics or not Vermilion.Metrics.eDPS then return nil end
       local ok, edps = pcall(Vermilion.Metrics.eDPS, now)
@@ -80,14 +65,11 @@ local function ts_sample()
   ts_count = ts_count + 1
 end
 
--- ── snapshot (for SavedVars) ───────────────────────────────────────────────
 function M.snapshot()
-  -- ordered copy of event ring (oldest → newest)
   local events = {}
   if ev_count <= EVENT_CAP then
     for i = 1, ev_count do events[i] = ev_buf[i] end
   else
-    -- ring has wrapped; start from ev_head+1 (oldest)
     local n = 0
     for i = 1, EVENT_CAP do
       local idx = (ev_head - 1 + i) % EVENT_CAP + 1
@@ -96,7 +78,6 @@ function M.snapshot()
     end
   end
 
-  -- ordered timeseries
   local ts = {}
   local ts_len = math.min(ts_count, TS_CAP)
   if ts_count <= TS_CAP then
@@ -110,7 +91,6 @@ function M.snapshot()
     end
   end
 
-  -- module snapshots (Vermilion drops group/coverage/shield-registry)
   local mode_snap    = Vermilion.Mode    and Vermilion.Mode.snapshot()          or {}
   local metrics_snap = (Vermilion.Metrics and Vermilion.Metrics.size_snapshot)
                        and Vermilion.Metrics.size_snapshot() or {}
@@ -127,9 +107,6 @@ function M.snapshot()
   }
 end
 
--- ── diag dump (/Vermilion diag) ─────────────────────────────────────────────
--- In DEBUG, output goes to the CopyBox (selectable / copyable). Otherwise
--- chat output as before. The CopyBox itself also no-ops outside DEBUG.
 local function build_diag_lines()
   local lines = {}
   lines[#lines+1] = "[diag] uptime=" .. (GetGameTimeMilliseconds() - start_time)
@@ -188,9 +165,6 @@ function M.print_diag()
   end
 end
 
--- Unified one-shot dev report: concatenates /diag + /prof + /validate
--- + recent log entries into a single CopyBox dump. Saves the dev from
--- running each command separately when sharing context.
 function M.full_report()
   if not Vermilion.Constants.DEBUG then
     d("[report] disabled (DEBUG=false)")

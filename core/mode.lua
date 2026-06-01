@@ -5,10 +5,6 @@ Vermilion.Mode = {}
 
 local M = Vermilion.Mode
 
--- Simpler mode set than Verdant. Each mode declares which kind
--- classes contribute. EOS (default) is the full picture; the two *_only
--- modes let a dev isolate a branch from the pipeline (DEBUG aid). The two
--- views (BY_SKILL / BY_OUTCOME) are a UI concern and independent of mode.
 local METRICS = {
   EOS        = { damage = true,  shield = true  },
   eDPS_only  = { damage = true,  shield = false },

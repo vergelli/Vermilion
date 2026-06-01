@@ -1,12 +1,12 @@
--- pipeline/presentation.lua
---
--- Stage 4 of the pipeline. Read-side: builds a stable RenderPayload from
--- metrics state, mutated in place each tick — zero per-tick allocation
--- (the eos_groups array is pre-grown by Metrics.eos_groups_into).
---
--- Like Verdant, this is a parallel read path. The graph's sample tick reads
--- core/metrics directly and pushes into core/temporal_buffer; this payload is
--- the snapshot surface for introspection / future consumers.
+--* pipeline/presentation.lua
+--*
+--* Stage 4 of the pipeline. Read-side: builds a stable RenderPayload from
+--* metrics state, mutated in place each tick — zero per-tick allocation
+--* (the eos_groups array is pre-grown by Metrics.eos_groups_into).
+--*
+--* Like Verdant, this is a parallel read path. The graph's sample tick reads
+--* core/metrics directly and pushes into core/temporal_buffer; this payload is
+--* the snapshot surface for introspection / future consumers.
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion

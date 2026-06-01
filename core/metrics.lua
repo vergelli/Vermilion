@@ -4,10 +4,6 @@ local Vermilion = Vermilion
 Vermilion.Metrics = {}
 
 local M = Vermilion.Metrics
-
--- Rolling-window durations (ms). eDPS over a short window, ShDPS over a wide
--- one (shielded-damage events are sparse). Defaults from Constants.METRICS;
--- re-read in init().
 local W_MS        = 5000
 local W_SHIELD_MS = 30000
 
@@ -16,17 +12,13 @@ local shield_out_buf  -- enemy-shield-absorbed damage (ShDPS)
 local event_pool
 local log = Vermilion.Log.for_module("metrics")
 
--- Resolved in init() (skill_colors loads before metrics in the manifest).
 local SkillColors
 
--- ── pool surface (transfers verbatim from Verdant) ─────────────────────────
 function M.acquire_event()  return event_pool:acquire()   end
 function M.release_event(ev) event_pool:release(ev)       end
 function M.pool_in_use()    return event_pool:in_use()    end
 function M.pool_capacity()  return event_pool:capacity()  end
 
--- on_evict for the ring buffers: a trimmed/overflowed entry returns its
--- pooled event to the pool.
 local function release_to_pool(entry) event_pool:release(entry) end
 
 function M.init()
@@ -59,9 +51,6 @@ end
 
 function M.window_seconds() return W_MS / 1000 end
 
--- ── ingestion (called by processing.process) ──────────────────────────────
--- The event becomes the buffer's owned entry; callers must NOT release it.
--- The buffer's on_evict returns it to the pool when it trims out of window.
 function M.ingest_damage_out(ev)
   if ev.amount > 0 then damage_out_buf:push(ev) else event_pool:release(ev) end
 end
@@ -70,17 +59,10 @@ function M.ingest_shield_out(ev)
   if ev.amount > 0 then shield_out_buf:push(ev) else event_pool:release(ev) end
 end
 
--- ── queries (sample/render rate, not hot path) ─────────────────────────────
 function M.eDPS(now_ms)  return damage_out_buf:sum(now_ms, "amount") / (W_MS / 1000)        end
 function M.ShDPS(now_ms) return shield_out_buf:sum(now_ms, "amount") / (W_SHIELD_MS / 1000) end
 function M.EOS(now_ms)   return M.eDPS(now_ms) + M.ShDPS(now_ms)                            end
 
--- Merged per-skill-line breakdown for View 1 (BY_SKILL).
---
--- EOS_g = eDPS_g + ShDPS_g, and the two source buffers use DIFFERENT windows
--- (5 s vs 30 s), so raw amounts are NOT directly additive. We rate-weight each
--- buffer by its own window before merging, so `total` equals eDPS + ShDPS = EOS
--- and each bucket is the group's EOS contribution.
 local function accumulate(now_ms, buckets)
   local ws  = W_MS / 1000
   local wss = W_SHIELD_MS / 1000
@@ -113,8 +95,6 @@ local function accumulate(now_ms, buckets)
   return total
 end
 
--- Fresh-array variant for the 1 Hz sample path (allocation permitted).
--- Returns a sorted array of { r, g, b, a, share } (largest share first).
 function M.eos_groups(now_ms)
   local buckets = {}
   local total   = accumulate(now_ms, buckets)
@@ -129,9 +109,6 @@ function M.eos_groups(now_ms)
   return out
 end
 
--- Zero-allocation variant for the render payload. Mutates the
--- pre-allocated `out` array in place; sets out.count. Reuses existing slot
--- tables; entries past out.count are stale and must be ignored by readers.
 function M.eos_groups_into(out, now_ms)
   local buckets = {}
   local total   = accumulate(now_ms, buckets)
@@ -145,7 +122,7 @@ function M.eos_groups_into(out, now_ms)
       slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
       slot.share = val / total
     end
-    -- Insertion sort over out[1..n] by descending share (zero-alloc).
+
     for i = 2, n do
       local key = out[i]
       local j = i - 1
