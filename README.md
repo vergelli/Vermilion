@@ -128,3 +128,10 @@ A movable button on the HUD. Click it to open the window. Drag it anywhere, or d
 - PvE and PvP alike — the Outcome view earns its keep in PvP.
 
 ---
+
+## License
+
+Code is licensed under the **MIT License** — see [LICENSE](LICENSE).
+
+The Vermilion name, logo, and artwork are © 2026 Federico Vergelli, all rights
+reserved, and are not covered by the MIT license.
