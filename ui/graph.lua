@@ -27,7 +27,7 @@ local TEXT_ALIGN_LEFT   = zc.TEXT_ALIGN_LEFT
 local TEXT_ALIGN_CENTER = zc.TEXT_ALIGN_CENTER
 local TEXT_ALIGN_BOTTOM = zc.TEXT_ALIGN_BOTTOM
 
--- View 2 (BY_OUTCOME) stripe colors (SPEC §5.2): eDPS deep crimson at the
+-- View 2 (BY_OUTCOME) stripe colors: eDPS deep crimson at the
 -- bottom (HP work, Vermilion's identity color), ShDPS cool pink-magenta on
 -- top (shield work — matches the game's pink shield overlay + Verdant). The
 -- two are stacked, so contrast matters: crimson sits at low-green/low-blue,

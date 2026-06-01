@@ -1,6 +1,6 @@
 -- VermilionEvent: pooled record passed across pipeline stages. Fixed shape,
 -- mutated, never allocated in the hot path. Mirror of Verdant's event schema
--- (SPEC_03 §3.1) with one addition per Vermilion SPEC §7.1: a `result` field
+-- with one addition per Vermilion: a `result` field
 -- carrying the post-mitigation ZOS ACTION_RESULT code, so downstream stages
 -- can separate the eDPS / ShDPS branches and support by-result breakdowns
 -- later without re-reading the raw ZOS tuple.

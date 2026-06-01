@@ -80,7 +80,7 @@ function M.EOS(now_ms)   return M.eDPS(now_ms) + M.ShDPS(now_ms)                
 -- EOS_g = eDPS_g + ShDPS_g, and the two source buffers use DIFFERENT windows
 -- (5 s vs 30 s), so raw amounts are NOT directly additive. We rate-weight each
 -- buffer by its own window before merging, so `total` equals eDPS + ShDPS = EOS
--- and each bucket is the group's EOS contribution (SPEC §4.5).
+-- and each bucket is the group's EOS contribution.
 local function accumulate(now_ms, buckets)
   local ws  = W_MS / 1000
   local wss = W_SHIELD_MS / 1000
@@ -113,7 +113,7 @@ local function accumulate(now_ms, buckets)
   return total
 end
 
--- Fresh-array variant for the 1 Hz sample path (allocation permitted, SPEC §13).
+-- Fresh-array variant for the 1 Hz sample path (allocation permitted).
 -- Returns a sorted array of { r, g, b, a, share } (largest share first).
 function M.eos_groups(now_ms)
   local buckets = {}
@@ -129,7 +129,7 @@ function M.eos_groups(now_ms)
   return out
 end
 
--- Zero-allocation variant for the render payload (SPEC §7.2 / §13). Mutates the
+-- Zero-allocation variant for the render payload. Mutates the
 -- pre-allocated `out` array in place; sets out.count. Reuses existing slot
 -- tables; entries past out.count are stale and must be ignored by readers.
 function M.eos_groups_into(out, now_ms)

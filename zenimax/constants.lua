@@ -1,7 +1,7 @@
 -- ZOS constants used by Vermilion, captured by value at module load time.
--- Per SPEC_01 §4.3 / §6, this is the by-value form: M.X = X. Consumers
+-- this is the by-value form: M.X = X. Consumers
 -- read through Vermilion.zenimax.constants and may local-cache for hot
--- paths (SPEC_01 §5.2).
+-- paths.
 
 Vermilion = Vermilion or {}
 Vermilion.zenimax = Vermilion.zenimax or {}

@@ -2,7 +2,7 @@
 --
 -- Dev-only. In release the file defines NOOP stubs and returns early —
 -- the outstanding-handle tracking, failure ring, and check
--- implementations are not parsed. Per SPEC_04 §6: invariant checks at
+-- implementations are not parsed. invariant checks at
 -- boundaries (pool acquire/release, monotonic clock, ring shape).
 
 Vermilion = Vermilion or {}

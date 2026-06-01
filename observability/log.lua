@@ -85,7 +85,7 @@ function M.for_module(source)
   return setmetatable({ source = source }, Bound)
 end
 
--- ── structured ring buffer (SPEC_04 §4) ──────────────────────────────────
+-- ── structured ring buffer ──────────────────────────────────
 -- Dev-only. Stubs declared here so callers can reference Vermilion.Log.write
 -- safely; the real implementation only parses when DEBUG=true.
 

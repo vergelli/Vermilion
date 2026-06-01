@@ -7,7 +7,7 @@ local log        = Vermilion.Log.for_module("temporal_buffer")
 
 -- ── state ─────────────────────────────────────────────────────────────────
 -- data: pre-allocated array of { t, eDPS, ShDPS, eos_groups }. Write pointer
--- wraps via modulo. Not persisted — combat data is transient. (SPEC §7.2)
+-- wraps via modulo. Not persisted — combat data is transient.
 local state = {
   data      = {},
   capacity  = 0,

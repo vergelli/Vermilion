@@ -7,7 +7,7 @@
 --   register_addon_loaded(name, callback)  one-shot, auto-unregisters
 --   register(name, eventCode, handler)     pcall-wrapped handler
 --   unregister(name, eventCode)
---   add_filter(name, eventCode, ...)       see SPEC_01 §4.2
+-- add_filter(name, eventCode,...)
 --   register_update(name, interval_ms, callback)
 --   unregister_update(name)
 

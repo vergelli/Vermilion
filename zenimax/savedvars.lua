@@ -1,4 +1,4 @@
--- Wrapper around ZO_SavedVars. Per SPEC_01, exposes a thin façade so addon
+-- Wrapper around ZO_SavedVars. exposes a thin façade so addon
 -- code never references ZO_SavedVars directly. Migration hooks let callers
 -- evolve the schema across SV_VERSION bumps without leaking ZOS APIs.
 

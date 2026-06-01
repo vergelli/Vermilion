@@ -1,4 +1,4 @@
--- SCENE_MANAGER wrapper. The SPEC_01 §4.5 sketch proposes a higher-level
+-- SCENE_MANAGER wrapper. The sketch proposes a higher-level
 -- semantic API (on_show / on_hide for named scenes). Vermilion's only consumer
 -- (core/visibility.lua) needs the broader signal — every scene state change,
 -- because it tracks the HUD <-> non-HUD transition rather than any specific

@@ -6,7 +6,7 @@
 -- live in memory so call sites that locally cache M.enter / M.exit
 -- don't crash.
 --
--- Per SPEC_04 §5: enter/exit balance via stack; mismatches log to
+-- enter/exit balance via stack; mismatches log to
 -- log.write("error", "profiler.unbalanced"). Time source is the only
 -- millisecond clock (zenimax.api.GetGameTimeMilliseconds); sub-ms
 -- stages report 0 most of the time — what matters is catching spikes.

@@ -10,7 +10,7 @@ local GetSkillLineId                          = api.GetSkillLineId
 local string_find                             = string.find
 
 -- One color per class / skill-line. `basic` (white) is the Vermilion addition
--- per SPEC §10.1: weapon light + heavy attacks render as a dedicated white
+-- weapon light + heavy attacks render as a dedicated white
 -- stripe in the skill stack. All other groups carry over from Verdant verbatim
 -- (class abilities classify identically regardless of HP-vs-damage role).
 local GROUP_COLORS = {
@@ -84,7 +84,7 @@ local GROUP_ORDER = {
   "other",
 }
 
--- Light/heavy attack classification (SPEC §10.2 / §15.2).
+-- Light/heavy attack classification.
 --
 -- VALIDATED against esoui/ source: there is NO stable API such as
 -- IsLightAttack(abilityId) (approach (a) is unavailable). So classification
@@ -94,7 +94,7 @@ local GROUP_ORDER = {
 -- The exact light/heavy attack ability IDs per weapon line must be captured
 -- in-game: run `/vermilion skills` after a session that uses light + heavy
 -- attacks on every weapon type, then add the reported IDs here. This iterative
--- bootstrap is the process SPEC §10.3 / §14.5 describe. Seeding it empty (vs.
+-- bootstrap is the process describe. Seeding it empty (vs.
 -- guessing numeric IDs) avoids mis-classifying real abilities.
 -- Ranged (staff / bow) basic attacks. Melee basics are handled by the
 -- death_recap_melee_basic icon pattern below (all melee weapons share it), so
@@ -258,7 +258,7 @@ local function lookup_group(abilityId)
   g = USER_OVERRIDES[abilityId]
   if g then ability_cache[abilityId] = g return g end
 
-  -- 0b. Basic (light/heavy) attack (SPEC §10.2 approach c).
+ -- 0b. Basic (light/heavy) attack.
   if BASIC_ABILITY_IDS[abilityId] then
     ability_cache[abilityId] = "basic"
     return "basic"
@@ -402,7 +402,7 @@ end
 
 -- Returns a sorted array of { r, g, b, a, share } (largest segment first) for a
 -- single buffer. Retained from Verdant; the merged two-buffer breakdown for
--- View 1 lives in core/metrics.eos_groups (SPEC §10.4).
+-- View 1 lives in core/metrics.eos_groups.
 function M.group_shares(buf, now_ms, predicate)
   buf:trim(now_ms)
   local buckets = {}

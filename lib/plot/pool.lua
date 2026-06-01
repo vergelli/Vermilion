@@ -1,7 +1,7 @@
 -- lib/plot/pool.lua
 --
 -- Thin wrapper around ZO_ObjectPool specialized for plot controls.
--- Per SPEC_02 §4.2 + §8 open question 1: the codebase already uses
+-- + open question 1: the codebase already uses
 -- ZO_ObjectPool in 3+ places; centralize the construction pattern
 -- here so composers don't each reinvent factory + reset closures.
 

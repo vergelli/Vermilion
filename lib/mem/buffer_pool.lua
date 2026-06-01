@@ -1,5 +1,5 @@
 -- Generic O(1) object pool. Pre-allocates `capacity` records via `factory`
--- and maintains a free-list of indices. Per SPEC_03 §5.1.
+-- and maintains a free-list of indices.
 --
 --   pool = BufferPool.new(factory, capacity)
 --   ev   = pool:acquire()      -- returns record or nil if exhausted

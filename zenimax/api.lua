@@ -1,7 +1,7 @@
--- ZOS API surface used by Vermilion. Per SPEC_01 §6/§7.1, functions are
+-- ZOS API surface used by Vermilion. functions are
 -- forwarded by value (M.X = X), captured at module load. This is the same
 -- call cost as the bare global with the wrapper benefit of a namespace.
--- Consumers may local-cache hot-path entries (SPEC_01 §5.2):
+-- Consumers may local-cache hot-path entries:
 --   local GetGameTimeMs = Vermilion.zenimax.api.GetGameTimeMilliseconds
 
 Vermilion = Vermilion or {}

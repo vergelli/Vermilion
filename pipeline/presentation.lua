@@ -6,7 +6,7 @@
 --
 -- Like Verdant, this is a parallel read path. The graph's sample tick reads
 -- core/metrics directly and pushes into core/temporal_buffer; this payload is
--- the snapshot surface for introspection / future consumers (SPEC §7.3, §8.5).
+-- the snapshot surface for introspection / future consumers.
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion

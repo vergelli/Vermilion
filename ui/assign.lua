@@ -160,6 +160,7 @@ function M.refresh()
   controls.flyout:SetHidden(true)
 
   local unknowns = SkillColors.get_unknowns()
+  controls.help:SetText("")
   if #unknowns == 0 then
     controls.empty:SetHidden(false)
     return
@@ -194,7 +195,7 @@ function M.refresh()
   end
 
   if #unknowns > shown then
-    log:warn("unknown list truncated:", shown, "of", #unknowns, "shown")
+    controls.help:SetText(string_format(GetString(VERMILION_ASSIGN_MORE), #unknowns - shown))
   end
 end
 
@@ -321,6 +322,7 @@ function M.init()
 
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
+  controls.help:SetColor(0.85, 0.70, 0.30, 1)  -- overflow notice (amber)
   controls.empty:SetText(GetString(VERMILION_ASSIGN_EMPTY))
   controls.empty:SetColor(0.45, 0.45, 0.45, 1)
   controls.empty:SetHidden(true)
