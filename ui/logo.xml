@@ -25,6 +25,14 @@
       <OnMouseExit>Vermilion.Logo.on_exit()</OnMouseExit>
 
       <Controls>
+        <!-- Fire halo, drawn BEHIND the logo (declared first). Bigger than the
+             64px button so it bleeds out as a glow. Hidden at idle; on hover it
+             fades in (ADD blend, set in Lua) and pulses like flickering fire. -->
+        <Texture name="$(parent)Glow" textureFile="Vermilion/assets/glow.dds" hidden="true">
+          <Dimensions x="112" y="112"/>
+          <Anchor point="CENTER" relativeTo="$(parent)" relativePoint="CENTER"/>
+        </Texture>
+
         <Texture name="$(parent)Icon" textureFile="Vermilion/assets/logo.dds">
           <AnchorFill/>
         </Texture>
