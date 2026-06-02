@@ -24,6 +24,8 @@ local GROUP_COLORS = {
   undaunted   = { r = 0.42, g = 0.42, b = 0.18, a = 0.95 },  -- olive
   support     = { r = 0.42, g = 0.31, b = 0.68, a = 0.95 },  -- muted purple
   vampire     = { r = 0.55, g = 0.05, b = 0.10, a = 0.95 },  -- carmesi (blood)
+  werewolf    = { r = 0.60, g = 0.28, b = 0.18, a = 0.95 },  -- blood-moon russet (World, sibling of vampire)
+  psijic      = { r = 0.86, g = 0.80, b = 0.52, a = 0.95 },  -- astral gold (Psijic Order)
   mages_guild = { r = 0.10, g = 0.45, b = 0.65, a = 0.95 },  -- celeste oscuro
   item        = { r = 0.95, g = 0.20, b = 0.80, a = 0.95 },  -- magenta (sets / enchants)
   status      = { r = 0.45, g = 0.62, b = 0.60, a = 0.90 },  -- teal-grey, elemental status-effect damage
@@ -59,7 +61,9 @@ local GROUP_LABELS = {
   soul_magic     = "Soul Magic",
   support        = "Alliance War",
   scribing       = "Scribing",
+  psijic         = "Psijic Order",
   vampire        = "Vampire",
+  werewolf       = "Werewolf",
   item           = "Item Set / Enchant",
   status         = "Status Effect",
   other          = "Unknown (grey)",
@@ -69,8 +73,8 @@ local GROUP_ORDER = {
   "basic",
   "templar", "dk", "sorc", "nb", "warden", "necro", "arcanist",
   "twohanded", "dualwield", "bow", "onehand", "destru", "resto",
-  "fighters_guild", "mages_guild", "undaunted", "soul_magic", "support", "scribing",
-  "vampire",
+  "fighters_guild", "mages_guild", "undaunted", "soul_magic", "support", "scribing", "psijic",
+  "vampire", "werewolf",
   "item", "status",
   "other",
 }
@@ -106,8 +110,10 @@ local ICON_PATTERNS = {
   { "ability_ava_",              "support"     },
   { "ability_undaunted_",        "undaunted"   },
   { "ability_mageguild_",        "mages_guild" },
+  { "ability_psijic_",           "psijic"      },
   { "ability_u26_vampire_",      "vampire"     },
   { "ability_vampire_",          "vampire"     },
+  { "ability_werewolf_",         "werewolf"    },
 }
 
 local SKILL_LINE_TO_GROUP = {
@@ -131,7 +137,9 @@ local SKILL_LINE_TO_GROUP = {
   [55]  = "undaunted",
   [48]  = "support",  [67]  = "support",
   [325] = "support",  [326] = "support",
+  [130] = "psijic",
   [51]  = "vampire",
+  [50]  = "werewolf",
 }
 
 local ABILITY_OVERRIDES = {
