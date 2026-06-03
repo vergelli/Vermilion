@@ -142,29 +142,30 @@
           <Dimensions x="56" y="14"/>
         </Label>
 
-        <!-- Live DPS readout: weapons icon (idle/active) + current EOS value,
-             sitting just right of the elapsed-time label. -->
+        <!-- Live DPS readout: weapons icon (idle/active) + current EOS value.
+             Lives in the TITLE row (left of the gear); the view nav took its old
+             spot in the controls row so the nav matches Verdant's layout. -->
         <Texture name="$(parent)DpsIcon"
                  textureFile="/esoui/art/treeicons/collection_indexicon_weapons_up.dds">
-          <Anchor point="TOPLEFT" offsetX="262" offsetY="32"/>
+          <Anchor point="TOPRIGHT" offsetX="-132" offsetY="6"/>
           <Dimensions x="26" y="26"/>
         </Texture>
 
         <Label name="$(parent)ReadoutLabel"
                font="ZoFontGameLarge"
-               horizontalAlignment="LEFT"
+               horizontalAlignment="RIGHT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="294" offsetY="32"/>
-          <Anchor point="TOPRIGHT" offsetX="-12" offsetY="32"/>
-          <Dimensions y="26"/>
+          <Anchor point="TOPRIGHT" offsetX="-62" offsetY="6"/>
+          <Dimensions x="70" y="26"/>
         </Label>
 
-        <!-- View navigation: [<<] [SKILL] [>] — in the title bar, left of gear. -->
+        <!-- View navigation: [<<] [SKILL] [>] — in the controls row, far right,
+             matching Verdant's layout (the DPS readout moved up to the title). -->
         <Button name="$(parent)PrevViewBtn"
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPRIGHT" offsetX="-132" offsetY="3"/>
+          <Anchor point="TOPRIGHT" offsetX="-80" offsetY="34"/>
           <Dimensions x="22" y="22"/>
           <Textures normal="EsoUI/Art/Buttons/large_leftdoublearrow_up.dds"
                     pressed="EsoUI/Art/Buttons/large_leftdoublearrow_down.dds"
@@ -176,7 +177,7 @@
                font="ZoFontGameSmall"
                horizontalAlignment="CENTER"
                verticalAlignment="CENTER">
-          <Anchor point="TOPRIGHT" offsetX="-86" offsetY="6"/>
+          <Anchor point="TOPRIGHT" offsetX="-34" offsetY="38"/>
           <Dimensions x="44" y="14"/>
         </Label>
 
@@ -184,7 +185,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPRIGHT" offsetX="-62" offsetY="3"/>
+          <Anchor point="TOPRIGHT" offsetX="-8" offsetY="34"/>
           <Dimensions x="22" y="22"/>
           <Textures normal="EsoUI/Art/Buttons/large_rightarrow_up.dds"
                     pressed="EsoUI/Art/Buttons/large_rightarrow_down.dds"

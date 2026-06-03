@@ -705,6 +705,9 @@ function M.init()
   VermilionGraphWindowChromeBottom:SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeLeft  :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeRight :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
+  -- Crisp crimson border: the border texture takes color cleanly and is never
+  -- covered by buttons, so it's the surface that actually reads as "Vermilion".
+  VermilionGraphWindowBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
 

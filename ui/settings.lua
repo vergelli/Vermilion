@@ -293,6 +293,7 @@ function M.init()
   -- Brand wash: tint the parchment a touch crimson so the window reads as
   -- Vermilion's even in a screenshot (identity / anti-clone).
   VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
+  VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   controls.title_sample   = VermilionSettingsPanelSampleTitle
   controls.label_sample   = VermilionSettingsPanelSampleLabel
   controls.track_sample   = VermilionSettingsPanelSliderTrackSample

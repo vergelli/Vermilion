@@ -322,7 +322,9 @@ function M.init()
 
   -- Brand wash: crimson-tint the parchment to match the rest of Vermilion.
   VermilionAssignPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
+  VermilionAssignPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   VermilionAssignConfirmBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
+  VermilionAssignConfirmBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
 
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
