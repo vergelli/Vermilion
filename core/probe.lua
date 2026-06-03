@@ -159,6 +159,8 @@ local function on_combat_out(result, isError, abilityName, _g, _slot,
     result     = result,
     ability    = abilityName,
     abilityId  = abilityId,
+    source     = sourceName,     -- captured so we can audit foreign-source leaks
+    sourceUnit = sourceUnitId,   -- (ESO tags these PLAYER, but the uid betrays them)
     target     = targetName,
     targetType = targetType,
     targetUnit = targetUnitId,
@@ -251,9 +253,9 @@ end
 
 function M.format_entry(category, e)
   if category == "damage" or category == "shield" then
-    return string_format("t=%d r=%d ab=%s tgt=%s tt=%d tuid=%d hit=%d",
-      e.t or 0, e.result or 0, e.ability or "?", e.target or "?",
-      e.targetType or 0, e.targetUnit or 0, e.hit or 0)
+    return string_format("t=%d r=%d ab=%s src=%s suid=%d tgt=%s tt=%d tuid=%d hit=%d",
+      e.t or 0, e.result or 0, e.ability or "?", e.source or "?", e.sourceUnit or 0,
+      e.target or "?", e.targetType or 0, e.targetUnit or 0, e.hit or 0)
   elseif category == "casts" then
     return string_format("t=%d slot=%d ab=%d %s",
       e.t or 0, e.slot or 0, e.abilityId or 0, e.abilityName or "?")
@@ -269,6 +271,79 @@ function M.print_stats()
     "[Vm] stats: dmg=%d shld=%d cast=%d combat=%d | noise=%d saves=%d",
     s.damage, s.shield, s.casts, s.combat, s.noise_dropped, s.autosaves
   ))
+end
+
+-- Source audit: walks the captured damage+shield events (all of which ESO
+-- already tagged as PLAYER-source) and groups them by sourceUnitId. The uid
+-- with the most events is almost certainly the real player (you land hundreds
+-- of hits; a leaked foreign proc only a handful), so every OTHER uid is a
+-- suspect — foreign damage the engine mis-attributed to you. This mirrors the
+-- LibCombat defence (drop suid<=0, key everything by unitId, anchor on the
+-- player's unitId) but is self-calibrating, so it can't be poisoned by a
+-- leaked first event. Returns a multi-line string for the CopyBox.
+function M.suspects_report()
+  local player_name = GetUnitName("player") or "?"
+
+  -- by_uid[uid] = { name=, count=, abilities = { [abId] = { name=, count=, sum=, result= } } }
+  local by_uid = {}
+  local function ingest(buf)
+    for i = 1, #buf do
+      local e   = buf[i]
+      local uid = e.sourceUnit or 0
+      local rec = by_uid[uid]
+      if not rec then rec = { name = e.source or "", count = 0, abilities = {} }; by_uid[uid] = rec end
+      rec.count = rec.count + 1
+      if (e.source or "") ~= "" then rec.name = e.source end
+      local abid = e.abilityId or 0
+      local ab = rec.abilities[abid]
+      if not ab then ab = { name = e.ability or "", count = 0, sum = 0, result = e.result or 0 }; rec.abilities[abid] = ab end
+      ab.count = ab.count + 1
+      ab.sum   = ab.sum + (e.hit or 0)
+    end
+  end
+  ingest(state.buffers.damage)
+  ingest(state.buffers.shield)
+
+  -- modal uid = self
+  local self_uid, self_n = nil, -1
+  for uid, rec in pairs(by_uid) do
+    if rec.count > self_n then self_n = rec.count; self_uid = uid end
+  end
+
+  local L = {}
+  L[#L+1] = "=== Vermilion source audit (probe) ==="
+  L[#L+1] = "player name : " .. player_name
+  L[#L+1] = string_format("self unitId : %s  (%d events, the modal source = you)",
+                          tostring(self_uid), self_n >= 0 and self_n or 0)
+  L[#L+1] = string_format("captured    : damage=%d shield=%d",
+                          #state.buffers.damage, #state.buffers.shield)
+  L[#L+1] = ""
+  L[#L+1] = "-- SUSPECTS (ESO tagged these PLAYER-source, but uid != you) --"
+  local any = false
+  for uid, rec in pairs(by_uid) do
+    if uid ~= self_uid then
+      any = true
+      local tags = {}
+      if uid == 0 then tags[#tags+1] = "ENV/world (suid=0)" end
+      if (rec.name or "") ~= "" and rec.name ~= player_name then tags[#tags+1] = "name!=you" end
+      local tagstr = (#tags > 0) and ("  <" .. table.concat(tags, ", ") .. ">") or ""
+      L[#L+1] = string_format('[uid %s] "%s"  events=%d%s',
+                              tostring(uid), rec.name or "", rec.count, tagstr)
+      for abid, ab in pairs(rec.abilities) do
+        L[#L+1] = string_format('    ab %d "%s"  r=%d  hits=%d  sumHit=%d',
+                                abid, ab.name or "", ab.result or 0, ab.count, ab.sum)
+      end
+    end
+  end
+  if not any then L[#L+1] = "  (none captured this session — clean!)" end
+  L[#L+1] = ""
+  L[#L+1] = "-- SELF (reference) --"
+  local srec = by_uid[self_uid]
+  if srec then
+    L[#L+1] = string_format('[uid %s] "%s"  events=%d',
+                            tostring(self_uid), srec.name or "", srec.count)
+  end
+  return table.concat(L, "\n")
 end
 
 function M.dump()

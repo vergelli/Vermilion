@@ -27,6 +27,9 @@ local function on_slash(input)
       return
     elseif cmd == "dump" then
       Vermilion.Probe.dump() ; return
+    elseif cmd == "suspects" then
+      -- Foreign-source audit → CopyBox (paste back for analysis). DEBUG-only.
+      Vermilion.CopyBox.show("Vermilion Source Audit", Vermilion.Probe.suspects_report()) ; return
     elseif cmd == "stats" then
       Vermilion.Probe.print_stats() ; return
     elseif cmd == "report" then
