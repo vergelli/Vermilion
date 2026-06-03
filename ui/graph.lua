@@ -37,6 +37,11 @@ local C_CHROME    = { r = 1.00, g = 0.74, b = 0.72, a = 0.82 }
 local C_NONCRIT   = { r = 0.55, g = 0.22, b = 0.18, a = 0.90 }  -- muted crimson base
 local C_CRIT      = { r = 1.00, g = 0.82, b = 0.28, a = 0.96 }  -- bright gold (crit pops)
 
+-- Viewport (the dark graph area) carries a faint crimson hue so the whole
+-- window reads as Vermilion's. Only the RGB bias changes — the user's alpha
+-- (the darkness level) is preserved, so the dark stays dark.
+local C_VIEWPORT  = { r = 1.00, g = 0.78, b = 0.75 }
+
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 local LINE_THICKNESS = 2
@@ -648,7 +653,7 @@ end
 
 -- Live-applies viewport alpha (0..1). Called by the settings slider.
 function M.set_viewport_alpha(a)
-  VermilionGraphWindowViewportBg:SetCenterColor(1, 1, 1, a)
+  VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, a)
 end
 
 function M.toggle()
@@ -701,7 +706,7 @@ function M.init()
   VermilionGraphWindowChromeLeft  :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeRight :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
-  VermilionGraphWindowViewportBg:SetCenterColor(1, 1, 1, sv_a / 100)
+  VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
 
   -- Grid (behind pools).
   controls.grid = create_grid("VermilionGrid", controls.canvas)

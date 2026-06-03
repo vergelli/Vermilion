@@ -23,7 +23,7 @@
                      mouseEnabled="true"
                      resizeHandleSize="8">
 
-      <Dimensions x="420" y="300"/>
+      <Dimensions x="420" y="312"/>
       <OnMoveStop>Vermilion.Graph.on_move_stop()</OnMoveStop>
       <OnResizeStop>Vermilion.Graph.on_resize_stop()</OnResizeStop>
 
@@ -42,7 +42,7 @@
         <Texture name="$(parent)ChromeTop"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
           <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"  offsetX="6"  offsetY="6"/>
-          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="TOPRIGHT" offsetX="-6" offsetY="50"/>
+          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="TOPRIGHT" offsetX="-6" offsetY="62"/>
         </Texture>
 
         <Texture name="$(parent)ChromeBottom"
@@ -53,13 +53,13 @@
 
         <Texture name="$(parent)ChromeLeft"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
-          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"    offsetX="6"  offsetY="50"/>
+          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"    offsetX="6"  offsetY="62"/>
           <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMLEFT" offsetX="14" offsetY="-14"/>
         </Texture>
 
         <Texture name="$(parent)ChromeRight"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
-          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPRIGHT"    offsetX="-14" offsetY="50"/>
+          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPRIGHT"    offsetX="-14" offsetY="62"/>
           <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-6"  offsetY="-14"/>
         </Texture>
 
@@ -67,8 +67,8 @@
              anti-clone signature; decorative (mouse disabled → drag passes
              through to the window). -->
         <Texture name="$(parent)BrandLogo" textureFile="Vermilion/assets/logo.dds">
-          <Anchor point="TOPLEFT" offsetX="12" offsetY="4"/>
-          <Dimensions x="18" y="18"/>
+          <Anchor point="TOPLEFT" offsetX="12" offsetY="6"/>
+          <Dimensions x="26" y="26"/>
         </Texture>
 
         <!-- Title -->
@@ -76,8 +76,8 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="34"   offsetY="6"/>
-          <Anchor point="TOPRIGHT" offsetX="-158" offsetY="6"/>
+          <Anchor point="TOPLEFT"  offsetX="42"   offsetY="12"/>
+          <Anchor point="TOPRIGHT" offsetX="-158" offsetY="12"/>
           <Dimensions y="14"/>
         </Label>
 
@@ -111,7 +111,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="22"/>
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="34"/>
           <Dimensions x="56" y="22"/>
           <OnClicked>Vermilion.Graph.on_record_click()</OnClicked>
         </Button>
@@ -120,7 +120,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="76" offsetY="22"/>
+          <Anchor point="TOPLEFT" offsetX="76" offsetY="34"/>
           <Dimensions x="56" y="22"/>
           <OnClicked>Vermilion.Graph.on_stop_click()</OnClicked>
         </Button>
@@ -129,7 +129,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="138" offsetY="22"/>
+          <Anchor point="TOPLEFT" offsetX="138" offsetY="34"/>
           <Dimensions x="56" y="22"/>
           <OnClicked>Vermilion.Graph.on_flush_click()</OnClicked>
         </Button>
@@ -138,7 +138,7 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="200" offsetY="26"/>
+          <Anchor point="TOPLEFT" offsetX="200" offsetY="38"/>
           <Dimensions x="56" y="14"/>
         </Label>
 
@@ -146,7 +146,7 @@
              sitting just right of the elapsed-time label. -->
         <Texture name="$(parent)DpsIcon"
                  textureFile="/esoui/art/treeicons/collection_indexicon_weapons_up.dds">
-          <Anchor point="TOPLEFT" offsetX="262" offsetY="20"/>
+          <Anchor point="TOPLEFT" offsetX="262" offsetY="32"/>
           <Dimensions x="26" y="26"/>
         </Texture>
 
@@ -154,8 +154,8 @@
                font="ZoFontGameLarge"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="294" offsetY="20"/>
-          <Anchor point="TOPRIGHT" offsetX="-12" offsetY="20"/>
+          <Anchor point="TOPLEFT"  offsetX="294" offsetY="32"/>
+          <Anchor point="TOPRIGHT" offsetX="-12" offsetY="32"/>
           <Dimensions y="26"/>
         </Label>
 
@@ -194,7 +194,7 @@
 
         <!-- ── Inner viewport: single canvas for both views ─────────────── -->
         <Control name="$(parent)Viewport" mouseEnabled="false">
-          <Anchor point="TOPLEFT"     offsetX="14"  offsetY="50"/>
+          <Anchor point="TOPLEFT"     offsetX="14"  offsetY="62"/>
           <Anchor point="BOTTOMRIGHT" offsetX="-14" offsetY="-14"/>
 
           <Controls>
