@@ -76,9 +76,8 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="42"   offsetY="12"/>
-          <Anchor point="TOPRIGHT" offsetX="-158" offsetY="12"/>
-          <Dimensions y="14"/>
+          <Anchor point="TOPLEFT" offsetX="42" offsetY="12"/>
+          <Dimensions x="128" y="14"/>
         </Label>
 
         <!-- Settings toggle — 28x28 gear. -->
@@ -143,20 +142,20 @@
         </Label>
 
         <!-- Live DPS readout: weapons icon (idle/active) + current EOS value.
-             Lives in the TITLE row (left of the gear); the view nav took its old
-             spot in the controls row so the nav matches Verdant's layout. -->
+             Sits in the TITLE row on the LEFT, just after the title (well clear
+             of the gear); the view nav owns the controls-row right like Verdant. -->
         <Texture name="$(parent)DpsIcon"
                  textureFile="/esoui/art/treeicons/collection_indexicon_weapons_up.dds">
-          <Anchor point="TOPRIGHT" offsetX="-132" offsetY="6"/>
+          <Anchor point="TOPLEFT" offsetX="174" offsetY="6"/>
           <Dimensions x="26" y="26"/>
         </Texture>
 
         <Label name="$(parent)ReadoutLabel"
                font="ZoFontGameLarge"
-               horizontalAlignment="RIGHT"
+               horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPRIGHT" offsetX="-62" offsetY="6"/>
-          <Dimensions x="70" y="26"/>
+          <Anchor point="TOPLEFT" offsetX="204" offsetY="6"/>
+          <Dimensions x="92" y="26"/>
         </Label>
 
         <!-- View navigation: [<<] [SKILL] [>] — in the controls row, far right,
