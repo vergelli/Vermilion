@@ -1,5 +1,5 @@
 
-![Vermilion](docs/assets/vermilion-header.png)
+![header](docs/assets/vermilion-header-4-2.png)
 
 # Vermilion
 

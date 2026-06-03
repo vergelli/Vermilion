@@ -28,11 +28,17 @@
         </Backdrop>
 
         <!-- ── title bar ───────────────────────────────────────────────── -->
+        <!-- Brand mark: small logo left of the window title (identity). -->
+        <Texture name="$(parent)BrandLogo" textureFile="Vermilion/assets/logo.dds">
+          <Anchor point="TOPLEFT" offsetX="12" offsetY="8"/>
+          <Dimensions x="20" y="20"/>
+        </Texture>
+
         <Label name="$(parent)WindowTitle"
                font="ZoFontWindowTitle"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="10"/>
+          <Anchor point="TOPLEFT" offsetX="38" offsetY="10"/>
           <Dimensions y="18"/>
         </Label>
 

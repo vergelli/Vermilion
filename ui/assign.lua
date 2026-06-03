@@ -320,6 +320,10 @@ function M.init()
   controls.confirm_yes   = VermilionAssignConfirmYesBtn
   controls.confirm_no    = VermilionAssignConfirmNoBtn
 
+  -- Brand wash: crimson-tint the parchment to match the rest of Vermilion.
+  VermilionAssignPanelBg:SetCenterColor(1.00, 0.82, 0.80, 1.0)
+  VermilionAssignConfirmBg:SetCenterColor(1.00, 0.82, 0.80, 1.0)
+
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.help:SetColor(0.85, 0.70, 0.30, 1)  -- overflow notice (amber)
