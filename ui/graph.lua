@@ -33,6 +33,10 @@ local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crim
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
 local C_CHROME    = { r = 1.00, g = 0.74, b = 0.72, a = 0.82 }
 
+-- CRIT view: muted crimson base (non-crit) + punchy gold cap (crit damage).
+local C_NONCRIT   = { r = 0.55, g = 0.22, b = 0.18, a = 0.90 }  -- muted crimson base
+local C_CRIT      = { r = 1.00, g = 0.82, b = 0.28, a = 0.96 }  -- bright gold (crit pops)
+
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 local LINE_THICKNESS = 2
@@ -50,7 +54,8 @@ local recording_start_ms = 0
 
 local VIEW_BY_SKILL   = 1
 local VIEW_BY_OUTCOME = 2
-local VIEW_LABELS     = { "SKILL", "OUTCOME" }
+local VIEW_BY_CRIT    = 3
+local VIEW_LABELS     = { "SKILL", "OUTCOME", "CRIT" }
 local current_view    = VIEW_BY_SKILL
 
 -- ── small helpers ─────────────────────────────────────────────────────────
@@ -416,11 +421,97 @@ local function render_by_outcome()
   end
 end
 
+-- ── View 3 — BY_CRIT: non-crit (bottom) + crit (top), of landed damage ─────
+local function render_by_crit()
+  controls.pool_eos_segments:ReleaseAllObjects()
+  controls.pool_eos_line:ReleaseAllObjects()
+  controls.pool_edps:ReleaseAllObjects()
+  controls.pool_shdps:ReleaseAllObjects()
+  controls.pool_line_edps:ReleaseAllObjects()
+  controls.pool_line_eos:ReleaseAllObjects()
+
+  local n = Vermilion.TemporalBuffer.count()
+  if n == 0 then
+    controls.no_data:SetHidden(false)
+    hide_grid(controls.grid)
+    return
+  end
+  controls.no_data:SetHidden(true)
+
+  local canvas = controls.canvas
+  local cw, ch = canvas:GetWidth(), canvas:GetHeight()
+  if cw <= 4 or ch <= 4 then return end
+  local ch_plot = math_max(4, ch - TIME_STRIP_H)
+
+  -- Scale to the window's max eDPS (the crit stack sums to eDPS) so the crit
+  -- ratio reads at full vertical resolution regardless of shield activity.
+  local max_edps, span_ms = 0, 0
+  do
+    local t_first, t_last = 0, 0
+    Vermilion.TemporalBuffer.iterate(function(i, s)
+      if s.eDPS > max_edps then max_edps = s.eDPS end
+      if i == 1 then t_first = s.t end
+      t_last = s.t
+    end)
+    span_ms = t_last - t_first
+  end
+  if max_edps <= 0 then hide_grid(controls.grid) return end
+  draw_grid(controls.grid, canvas, max_edps, span_ms)
+
+  local slot_w, bw, offset = slot_geometry(cw)
+  local xs, top_hs = {}, {}
+
+  Vermilion.TemporalBuffer.iterate(function(i, s)
+    local x         = (offset + i - 1) * slot_w
+    local noncrit_h = math_max(0, math_floor(ch_plot * (s.noncrit / max_edps) + 0.5))
+    local crit_h    = math_max(0, math_floor(ch_plot * (s.crit    / max_edps) + 0.5))
+    xs[i]     = x + bw * 0.5
+    top_hs[i] = noncrit_h + crit_h
+
+    -- Non-crit base (bottom), muted crimson.
+    if noncrit_h > 0 then
+      local tn = controls.pool_edps:AcquireObject()
+      tn:ClearAnchors()
+      tn:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, x, -TIME_STRIP_H)
+      tn:SetWidth(bw)
+      tn:SetHeight(noncrit_h)
+      tn:SetColor(C_NONCRIT.r, C_NONCRIT.g, C_NONCRIT.b, C_NONCRIT.a)
+      tn:SetHidden(false)
+    end
+
+    -- Crit cap (top), gold.
+    if crit_h > 0 then
+      local tc = controls.pool_shdps:AcquireObject()
+      tc:ClearAnchors()
+      tc:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, x, -(TIME_STRIP_H + noncrit_h))
+      tc:SetWidth(bw)
+      tc:SetHeight(crit_h)
+      tc:SetColor(C_CRIT.r, C_CRIT.g, C_CRIT.b, C_CRIT.a)
+      tc:SetHidden(false)
+    end
+  end)
+
+  -- Single frontier polyline at the top of the stack (= landed-damage level).
+  if slot_w >= 3 then
+    for i = 2, n do
+      local lt = controls.pool_line_edps:AcquireObject()
+      lt:ClearAnchors()
+      lt:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(top_hs[i-1] + TIME_STRIP_H))
+      lt:SetAnchor(BOTTOMRIGHT, canvas, BOTTOMLEFT, xs[i],   -(top_hs[i]   + TIME_STRIP_H))
+      lt:SetColor(C_LINE_EDPS.r, C_LINE_EDPS.g, C_LINE_EDPS.b, C_LINE_EDPS.a)
+      lt:SetThickness(LINE_THICKNESS)
+      lt:SetHidden(false)
+    end
+  end
+end
+
 local function render_current_view()
   if current_view == VIEW_BY_SKILL then
     render_by_skill()
-  else
+  elseif current_view == VIEW_BY_OUTCOME then
     render_by_outcome()
+  else
+    render_by_crit()
   end
 end
 
@@ -458,8 +549,9 @@ local function on_sample_update()
   local now   = GetGameTimeMilliseconds()
   local edps  = Vermilion.Metrics.eDPS(now)
   local shdps = Vermilion.Metrics.ShDPS(now)
+  local crit, noncrit = Vermilion.Metrics.crit_split(now)
   local eg    = Vermilion.Metrics.eos_groups(now)
-  Vermilion.TemporalBuffer.push(now, edps, shdps, eg)
+  Vermilion.TemporalBuffer.push(now, edps, shdps, crit, noncrit, eg)
 
   update_header(edps + shdps)
 
@@ -542,14 +634,14 @@ end
 
 function M.prev_view()
   local v = current_view - 1
-  if v < VIEW_BY_SKILL then v = VIEW_BY_OUTCOME end
+  if v < VIEW_BY_SKILL then v = VIEW_BY_CRIT end
   release_all_pools()
   set_view(v)
 end
 
 function M.next_view()
   local v = current_view + 1
-  if v > VIEW_BY_OUTCOME then v = VIEW_BY_SKILL end
+  if v > VIEW_BY_CRIT then v = VIEW_BY_SKILL end
   release_all_pools()
   set_view(v)
 end
@@ -590,7 +682,8 @@ function M.init()
   -- Restore saved view, position and size.
   local sv = Vermilion.SavedVars
   sv.graph = sv.graph or {}
-  if sv.graph.view_idx == VIEW_BY_OUTCOME or sv.graph.view_idx == VIEW_BY_SKILL then
+  if sv.graph.view_idx and sv.graph.view_idx >= VIEW_BY_SKILL
+     and sv.graph.view_idx <= VIEW_BY_CRIT then
     current_view = sv.graph.view_idx
   end
   if sv.graph.x then

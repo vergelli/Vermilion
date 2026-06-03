@@ -23,17 +23,19 @@ function M.init(capacity)
   state.count    = 0
   state.data     = {}
   for i = 1, capacity do
-    state.data[i] = { t = 0, eDPS = 0, ShDPS = 0, eos_groups = {} }
+    state.data[i] = { t = 0, eDPS = 0, ShDPS = 0, crit = 0, noncrit = 0, eos_groups = {} }
   end
   log:info("init: capacity=", capacity)
 end
 
 
-function M.push(timestamp, eDPS, ShDPS, eos_groups)
+function M.push(timestamp, eDPS, ShDPS, crit, noncrit, eos_groups)
   local slot       = state.data[state.write]
   slot.t           = timestamp
   slot.eDPS        = eDPS
   slot.ShDPS       = ShDPS
+  slot.crit        = crit or 0
+  slot.noncrit     = noncrit or 0
   slot.eos_groups  = eos_groups or {}
   state.write = (state.write % state.capacity) + 1
   if state.count < state.capacity then

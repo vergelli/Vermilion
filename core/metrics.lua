@@ -14,6 +14,14 @@ local log = Vermilion.Log.for_module("metrics")
 
 local SkillColors
 
+-- Crit result codes, bound in init (zenimax.constants is loaded by then).
+local CRIT_DMG, CRIT_DOT
+
+local function is_crit(e)
+  local r = e.result
+  return r == CRIT_DMG or r == CRIT_DOT
+end
+
 function M.acquire_event()  return event_pool:acquire()   end
 function M.release_event(ev) event_pool:release(ev)       end
 function M.pool_in_use()    return event_pool:in_use()    end
@@ -34,6 +42,11 @@ function M.init()
   shield_out_buf = RingBuffer.new(W_SHIELD_MS,  512, release_to_pool)
 
   SkillColors = Vermilion.SkillColors
+
+  local zc = Vermilion.zenimax.constants
+  CRIT_DMG = zc.ACTION_RESULT_CRITICAL_DAMAGE
+  CRIT_DOT = zc.ACTION_RESULT_DOT_TICK_CRITICAL
+
   log:info("init: dmg_window=", W_MS, "ms shield_window=", W_SHIELD_MS, "ms pool=", cap)
 end
 
@@ -62,6 +75,26 @@ end
 function M.eDPS(now_ms)  return damage_out_buf:sum(now_ms, "amount") / (W_MS / 1000)        end
 function M.ShDPS(now_ms) return shield_out_buf:sum(now_ms, "amount") / (W_SHIELD_MS / 1000) end
 function M.EOS(now_ms)   return M.eDPS(now_ms) + M.ShDPS(now_ms)                            end
+
+-- Splits landed damage (eDPS) into its critical and non-critical halves in a
+-- single pass over the same window/buffer eDPS uses, so crit + noncrit == eDPS
+-- exactly. Returns (crit_dps, noncrit_dps).
+function M.crit_split(now_ms)
+  damage_out_buf:trim(now_ms)
+  local ws    = W_MS / 1000
+  local crit  = 0
+  local total = 0
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e   = damage_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      total = total + amt
+      if is_crit(e) then crit = crit + amt end
+    end
+  end
+  crit = crit / ws
+  return crit, (total / ws) - crit
+end
 
 local function accumulate(now_ms, buckets)
   local ws  = W_MS / 1000
