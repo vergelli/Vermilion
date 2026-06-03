@@ -40,7 +40,7 @@ ZO_CreateStringId("VERMILION_HELP_GRAPH",   "  /vermilion         toggle the dam
 ZO_CreateStringId("VERMILION_HELP_HELP",    "  /vermilion help    show this list")
 
 -- Graph window
-ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analytics")
+ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analysis")
 ZO_CreateStringId("VERMILION_GRAPH_RECORD",  "Record")
 ZO_CreateStringId("VERMILION_GRAPH_STOP",    "Stop")
 ZO_CreateStringId("VERMILION_GRAPH_FLUSH",   "Flush")

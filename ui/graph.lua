@@ -31,7 +31,7 @@ local C_EDPS      = { r = 0.88, g = 0.24, b = 0.18, a = 0.92 }  -- deep crimson 
 local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- pink-magenta (shield work)
 local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crimson frontier
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
-local C_CHROME    = { r = 1.00, g = 0.74, b = 0.72, a = 0.82 }
+local C_CHROME    = { r = 1.00, g = 0.62, b = 0.58, a = 0.82 }  -- pronounced crimson wash
 
 -- CRIT view: muted crimson base (non-crit) + punchy gold cap (crit damage).
 local C_NONCRIT   = { r = 0.55, g = 0.22, b = 0.18, a = 0.90 }  -- muted crimson base
