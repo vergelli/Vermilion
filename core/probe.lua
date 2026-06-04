@@ -66,6 +66,9 @@ local function new_state()
     universe = {
       abilities = {},  -- [abilityId] = name (first-seen)
       targets   = {},  -- [unitId]    = { name=, lastType= } (first-seen)
+      sources   = {},  -- [unitId]    = { name=, count=, abilities={[id]={name,count,sum,result}} }
+                       --               NEVER evicted (unlike the rolling buffers), so a rare
+                       --               foreign proc early in a long fight survives until audit.
     },
     context = nil,
     player_unit_id  = nil,
@@ -119,6 +122,21 @@ local function remember_target(unitId, name, unitType)
   end
 end
 
+-- Never-evicted source tally (keeps uid==0 env damage too, on purpose). Survives
+-- the rolling buffer so a once-per-fight foreign proc isn't lost before the audit.
+local function remember_source(uid, name, abilityId, abilityName, hitValue, result)
+  if uid == nil then return end
+  local rec = state.universe.sources[uid]
+  if rec == nil then rec = { name = name or "", count = 0, abilities = {} }; state.universe.sources[uid] = rec end
+  rec.count = rec.count + 1
+  if (name or "") ~= "" then rec.name = name end
+  local abid = abilityId or 0
+  local ab = rec.abilities[abid]
+  if ab == nil then ab = { name = abilityName or "", count = 0, sum = 0, result = result or 0 }; rec.abilities[abid] = ab end
+  ab.count = ab.count + 1
+  ab.sum   = ab.sum + (hitValue or 0)
+end
+
 -- --- Combat handlers -----------------------------------------------------
 
 local function classify(result)
@@ -153,6 +171,7 @@ local function on_combat_out(result, isError, abilityName, _g, _slot,
 
   remember_ability(abilityId, abilityName)
   remember_target(targetUnitId, targetName, targetType)
+  remember_source(sourceUnitId, sourceName, abilityId, abilityName, hitValue, result)
 
   push(category, {
     t          = now(),
@@ -248,7 +267,7 @@ function M.get_tag()             return state.session_tag end
 function M.clear()
   for k in pairs(state.buffers) do state.buffers[k] = {} end
   for k in pairs(state.stats)   do state.stats[k]   = 0  end
-  state.universe = { abilities = {}, targets = {} }
+  state.universe = { abilities = {}, targets = {}, sources = {} }
 end
 
 function M.format_entry(category, e)
@@ -284,29 +303,17 @@ end
 function M.suspects_report()
   local player_name = GetUnitName("player") or "?"
 
-  -- by_uid[uid] = { name=, count=, abilities = { [abId] = { name=, count=, sum=, result= } } }
-  local by_uid = {}
-  local function ingest(buf)
-    for i = 1, #buf do
-      local e   = buf[i]
-      local uid = e.sourceUnit or 0
-      local rec = by_uid[uid]
-      if not rec then rec = { name = e.source or "", count = 0, abilities = {} }; by_uid[uid] = rec end
-      rec.count = rec.count + 1
-      if (e.source or "") ~= "" then rec.name = e.source end
-      local abid = e.abilityId or 0
-      local ab = rec.abilities[abid]
-      if not ab then ab = { name = e.ability or "", count = 0, sum = 0, result = e.result or 0 }; rec.abilities[abid] = ab end
-      ab.count = ab.count + 1
-      ab.sum   = ab.sum + (e.hit or 0)
-    end
-  end
-  ingest(state.buffers.damage)
-  ingest(state.buffers.shield)
+  -- Read the never-evicted source registry (not the rolling buffers), so a rare
+  -- foreign proc early in a long fight is still here. by_uid[uid] =
+  -- { name=, count=, abilities = { [abId] = { name=, count=, sum=, result= } } }.
+  local by_uid = state.universe.sources or {}
 
-  -- modal uid = self
+  -- modal uid = self (you land far more hits than any leaked foreign source)
   local self_uid, self_n = nil, -1
+  local nsrc, nevents = 0, 0
   for uid, rec in pairs(by_uid) do
+    nsrc = nsrc + 1
+    nevents = nevents + rec.count
     if rec.count > self_n then self_n = rec.count; self_uid = uid end
   end
 
@@ -315,8 +322,8 @@ function M.suspects_report()
   L[#L+1] = "player name : " .. player_name
   L[#L+1] = string_format("self unitId : %s  (%d events, the modal source = you)",
                           tostring(self_uid), self_n >= 0 and self_n or 0)
-  L[#L+1] = string_format("captured    : damage=%d shield=%d",
-                          #state.buffers.damage, #state.buffers.shield)
+  L[#L+1] = string_format("registry    : %d distinct sources, %d events (never-evicted)",
+                          nsrc, nevents)
   L[#L+1] = ""
   L[#L+1] = "-- SUSPECTS (ESO tagged these PLAYER-source, but uid != you) --"
   local any = false
