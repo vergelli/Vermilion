@@ -369,6 +369,32 @@ function M.dump()
   end
 end
 
+-- Same raw event log as M.dump(), but as one string for the CopyBox (chat
+-- truncates and can't be selected — typing a combat event by hand should be a
+-- war crime). Walks the rolling buffers; for aggregated sources use suspects.
+function M.dump_report()
+  local s = state.stats
+  local L = {}
+  L[#L+1] = "=== Vermilion probe dump ==="
+  L[#L+1] = string_format("stats: dmg=%d shld=%d cast=%d combat=%d | noise=%d saves=%d",
+    s.damage, s.shield, s.casts, s.combat, s.noise_dropped, s.autosaves)
+  local total = 0
+  for _, buf in pairs(state.buffers) do total = total + #buf end
+  if total == 0 then
+    L[#L+1] = "(buffers empty)"
+    return table.concat(L, "\n")
+  end
+  for category, buf in pairs(state.buffers) do
+    if #buf > 0 then
+      L[#L+1] = string_format("-- %s (%d) --", category, #buf)
+      for i = 1, #buf do
+        L[#L+1] = "  " .. M.format_entry(category, buf[i])
+      end
+    end
+  end
+  return table.concat(L, "\n")
+end
+
 local function deep_copy(t)
   if type(t) ~= "table" then return t end
   local out = {}

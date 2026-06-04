@@ -26,7 +26,11 @@ local function on_slash(input)
       d("[Vm] " .. GetString(VERMILION_PROBE_OFF))
       return
     elseif cmd == "dump" then
-      Vermilion.Probe.dump() ; return
+      -- Raw event log → CopyBox (selectable); `dump chat` keeps the old chat spew.
+      local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
+      if sub == "chat" then Vermilion.Probe.dump()
+      else Vermilion.CopyBox.show("Vermilion Dump", Vermilion.Probe.dump_report()) end
+      return
     elseif cmd == "suspects" then
       -- Foreign-source audit → CopyBox (paste back for analysis). DEBUG-only.
       Vermilion.CopyBox.show("Vermilion Source Audit", Vermilion.Probe.suspects_report()) ; return
