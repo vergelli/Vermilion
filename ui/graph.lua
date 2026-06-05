@@ -319,7 +319,7 @@ local function render_by_skill()
 
     local y_off = 0
     local groups = s.eos_groups
-    for g = 1, #groups do
+    for g = 1, (groups.count or 0) do
       local grp   = groups[g]
       local seg_h = math_max(1, math_floor(col_h * grp.share + 0.5))
       local t = controls.pool_eos_segments:AcquireObject()
@@ -549,14 +549,18 @@ end
 local prof_enter = Vermilion.Profiler.enter
 local prof_exit  = Vermilion.Profiler.exit
 
+-- Single reused scratch for the group breakdown — Metrics fills it in place and
+-- TemporalBuffer.push copies out of it, so a 1 Hz sample allocates nothing.
+local sample_eos_scratch = { count = 0 }
+
 local function on_sample_update()
   prof_enter("graph.sample_tick")
   local now   = GetGameTimeMilliseconds()
   local edps  = Vermilion.Metrics.eDPS(now)
   local shdps = Vermilion.Metrics.ShDPS(now)
   local crit, noncrit = Vermilion.Metrics.crit_split(now)
-  local eg    = Vermilion.Metrics.eos_groups(now)
-  Vermilion.TemporalBuffer.push(now, edps, shdps, crit, noncrit, eg)
+  Vermilion.Metrics.eos_groups_into(sample_eos_scratch, now)
+  Vermilion.TemporalBuffer.push(now, edps, shdps, crit, noncrit, sample_eos_scratch)
 
   update_header(edps + shdps)
 

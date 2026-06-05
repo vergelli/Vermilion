@@ -23,7 +23,7 @@ local function acquire()
 end
 
 -- Outgoing damage that landed on enemy HP (eDPS branch).
-function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result)
+function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
   if not ev then return nil end
@@ -34,12 +34,13 @@ function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_unit_id = targetUnitId  or 0
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
+  ev.source_unit_id = sourceUnitId  or 0   -- for the filter's source-attribution guard
   return ev
 end
 
 -- Outgoing damage absorbed by an enemy damage shield (ShDPS branch).
 -- result is always ACTION_RESULT_DAMAGE_SHIELDED here (enforced at subscription).
-function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result)
+function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
   if not ev then return nil end
@@ -50,6 +51,7 @@ function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_unit_id = targetUnitId  or 0
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
+  ev.source_unit_id = sourceUnitId  or 0   -- for the filter's source-attribution guard
   return ev
 end
 

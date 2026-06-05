@@ -38,6 +38,10 @@ local function on_slash(input)
       Vermilion.Probe.print_stats() ; return
     elseif cmd == "report" then
       Vermilion.Diagnostics.full_report() ; return
+    elseif cmd == "gcprobe" then
+      -- Memory validation: bytes/sample of the data path (zero-alloc proof).
+      local n = tonumber(string_match(input, "^%s*%S+%s+(%d+)")) or 1000
+      Vermilion.Diagnostics.gc_probe(n) ; return
     elseif cmd == "prof" then
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       if sub == "reset" then Vermilion.Profiler.reset(); d("[prof] reset")

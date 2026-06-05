@@ -72,7 +72,7 @@ end
 -- hitValue, powerType, damageType, log, sourceUnitId, targetUnitId, abilityId.
 function M.dispatch_damage_out(result, isError, _name, _g, _slot,
                                _src, _sourceType, _tgt, targetType, hit,
-                               _pt, _dt, _log, _suid, targetUnitId, abilityId)
+                               _pt, _dt, _log, sourceUnitId, targetUnitId, abilityId)
   prof_enter("pipeline.combat_event")
   bump("engine.damage.in")
   if isError then bump("engine.damage.dropped_error") prof_exit("pipeline.combat_event") return end
@@ -83,7 +83,7 @@ function M.dispatch_damage_out(result, isError, _name, _g, _slot,
 
   local t = now()
   prof_enter("pipeline.combat_event.acquisition")
-  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result)
+  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   prof_exit("pipeline.combat_event.acquisition")
   run_stages(ev, "engine.damage.accepted")
   prof_exit("pipeline.combat_event")
@@ -92,7 +92,7 @@ end
 -- ── combat: shielded damage (ShDPS) ────────────────────────────────────────
 function M.dispatch_shield_out(result, isError, _name, _g, _slot,
                                _src, _sourceType, _tgt, targetType, hit,
-                               _pt, _dt, _log, _suid, targetUnitId, abilityId)
+                               _pt, _dt, _log, sourceUnitId, targetUnitId, abilityId)
   prof_enter("pipeline.combat_event")
   bump("engine.shield.in")
   if isError then bump("engine.shield.dropped_error") prof_exit("pipeline.combat_event") return end
@@ -103,7 +103,7 @@ function M.dispatch_shield_out(result, isError, _name, _g, _slot,
 
   local t = now()
   prof_enter("pipeline.combat_event.acquisition")
-  local ev = Acquisition.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result)
+  local ev = Acquisition.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   prof_exit("pipeline.combat_event.acquisition")
   run_stages(ev, "engine.shield.accepted")
   prof_exit("pipeline.combat_event")

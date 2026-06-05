@@ -15,5 +15,6 @@ function Event.factory()
     target_unit_id = 0,
     target_type    = 0,
     ability_id     = 0,
+    source_unit_id = 0,
   }
 end

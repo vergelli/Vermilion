@@ -96,7 +96,14 @@ function M.crit_split(now_ms)
   return crit, (total / ws) - crit
 end
 
+-- Reused scratch for the per-group breakdown. Cleared (not reallocated) on
+-- every pass so the 1 Hz sample loop never churns a fresh table — the hidden
+-- second allocation source the gcprobe is built to catch. Sparse semantics are
+-- preserved: only groups that took a hit are present after the reset.
+local accum_buckets = {}
+
 local function accumulate(now_ms, buckets)
+  for k in pairs(buckets) do buckets[k] = nil end   -- reset in place, zero-alloc
   local ws  = W_MS / 1000
   local wss = W_SHIELD_MS / 1000
   local total = 0
@@ -128,22 +135,12 @@ local function accumulate(now_ms, buckets)
   return total
 end
 
-function M.eos_groups(now_ms)
-  local buckets = {}
-  local total   = accumulate(now_ms, buckets)
-  local out     = {}
-  if total > 0 then
-    for g, val in pairs(buckets) do
-      local c = SkillColors.group_color(g)
-      out[#out + 1] = { r = c.r, g = c.g, b = c.b, a = c.a, share = val / total }
-    end
-    table.sort(out, function(a, b) return a.share > b.share end)
-  end
-  return out
-end
-
+-- Single source for the group breakdown: fills the caller-owned `out` array in
+-- place (reusing its sub-tables) and publishes the live length via out.count.
+-- The allocating variant (former M.eos_groups) was removed — both the live
+-- sample path and the presentation snapshot go through here, zero-alloc.
 function M.eos_groups_into(out, now_ms)
-  local buckets = {}
+  local buckets = accum_buckets
   local total   = accumulate(now_ms, buckets)
   local n = 0
   if total > 0 then

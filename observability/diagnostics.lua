@@ -5,6 +5,20 @@ local Vermilion = Vermilion
 Vermilion.Diagnostics = {}
 local M = Vermilion.Diagnostics
 
+local NOOP = function() end
+M.bump        = NOOP
+M.get         = function() return 0 end
+M.log_event   = NOOP
+M.snapshot    = function() return {} end
+M.print_diag  = function() d("[diag] disabled (DEBUG=false)") end
+M.full_report = function() d("[report] disabled (DEBUG=false)") end
+M.reset       = NOOP
+M.init        = NOOP
+
+if not Vermilion.Constants.DEBUG then return end
+
+-- ── below this line: only parses / runs when DEBUG=true ─────────────────────
+
 local GetGameTimeMilliseconds = Vermilion.zenimax.api.GetGameTimeMilliseconds
 local d           = d
 local pairs       = pairs
@@ -214,4 +228,62 @@ end
 function M.init()
   start_time = GetGameTimeMilliseconds()
   Vermilion.zenimax.events.register_update("Vermilion_DiagTick", TICK_MS, ts_sample)
+end
+
+-- ── gc probe (Vulkan-style memory validation) ──────────────────────────────
+-- Measures heap bytes allocated per simulated sample of the DATA path (Metrics
+-- read + zero-alloc fill + in-place TemporalBuffer push), isolated from the UI
+-- string allocations that every label SetText does regardless. Uses ZOS's own
+-- mem-profile idiom: double collectgarbage('collect') to settle finalizers,
+-- then a count() delta (see esoui/libraries/globals/debugutils.lua).
+--
+-- Reads a POSITIVE CONTROL first (a loop that deliberately allocates one table
+-- per iteration). If the control reports > 0 and the data path reports ~0, then
+-- ~0 means "really zero", not "probe broken". Run AFTER some combat so the
+-- metrics windows hold representative data.
+local gcprobe_scratch = { count = 0 }
+local gcprobe_sink                       -- forces the control alloc to be observable
+
+function M.gc_probe(n)
+  n = n or 1000
+  local Metrics = Vermilion.Metrics
+  local TB      = Vermilion.TemporalBuffer
+  local now     = GetGameTimeMilliseconds()
+
+  -- Collected to the CopyBox (paste back for analysis), mirrored to chat.
+  -- All emit()/format work happens AFTER each measurement, never polluting it.
+  local lines = {}
+  local function emit(s) lines[#lines + 1] = s; d("[gcprobe] " .. s) end
+
+  local function measure(label, body)
+    for _ = 1, 64 do body() end          -- warm to high-water-mark (skip one-time growth)
+    for _ = 1, 2 do collectgarbage("collect") end
+    local before = collectgarbage("count")
+    for _ = 1, n do body() end
+    local after  = collectgarbage("count")
+    local bytes  = (after - before) * 1024 / n
+    emit(string.format("%-26s %9.2f bytes/sample", label, bytes))
+    return bytes
+  end
+
+  emit(string.format("=== Vermilion gcprobe  N=%d  (ZOS double-collect) ===", n))
+  measure("control (1 table/iter)", function()
+    gcprobe_sink = { r = 0, g = 0, b = 0, a = 0, share = 0 }
+  end)
+  local dp = measure("data path (M1)", function()
+    local e  = Metrics.eDPS(now)
+    local s  = Metrics.ShDPS(now)
+    local c, nc = Metrics.crit_split(now)
+    Metrics.eos_groups_into(gcprobe_scratch, now)
+    TB.push(now, e, s, c, nc, gcprobe_scratch)
+  end)
+
+  TB.clear()   -- the probe pushed N fake samples; reset so the graph stays clean
+  emit(dp < 1 and "VERDICT: data path ~0 -> ZERO-ALLOC CONFIRMED"
+               or "VERDICT: data path NONZERO -> an alloc leaked, investigate")
+  emit("(temporal buffer cleared)")
+
+  if Vermilion.CopyBox then
+    Vermilion.CopyBox.show("Vermilion gcprobe", table.concat(lines, "\n"))
+  end
 end

@@ -23,20 +23,35 @@ function M.init(capacity)
   state.count    = 0
   state.data     = {}
   for i = 1, capacity do
-    state.data[i] = { t = 0, eDPS = 0, ShDPS = 0, crit = 0, noncrit = 0, eos_groups = {} }
+    state.data[i] = { t = 0, eDPS = 0, ShDPS = 0, crit = 0, noncrit = 0, eos_groups = { count = 0 } }
   end
   log:info("init: capacity=", capacity)
 end
 
 
-function M.push(timestamp, eDPS, ShDPS, crit, noncrit, eos_groups)
-  local slot       = state.data[state.write]
-  slot.t           = timestamp
-  slot.eDPS        = eDPS
-  slot.ShDPS       = ShDPS
-  slot.crit        = crit or 0
-  slot.noncrit     = noncrit or 0
-  slot.eos_groups  = eos_groups or {}
+-- `src_groups` is a SHARED scratch the caller reuses every sample. We must NOT
+-- store the reference (that would alias every slot to the latest sample) — we
+-- copy its values into this slot's OWN pre-allocated array, reusing the sub-
+-- tables. Sub-tables grow once to the high-water-mark then are reused forever;
+-- entries past `count` are left as harmless stale (the render reads `.count`).
+function M.push(timestamp, eDPS, ShDPS, crit, noncrit, src_groups)
+  local slot   = state.data[state.write]
+  slot.t       = timestamp
+  slot.eDPS    = eDPS
+  slot.ShDPS   = ShDPS
+  slot.crit    = crit or 0
+  slot.noncrit = noncrit or 0
+
+  local dst = slot.eos_groups
+  local n   = (src_groups and (src_groups.count or #src_groups)) or 0
+  for i = 1, n do
+    local s = src_groups[i]
+    local d = dst[i]
+    if d == nil then d = {}; dst[i] = d end   -- one-time growth, then reused
+    d.r = s.r; d.g = s.g; d.b = s.b; d.a = s.a; d.share = s.share
+  end
+  dst.count = n
+
   state.write = (state.write % state.capacity) + 1
   if state.count < state.capacity then
     state.count = state.count + 1
