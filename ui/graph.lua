@@ -281,6 +281,18 @@ local function window_extent()
   return max_eos, (t_last - t_first)
 end
 
+-- ── reused render scratch ─────────────────────────────────────────────────
+-- Hoisted out of the render functions so a redraw at high capacity doesn't
+-- allocate fresh per-sample arrays every frame (render runs up to sample-rate
+-- Hz while the window is open). Each render fn has its OWN tables (no aliasing
+-- between views). Safe to reuse across frames: every read is bounded by
+-- n = TemporalBuffer.count() (loops `for i = 2, n`), so stale tail entries left
+-- by a previous larger frame are never read. The iterate closures are left
+-- as-is (separate, lower-value allocation — see render_vulkanization backlog).
+local rsk_xs, rsk_eos_hs                  = {}, {}      -- by_skill
+local rout_xs, rout_edps_hs, rout_eos_hs  = {}, {}, {}  -- by_outcome
+local rcr_xs, rcr_top_hs                  = {}, {}      -- by_crit
+
 -- ── View 1 — BY_SKILL: EOS stack colored by skill line ────────────────────
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
@@ -308,7 +320,7 @@ local function render_by_skill()
   draw_grid(controls.grid, canvas, max_eos, span_ms)
 
   local slot_w, bw, offset = slot_geometry(cw)
-  local xs, eos_hs = {}, {}
+  local xs, eos_hs = rsk_xs, rsk_eos_hs
 
   Vermilion.TemporalBuffer.iterate(function(i, s)
     local x   = (offset + i - 1) * slot_w
@@ -374,7 +386,7 @@ local function render_by_outcome()
   draw_grid(controls.grid, canvas, max_eos, span_ms)
 
   local slot_w, bw, offset = slot_geometry(cw)
-  local xs, edps_hs, eos_hs = {}, {}, {}
+  local xs, edps_hs, eos_hs = rout_xs, rout_edps_hs, rout_eos_hs
 
   Vermilion.TemporalBuffer.iterate(function(i, s)
     local x       = (offset + i - 1) * slot_w
@@ -464,7 +476,7 @@ local function render_by_crit()
   draw_grid(controls.grid, canvas, max_edps, span_ms)
 
   local slot_w, bw, offset = slot_geometry(cw)
-  local xs, top_hs = {}, {}
+  local xs, top_hs = rcr_xs, rcr_top_hs
 
   Vermilion.TemporalBuffer.iterate(function(i, s)
     local x         = (offset + i - 1) * slot_w
