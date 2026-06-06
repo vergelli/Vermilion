@@ -65,8 +65,7 @@ local current_view    = VIEW_BY_SKILL
 
 -- ── small helpers ─────────────────────────────────────────────────────────
 local function fmt_val(v)
-  if v >= 1000 then return string_format("%.0fk", v / 1000) end
-  return tostring(math_floor(v))
+  return ZO_AbbreviateAndLocalizeNumber(math_floor(v), 0, false)
 end
 
 local function fmt_secs(ms)
@@ -75,10 +74,8 @@ local function fmt_secs(ms)
   return s .. "s"
 end
 
--- One-decimal compact form for the header readout (e.g. 12345 -> "12.3k").
 local function fmt_readout(v)
-  if v >= 1000 then return string_format("%.1fk", v / 1000) end
-  return tostring(math_floor(v + 0.5))
+  return ZO_AbbreviateAndLocalizeNumber(math_floor(v + 0.5), 1, false)
 end
 
 -- Header DPS iNDICATOR. It may change
