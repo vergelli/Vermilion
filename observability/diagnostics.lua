@@ -179,7 +179,8 @@ function M.print_diag()
   end
 end
 
-function M.full_report()
+
+function M.full_report(include_gc)
   if not Vermilion.Constants.DEBUG then
     d("[report] disabled (DEBUG=false)")
     return
@@ -202,8 +203,17 @@ function M.full_report()
   if Vermilion.Validation and Vermilion.Validation.report_lines then
     section("validation", Vermilion.Validation.report_lines())
   end
+  if Vermilion.SkillColors and Vermilion.SkillColors.unknown_lines then
+    section("unclassified abilities", Vermilion.SkillColors.unknown_lines())
+  end
+  if Vermilion.Probe and Vermilion.Probe.suspects_report then
+    section("source audit", { Vermilion.Probe.suspects_report() })
+  end
   if Vermilion.Log and Vermilion.Log.recent_lines then
     section("log (last 20)", Vermilion.Log.recent_lines(20))
+  end
+  if include_gc and M.gc_probe_lines then
+    section("gcprobe  (WARNING: this CLEARED the recording buffer)", M.gc_probe_lines())
   end
   if Vermilion.CopyBox and Vermilion.CopyBox.show then
     Vermilion.CopyBox.show("Vermilion /report", table.concat(out, "\n"))
@@ -230,28 +240,16 @@ function M.init()
   Vermilion.zenimax.events.register_update("Vermilion_DiagTick", TICK_MS, ts_sample)
 end
 
--- ── gc probe (Vulkan-style memory validation) ──────────────────────────────
--- Measures heap bytes allocated per simulated sample of the DATA path (Metrics
--- read + zero-alloc fill + in-place TemporalBuffer push), isolated from the UI
--- string allocations that every label SetText does regardless. Uses ZOS's own
--- mem-profile idiom: double collectgarbage('collect') to settle finalizers,
--- then a count() delta (see esoui/libraries/globals/debugutils.lua).
---
--- Reads a POSITIVE CONTROL first (a loop that deliberately allocates one table
--- per iteration). If the control reports > 0 and the data path reports ~0, then
--- ~0 means "really zero", not "probe broken". Run AFTER some combat so the
--- metrics windows hold representative data.
 local gcprobe_scratch = { count = 0 }
 local gcprobe_sink                       -- forces the control alloc to be observable
 
-function M.gc_probe(n)
+function M.gc_probe_lines(n)
   n = n or 1000
   local Metrics = Vermilion.Metrics
   local TB      = Vermilion.TemporalBuffer
   local now     = GetGameTimeMilliseconds()
 
-  -- Collected to the CopyBox (paste back for analysis), mirrored to chat.
-  -- All emit()/format work happens AFTER each measurement, never polluting it.
+
   local lines = {}
   local function emit(s) lines[#lines + 1] = s; d("[gcprobe] " .. s) end
 
@@ -278,11 +276,16 @@ function M.gc_probe(n)
     TB.push(now, e, s, c, nc, gcprobe_scratch)
   end)
 
-  TB.clear()   -- the probe pushed N fake samples; reset so the graph stays clean
+  TB.clear()
   emit(dp < 1 and "VERDICT: data path ~0 -> ZERO-ALLOC CONFIRMED"
                or "VERDICT: data path NONZERO -> an alloc leaked, investigate")
   emit("(temporal buffer cleared)")
+  return lines
+end
 
+
+function M.gc_probe(n)
+  local lines = M.gc_probe_lines(n)
   if Vermilion.CopyBox then
     Vermilion.CopyBox.show("Vermilion gcprobe", table.concat(lines, "\n"))
   end

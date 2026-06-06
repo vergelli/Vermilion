@@ -15,7 +15,7 @@ local function on_slash(input)
   input = input or ""
   local cmd = string_match(string_lower(input), "^%s*(%S+)") or ""
 
-  -- ── debug commands (developer only) ──────────────────────────────────────
+
   if DEBUG then
     if cmd == "on" then
       Vermilion.Probe.set_enabled(true)
@@ -26,20 +26,22 @@ local function on_slash(input)
       d("[Vm] " .. GetString(VERMILION_PROBE_OFF))
       return
     elseif cmd == "dump" then
-      -- Raw event log → CopyBox (selectable); `dump chat` keeps the old chat spew.
+
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       if sub == "chat" then Vermilion.Probe.dump()
       else Vermilion.CopyBox.show("Vermilion Dump", Vermilion.Probe.dump_report()) end
       return
     elseif cmd == "suspects" then
-      -- Foreign-source audit → CopyBox (paste back for analysis). DEBUG-only.
+
       Vermilion.CopyBox.show("Vermilion Source Audit", Vermilion.Probe.suspects_report()) ; return
     elseif cmd == "stats" then
       Vermilion.Probe.print_stats() ; return
     elseif cmd == "report" then
-      Vermilion.Diagnostics.full_report() ; return
+
+      local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
+      Vermilion.Diagnostics.full_report(sub == "gc" or sub == "full") ; return
     elseif cmd == "gcprobe" then
-      -- Memory validation: bytes/sample of the data path (zero-alloc proof).
+
       local n = tonumber(string_match(input, "^%s*%S+%s+(%d+)")) or 1000
       Vermilion.Diagnostics.gc_probe(n) ; return
     elseif cmd == "prof" then
@@ -72,8 +74,7 @@ local function on_slash(input)
     elseif cmd == "skills" then
       Vermilion.SkillColors.print_unknown() ; return
     elseif cmd == "basic" then
-      -- Shortcut for `tag <id> basic` (the common case): mark a grey weapon
-      -- attack white and persist it. Survives reloads.
+
       local id = tonumber(string_match(input, "^%s*%S+%s+(%d+)"))
       if id and id > 0 then
         Vermilion.SkillColors.set_override(id, "basic")
@@ -85,10 +86,7 @@ local function on_slash(input)
       end
       return
     elseif cmd == "tag" then
-      -- Assign ANY grey ability to ANY colour group, persisted to SavedVars.
-      -- Turns colour discovery into a 2-second user action (no code, no reload):
-      --   /vermilion skills        -> lists grey abilityIds + names
-      --   /vermilion tag 12345 item
+
       local id    = tonumber(string_match(input, "^%s*%S+%s+(%d+)"))
       local group = string_match(input, "^%s*%S+%s+%d+%s+(%S+)")
       if id and id > 0 and group and Vermilion.SkillColors.set_override(id, group) then
@@ -115,8 +113,7 @@ local function on_slash(input)
   end
 
   -- ── help ─────────────────────────────────────────────────────────────────
-  -- Lists user-facing commands. Dev commands stay hidden in release —
-  -- the user never needs to know they exist (mirror of Verdant phase-7 design).
+
   if cmd == "help" then
     d(GetString(VERMILION_HELP_HEADER))
     d(GetString(VERMILION_HELP_GRAPH))
@@ -124,7 +121,7 @@ local function on_slash(input)
     return
   end
 
-  -- ── /vermilion (any input) → toggle the temporal analytics window ─────────
+
   Vermilion.Graph.toggle()
 end
 
@@ -132,23 +129,21 @@ local function on_addon_loaded()
   local C   = Vermilion.Constants
   local Log = Vermilion.Log.for_module("bootstrap")
 
-  -- GetWorldName() separates EU / NA / PTS SavedVars for the same @account.
+
   local world = GetWorldName()
   Vermilion.SavedVars = Vermilion.zenimax.savedvars.new_account_wide(
     C.SV_TABLE, C.SV_VERSION, world,
     { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {}, logo = {} })
 
-  -- Replay user-captured light/heavy attack IDs (via /vermilion basic <id>).
+
   Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)
 
   Log:info("savedvars opened: world=", world, "version=", C.SV_VERSION)
 
-  -- Probe is dev-only (used by DEBUG-gated /vermilion on/off/dump/...). It
-  -- registers ZOS event handlers that do conditional work per combat event
-  -- even when disabled. Skipping init() in release keeps that off the hot path.
+
   if C.DEBUG then Vermilion.Probe.init() end
   Vermilion.Pipeline.init()
-  Vermilion.Logo.init()        -- before Settings (reads Logo.is_enabled) + Visibility (calls Logo.sync)
+  Vermilion.Logo.init()
   Vermilion.Settings.init()
   Vermilion.Graph.init()
   Vermilion.Assign.init()

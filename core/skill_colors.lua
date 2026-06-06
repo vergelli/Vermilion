@@ -329,6 +329,18 @@ function M.print_unknown()
   end
 end
 
+
+function M.unknown_lines()
+  local lines = {}
+  for id, info in pairs(unknown_log) do
+    lines[#lines + 1] = string.format("  [%d] = \"?\",  -- %s", id, info)
+  end
+  if #lines == 0 then return { "(none — all damage abilities classified)" } end
+  table.sort(lines)
+  table.insert(lines, 1, "add to ABILITY_OVERRIDES / BASIC_ABILITY_IDS:")
+  return lines
+end
+
 function M.group_shares(buf, now_ms, predicate)
   buf:trim(now_ms)
   local buckets = {}
