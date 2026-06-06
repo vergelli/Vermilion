@@ -1,9 +1,9 @@
 ## Title: Vermilion
 ## Description: Real-time damage-dealer analytics — eDPS, shield-cracking and skill-line breakdown
 ## Author: Federico Vergelli
-## Version: 0.1.0
-## AddOnVersion: 1
-## APIVersion: 101049
+## Version: 0.8.0
+## AddOnVersion: 2
+## APIVersion: 101049 101050
 ## SavedVariables: VermilionSavedVars
 
 # This Add-on is not created by, affiliated with, or sponsored by ZeniMax Media Inc. or its affiliates.
