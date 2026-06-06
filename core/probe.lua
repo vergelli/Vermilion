@@ -55,20 +55,20 @@ local function new_state()
     in_combat     = false,
     session_id    = (M.state and M.state.session_id or 0) + 1,
     buffers = {
-      damage = {},  -- landed damage from player
-      shield = {},  -- DAMAGE_SHIELDED from player
-      casts  = {},  -- EVENT_ACTION_SLOT_ABILITY_USED
-      combat = {},  -- combat state transitions
+      damage = {},
+      shield = {},
+      casts  = {},
+      combat = {},
     },
     stats = {
       damage=0, shield=0, casts=0, combat=0, noise_dropped=0, autosaves=0,
     },
     universe = {
-      abilities = {},  -- [abilityId] = name (first-seen)
-      targets   = {},  -- [unitId]    = { name=, lastType= } (first-seen)
-      sources   = {},  -- [unitId]    = { name=, count=, abilities={[id]={name,count,sum,result}} }
-                       --               NEVER evicted (unlike the rolling buffers), so a rare
-                       --               foreign proc early in a long fight survives until audit.
+      abilities = {},
+      targets   = {},
+      sources   = {},
+
+
     },
     context = nil,
     player_unit_id  = nil,
@@ -122,8 +122,7 @@ local function remember_target(unitId, name, unitType)
   end
 end
 
--- Never-evicted source tally (keeps uid==0 env damage too, on purpose). Survives
--- the rolling buffer so a once-per-fight foreign proc isn't lost before the audit.
+
 local function remember_source(uid, name, abilityId, abilityName, hitValue, result)
   if uid == nil then return end
   local rec = state.universe.sources[uid]
@@ -178,8 +177,8 @@ local function on_combat_out(result, isError, abilityName, _g, _slot,
     result     = result,
     ability    = abilityName,
     abilityId  = abilityId,
-    source     = sourceName,     -- captured so we can audit foreign-source leaks
-    sourceUnit = sourceUnitId,   -- (ESO tags these PLAYER, but the uid betrays them)
+    source     = sourceName,
+    sourceUnit = sourceUnitId,
     target     = targetName,
     targetType = targetType,
     targetUnit = targetUnitId,
@@ -218,7 +217,7 @@ local function on_action_slot_used(actionSlotIndex)
   end
 end
 
--- --- Context snapshot ----------------------------------------------------
+-- --- Context snapshot 
 
 local function snapshot_bars()
   local bars = {}
@@ -257,7 +256,7 @@ function M.snapshot_context()
   }
 end
 
--- --- Public API ----------------------------------------------------------
+--** --- Public API 
 
 function M.set_enabled(v)        state.enabled = v and true or false end
 function M.set_filter(category)  state.filter = category end
@@ -292,23 +291,10 @@ function M.print_stats()
   ))
 end
 
--- Source audit: walks the captured damage+shield events (all of which ESO
--- already tagged as PLAYER-source) and groups them by sourceUnitId. The uid
--- with the most events is almost certainly the real player (you land hundreds
--- of hits; a leaked foreign proc only a handful), so every OTHER uid is a
--- suspect — foreign damage the engine mis-attributed to you. This mirrors the
--- LibCombat defence (drop suid<=0, key everything by unitId, anchor on the
--- player's unitId) but is self-calibrating, so it can't be poisoned by a
--- leaked first event. Returns a multi-line string for the CopyBox.
 function M.suspects_report()
   local player_name = GetUnitName("player") or "?"
 
-  -- Read the never-evicted source registry (not the rolling buffers), so a rare
-  -- foreign proc early in a long fight is still here. by_uid[uid] =
-  -- { name=, count=, abilities = { [abId] = { name=, count=, sum=, result= } } }.
   local by_uid = state.universe.sources or {}
-
-  -- modal uid = self (you land far more hits than any leaked foreign source)
   local self_uid, self_n = nil, -1
   local nsrc, nevents = 0, 0
   for uid, rec in pairs(by_uid) do
@@ -369,9 +355,6 @@ function M.dump()
   end
 end
 
--- Same raw event log as M.dump(), but as one string for the CopyBox (chat
--- truncates and can't be selected — typing a combat event by hand should be a
--- war crime). Walks the rolling buffers; for aggregated sources use suspects.
 function M.dump_report()
   local s = state.stats
   local L = {}
@@ -433,13 +416,12 @@ function M.maybe_autosave()
   if Vermilion.SavedVars then M.persist_to_savedvars(Vermilion.SavedVars) end
 end
 
--- --- Wiring --------------------------------------------------------------
+--* --- Wiring
 
 function M.init()
   local P = Vermilion.Constants.PROBE
   local E = Vermilion.zenimax.events
 
-  -- 1) Landed damage where I am the source (R_land triaged in the wrapper).
   E.register(P.SRC_DAMAGE_OUT, EVENT_COMBAT_EVENT, function(...)
     local r = ...
     if r == ACTION_RESULT_DAMAGE
@@ -455,7 +437,6 @@ function M.init()
   E.add_filter(P.SRC_DAMAGE_OUT, EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
-  -- 2) Shielded damage where I am the source.
   E.register(P.SRC_SHIELD_OUT, EVENT_COMBAT_EVENT, on_combat_out)
   E.add_filter(P.SRC_SHIELD_OUT, EVENT_COMBAT_EVENT,
     REGISTER_FILTER_COMBAT_RESULT, ACTION_RESULT_DAMAGE_SHIELDED)
@@ -464,17 +445,13 @@ function M.init()
   E.add_filter(P.SRC_SHIELD_OUT, EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
-  -- 3) Combat-state transitions (autosave trigger + episode boundaries).
   E.register(P.SRC_COMBAT_STATE, EVENT_PLAYER_COMBAT_STATE, on_combat_state)
 
-  -- 4) Cast tracking.
   E.register(P.SRC_CAST, EVENT_ACTION_SLOT_ABILITY_USED, on_action_slot_used)
 
-  -- 5) Auto-persist on deactivation (logout / reloadui / zoning).
   E.register(P.SRC_AUTOSAVE, EVENT_PLAYER_DEACTIVATED, function()
     if Vermilion.SavedVars then M.persist_to_savedvars(Vermilion.SavedVars) end
   end)
 
-  -- 6) Context capture on player activation.
   E.register(P.SRC_PLAYER, EVENT_PLAYER_ACTIVATED, function() M.snapshot_context() end)
 end

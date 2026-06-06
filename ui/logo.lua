@@ -10,7 +10,6 @@ local TOPLEFT = zc.TOPLEFT
 local CENTER  = zc.CENTER
 local GuiRoot = zc.GuiRoot
 
--- Base-game animation globals (captured by value, like the zenimax wrappers).
 local ANIMATION_MANAGER          = ANIMATION_MANAGER
 local ANIMATION_ALPHA            = ANIMATION_ALPHA
 local ANIMATION_PLAYBACK_PING_PONG = ANIMATION_PLAYBACK_PING_PONG
@@ -27,7 +26,6 @@ local GLOW_MIN       = 0.45
 local GLOW_MAX       = 1.00
 local GLOW_PERIOD_MS = 650
 
--- ── state ───────────────────────────────────────────────────────────────────
 local controls = {}
 local enabled  = true
 local allowed  = false
@@ -62,7 +60,6 @@ function M.set_enabled(e)
   refresh()
 end
 
--- ── mouse ────────────────────────────────────────────────────────────────────
 function M.on_enter()
   controls.icon:SetAlpha(HOVER_ALPHA)
   controls.icon:SetScale(HOVER_SCALE)

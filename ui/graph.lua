@@ -13,7 +13,6 @@ local math_max                   = math.max
 local math_floor                 = math.floor
 local string_format              = string.format
 
--- ── UI constants ──────────────────────────────────────────────────────────
 local log               = Vermilion.Log.for_module("graph")
 local TOPLEFT           = zc.TOPLEFT
 local BOTTOMLEFT        = zc.BOTTOMLEFT
@@ -33,13 +32,9 @@ local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crim
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
 local C_CHROME    = { r = 1.00, g = 0.62, b = 0.58, a = 0.82 }  -- pronounced crimson wash
 
--- CRIT view: muted crimson base (non-crit) + punchy gold cap (crit damage).
 local C_NONCRIT   = { r = 0.55, g = 0.22, b = 0.18, a = 0.90 }  -- muted crimson base
 local C_CRIT      = { r = 1.00, g = 0.82, b = 0.28, a = 0.96 }  -- bright gold (crit pops)
 
--- Viewport (the dark graph area) carries a faint crimson hue so the whole
--- window reads as Vermilion's. Only the RGB bias changes — the user's alpha
--- (the darkness level) is preserved, so the dark stays dark.
 local C_VIEWPORT  = { r = 1.00, g = 0.78, b = 0.75 }
 
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
@@ -53,7 +48,7 @@ local C_GRID_LINE = { r = 0.55, g = 0.58, b = 0.70, a = 0.25 }
 local C_GRID_LBL  = { r = 0.82, g = 0.85, b = 0.90, a = 0.92 }
 local C_TIME_LBL  = { r = 0.68, g = 0.70, b = 0.75, a = 0.85 }
 
--- ── state ─────────────────────────────────────────────────────────────────
+-- state
 local controls           = {}
 local recording_start_ms = 0
 
@@ -63,7 +58,7 @@ local VIEW_BY_CRIT    = 3
 local VIEW_LABELS     = { "SKILL", "OUTCOME", "CRIT" }
 local current_view    = VIEW_BY_SKILL
 
--- ── small helpers ─────────────────────────────────────────────────────────
+-- small helpers
 local function fmt_val(v)
   return ZO_AbbreviateAndLocalizeNumber(math_floor(v), 0, false)
 end
@@ -78,7 +73,7 @@ local function fmt_readout(v)
   return ZO_AbbreviateAndLocalizeNumber(math_floor(v + 0.5), 1, false)
 end
 
--- Header DPS iNDICATOR. It may change
+-- Header DPS iNDICATOR. It may change .. this icon suck I know
 local DPS_ICON_IDLE   = "/esoui/art/treeicons/collection_indexicon_weapons_up.dds"
 local DPS_ICON_ACTIVE = "/esoui/art/treeicons/collection_indexicon_weapons_down.dds"
 
@@ -93,13 +88,11 @@ local function header_tick()
   update_header(Vermilion.Metrics.eDPS(now) + Vermilion.Metrics.ShDPS(now))
 end
 
--- ── pool factories (lib/plot/Pool wrappers) ───────────────────────────────
 local Pool = Vermilion.lib.plot.Pool
 
 local function fill_factory(c)
   c:SetTexture(FILL_TEXTURE)
   c:SetTextureCoords(0, 1, FILL_T, FILL_B)
-  -- Sub-pixel positioning: keep adjacent bars on a clean float boundary.
   c:SetPixelRoundingEnabled(false)
 end
 
@@ -120,7 +113,6 @@ local function make_line_pool(name_prefix)
   return Pool.new_virtual(name_prefix, controls.canvas, "VermilionGraphLineTemplate", line_factory, line_reset)
 end
 
--- ── grid system ───────────────────────────────────────────────────────────
 local function create_grid(prefix, parent_ctrl)
   local WM  = WINDOW_MANAGER
   local obj = { hlines = {}, vlines = {}, ylabels = {} }
@@ -246,7 +238,6 @@ local function draw_grid(grid, canvas, max_val, span_ms)
   end
 end
 
--- ── release all pools ─────────────────────────────────────────────────────
 local function release_all_pools()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_eos_line:ReleaseAllObjects()
@@ -278,19 +269,14 @@ local function window_extent()
   return max_eos, (t_last - t_first)
 end
 
--- ── reused render scratch ─────────────────────────────────────────────────
 -- Hoisted out of the render functions so a redraw at high capacity doesn't
 -- allocate fresh per-sample arrays every frame (render runs up to sample-rate
--- Hz while the window is open). Each render fn has its OWN tables (no aliasing
--- between views). Safe to reuse across frames: every read is bounded by
--- n = TemporalBuffer.count() (loops `for i = 2, n`), so stale tail entries left
--- by a previous larger frame are never read. The iterate closures are left
--- as-is (separate, lower-value allocation — see render_vulkanization backlog).
-local rsk_xs, rsk_eos_hs                  = {}, {}      -- by_skill
-local rout_xs, rout_edps_hs, rout_eos_hs  = {}, {}, {}  -- by_outcome
-local rcr_xs, rcr_top_hs                  = {}, {}      -- by_crit
+-- Hz while the window is open). I tried to vulkanize this but it's complex.
+-- The iterate closures are left separated (This is Tech. Debt I have on my backlog).
+local rsk_xs, rsk_eos_hs                  = {}, {}
+local rout_xs, rout_edps_hs, rout_eos_hs  = {}, {}, {}
+local rcr_xs, rcr_top_hs                  = {}, {}
 
--- ── View 1 — BY_SKILL: EOS stack colored by skill line ────────────────────
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_eos_line:ReleaseAllObjects()
@@ -342,7 +328,6 @@ local function render_by_skill()
     end
   end)
 
-  -- Top frontier polyline (EOS), gated on slot width like Verdant.
   if slot_w >= 3 then
     for i = 2, n do
       local le = controls.pool_eos_line:AcquireObject()
@@ -356,7 +341,6 @@ local function render_by_skill()
   end
 end
 
--- ── View 2 — BY_OUTCOME: eDPS (bottom) + ShDPS (top) ──────────────────────
 local function render_by_outcome()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_eos_line:ReleaseAllObjects()
@@ -435,7 +419,6 @@ local function render_by_outcome()
   end
 end
 
--- ── View 3 — BY_CRIT: non-crit (bottom) + crit (top), of landed damage ─────
 local function render_by_crit()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_eos_line:ReleaseAllObjects()
@@ -457,8 +440,6 @@ local function render_by_crit()
   if cw <= 4 or ch <= 4 then return end
   local ch_plot = math_max(4, ch - TIME_STRIP_H)
 
-  -- Scale to the window's max eDPS (the crit stack sums to eDPS) so the crit
-  -- ratio reads at full vertical resolution regardless of shield activity.
   local max_edps, span_ms = 0, 0
   do
     local t_first, t_last = 0, 0
@@ -482,7 +463,6 @@ local function render_by_crit()
     xs[i]     = x + bw * 0.5
     top_hs[i] = noncrit_h + crit_h
 
-    -- Non-crit base (bottom), muted crimson.
     if noncrit_h > 0 then
       local tn = controls.pool_edps:AcquireObject()
       tn:ClearAnchors()
@@ -493,7 +473,6 @@ local function render_by_crit()
       tn:SetHidden(false)
     end
 
-    -- Crit cap (top), gold.
     if crit_h > 0 then
       local tc = controls.pool_shdps:AcquireObject()
       tc:ClearAnchors()
@@ -505,7 +484,6 @@ local function render_by_crit()
     end
   end)
 
-  -- Single frontier polyline at the top of the stack (= landed-damage level).
   if slot_w >= 3 then
     for i = 2, n do
       local lt = controls.pool_line_edps:AcquireObject()
@@ -529,14 +507,12 @@ local function render_current_view()
   end
 end
 
--- ── button state visuals ──────────────────────────────────────────────────
 local function refresh_button_colors()
   local recording = Vermilion.TemporalBuffer.is_recording()
   controls.btn_record:SetEnabled(not recording)
   controls.btn_stop:SetEnabled(recording)
 end
 
--- ── view switching ────────────────────────────────────────────────────────
 local function persist_view()
   local sv = Vermilion.SavedVars
   if sv then sv.graph = sv.graph or {} ; sv.graph.view_idx = current_view end
@@ -554,12 +530,9 @@ local function set_view(v)
   render_current_view()
 end
 
--- ── sampling loop ─────────────────────────────────────────────────────────
 local prof_enter = Vermilion.Profiler.enter
 local prof_exit  = Vermilion.Profiler.exit
 
--- Single reused scratch for the group breakdown — Metrics fills it in place and
--- TemporalBuffer.push copies out of it, so a 1 Hz sample allocates nothing.
 local sample_eos_scratch = { count = 0 }
 
 local function on_sample_update()
@@ -582,7 +555,6 @@ local function on_sample_update()
   prof_exit("graph.sample_tick")
 end
 
--- ── public API ────────────────────────────────────────────────────────────
 function M.current_view() return current_view end
 
 function M.on_record_click()
@@ -664,7 +636,6 @@ function M.next_view()
   set_view(v)
 end
 
--- Live-applies viewport alpha (0..1). Called by the settings slider.
 function M.set_viewport_alpha(a)
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, a)
 end
@@ -680,7 +651,7 @@ function M.toggle()
   end
 end
 
--- ── init ──────────────────────────────────────────────────────────────────
+
 function M.init()
   controls.window        = VermilionGraphWindow
   controls.title         = VermilionGraphWindowTitleLabel
@@ -697,7 +668,6 @@ function M.init()
   controls.readout       = VermilionGraphWindowReadoutLabel
   controls.dps_icon      = VermilionGraphWindowDpsIcon
 
-  -- Restore saved view, position and size.
   local sv = Vermilion.SavedVars
   sv.graph = sv.graph or {}
   if sv.graph.view_idx and sv.graph.view_idx >= VIEW_BY_SKILL
@@ -718,16 +688,12 @@ function M.init()
   VermilionGraphWindowChromeBottom:SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeLeft  :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
   VermilionGraphWindowChromeRight :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
-  -- Crisp crimson border: the border texture takes color cleanly and is never
-  -- covered by buttons, so it's the surface that actually reads as "Vermilion".
   VermilionGraphWindowBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
 
-  -- Grid (behind pools).
   controls.grid = create_grid("VermilionGrid", controls.canvas)
 
-  -- Object pools (created after grid; pool objects render on top).
   controls.pool_eos_segments = make_fill_pool("VermilionEosSeg")
   controls.pool_eos_line     = make_line_pool("VermilionEosLine")
   controls.pool_edps         = make_fill_pool("VermilionEdpsFill")
@@ -735,7 +701,6 @@ function M.init()
   controls.pool_line_edps    = make_line_pool("VermilionLineEdps")
   controls.pool_line_eos     = make_line_pool("VermilionLineEos")
 
-  -- Labels / button text.
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText(GetString(VERMILION_GRAPH_RECORD))
@@ -749,12 +714,8 @@ function M.init()
   controls.view_label:SetText(VIEW_LABELS[current_view])
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
 
-  -- Live EOS readout in the header (weapons icon + value).
   controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
   update_header(0)
-  -- Always-on 1 Hz refresh so the header tracks live DPS independent of the
-  -- record/stop lifecycle.
   zev.register_update("VermilionHeaderTick", 1000, header_tick)
-
   refresh_button_colors()
 end

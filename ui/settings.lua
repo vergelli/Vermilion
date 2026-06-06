@@ -15,7 +15,6 @@ local math_max           = math.max
 local math_min           = math.min
 local math_floor         = math.floor
 
--- ── UI constants ──────────────────────────────────────────────────────────
 local log         = Vermilion.Log.for_module("settings")
 local TOP         = zc.TOP
 local TOPLEFT     = zc.TOPLEFT
@@ -27,8 +26,6 @@ local GuiRoot     = zc.GuiRoot
 local FILL_TEXTURE = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 
--- ── presets ─────────────────────────────────────────────────────────────────
--- Sampling rate (stored as ms interval; label shows Hz). 1..10 Hz, 1 Hz step.
 local SAMPLE_PRESETS = {}
 local SAMPLE_LABELS  = {}
 for hz = 1, 10 do
@@ -38,7 +35,6 @@ for hz = 1, 10 do
 end
 local SAMPLE_DEFAULT = 1000
 
--- Time window for the temporal buffer (seconds). 15 s → 10 min in 15 s steps.
 local function twindow_presets()
   local p, lbls = {}, {}
   for s = 15, 600, 15 do
@@ -56,7 +52,6 @@ end
 local TWINDOW_PRESETS, TWINDOW_LABELS = twindow_presets()
 local TWINDOW_DEFAULT = 60
 
--- Viewport alpha (integer percentage 0..100, step 5).
 local VPALPHA_PRESETS = {}
 local VPALPHA_LABELS  = {}
 for pct = 0, 100, 5 do
@@ -65,13 +60,11 @@ for pct = 0, 100, 5 do
 end
 local VPALPHA_DEFAULT = 30
 
--- ── state ─────────────────────────────────────────────────────────────────────
 local controls        = {}
 local current_sample  = SAMPLE_DEFAULT
 local current_twindow = TWINDOW_DEFAULT
 local current_vpalpha = VPALPHA_DEFAULT
 
--- ── shared helpers ────────────────────────────────────────────────────────────
 local function nearest_idx(presets, ms)
   local bi, bd = 1, math.huge
   for i, p in ipairs(presets) do
@@ -133,8 +126,6 @@ local function persist_graph(key, val)
   if sv then sv.graph = sv.graph or {} ; sv.graph[key] = val end
 end
 
--- Capacity-based safety warning: render cost scales with sample count, so a
--- long window × high sample rate can balloon and impact FPS.
 local CAPACITY_WARN_THRESHOLD = 1500
 
 local function warn_if_heavy(capacity, twindow_s, hz)
@@ -158,7 +149,6 @@ local function refresh_all_sliders()
   update_slider(c.track_vpalpha, c.fill_vpalpha, c.thumb_vpalpha, c.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
 end
 
--- ── public API ────────────────────────────────────────────────────────────────
 function M.toggle()
   local win    = controls.window
   local hidden = win:IsHidden()
@@ -178,16 +168,11 @@ function M.on_move_stop()
   sv.settings.y = controls.window:GetTop()
 end
 
--- Opens the unknown-contributions assignment window, closing Settings first so
--- the two windows never stack on screen.
 function M.on_unknown_click()
   controls.window:SetHidden(true)
   Vermilion.Assign.show()
 end
 
--- Toggles the floating logo. When turning it off, drop a one-time chat hint on
--- how to reach the window without it (keybind / slash command), since there is
--- no clean API to deep-link the addon's keybinding screen.
 function M.on_logo_click()
   local now = not Vermilion.Logo.is_enabled()
   Vermilion.Logo.set_enabled(now)
@@ -235,7 +220,6 @@ function M.on_vpalpha_track_click(control)
   update_slider(controls.track_vpalpha, controls.fill_vpalpha, controls.thumb_vpalpha, controls.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
 end
 
--- Restores every setting to its default value, persists, reapplies.
 function M.on_reset_click()
   log:info("reset to defaults")
   current_sample  = SAMPLE_DEFAULT
@@ -249,7 +233,6 @@ function M.on_reset_click()
   refresh_all_sliders()
 end
 
--- ── introspection (read-only; do NOT mutate the returned table) ─────────────────
 function M.snapshot()
   local hz       = math_floor(1000 / current_sample)
   local capacity = current_twindow * hz
@@ -273,7 +256,6 @@ function M.report_lines()
   }
 end
 
--- ── init ──────────────────────────────────────────────────────────────────────
 function M.init()
   local sv = Vermilion.SavedVars
   sv.temporal = sv.temporal or {}
@@ -284,14 +266,11 @@ function M.init()
   current_twindow = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, sv.temporal.time_window_s      or TWINDOW_DEFAULT)]
   current_vpalpha = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]
 
-  -- Pre-allocate the circular buffer with the saved (or default) capacity.
   reinit_buffer()
 
   controls.window         = VermilionSettingsPanel
   controls.window_title   = VermilionSettingsPanelWindowTitle
 
-  -- Brand wash: tint the parchment a touch crimson so the window reads as
-  -- Vermilion's even in a screenshot (identity / anti-clone).
   VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   controls.title_sample   = VermilionSettingsPanelSampleTitle
@@ -331,9 +310,7 @@ function M.init()
   c.fill_sample,  c.thumb_sample  = setup_slider_visuals(c.track_sample,  "VermilionSettingsSample")
   c.fill_twindow, c.thumb_twindow = setup_slider_visuals(c.track_twindow, "VermilionSettingsTWindow")
   c.fill_vpalpha, c.thumb_vpalpha = setup_slider_visuals(c.track_vpalpha, "VermilionSettingsVPAlpha")
-  -- slider display deferred to first toggle() — panel hidden, GetWidth() == 0
 
-  -- Restore window position (centered fallback).
   if sv.settings.x and sv.settings.y then
     controls.window:ClearAnchors()
     controls.window:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, sv.settings.x, sv.settings.y)

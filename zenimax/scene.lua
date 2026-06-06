@@ -8,11 +8,9 @@ local M = Vermilion.zenimax.scene
 
 local SCENE_MANAGER = SCENE_MANAGER
 
--- ── constants ─────────────────────────────────────────────────────────────
 M.SCENE_SHOWN  = SCENE_SHOWN
 M.SCENE_HIDDEN = SCENE_HIDDEN
 
--- ── callbacks ─────────────────────────────────────────────────────────────
 function M.register_callback(event_name, callback)
   SCENE_MANAGER:RegisterCallback(event_name, callback)
 end

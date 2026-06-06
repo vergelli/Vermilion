@@ -21,7 +21,6 @@ function M.register_addon_loaded(name, callback)
   end)
 end
 
--- Wrap every handler in pcall so a single bug never silently breaks the probe.
 function M.register(name, eventCode, handler)
   EVENT_MANAGER:RegisterForEvent(name, eventCode, function(_, ...)
     local ok, err = pcall(handler, ...)

@@ -15,11 +15,11 @@ M.reset        = NOOP
 
 if not Vermilion.Constants.DEBUG then return end
 
--- ── below this line: only parses when DEBUG=true ────────────────────────
+--!! You shall not passs!!
 
 local now_ms = Vermilion.zenimax.api.GetGameTimeMilliseconds
 
--- ── histograms ────────────────────────────────────────────────────────────
+-- histograms
 local BUCKET_BOUNDS = { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256 }
 local BUCKET_COUNT  = #BUCKET_BOUNDS
 
@@ -47,13 +47,13 @@ local function percentile(h, p)
   return BUCKET_BOUNDS[BUCKET_COUNT]
 end
 
--- ── state ─────────────────────────────────────────────────────────────────
+-- state
 local stages       = {}
 local enter_stack  = {}
 local stack_top    = 0
 local started_at   = now_ms()
 
--- ── real implementations (replace stubs at the bottom) ──────────────────
+--  the real thing (replace stubs at the bottom)
 function M.enter(name)
   stack_top = stack_top + 1
   local frame = enter_stack[stack_top]

@@ -3,9 +3,9 @@
 ![Version](https://img.shields.io/badge/version-0.8.0-blue)
 ![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua&logoColor=white)
 ![ESO](https://img.shields.io/badge/ESO-Update%2049%20%C2%B7%20API%20101049-orange)
+![ESO](https://img.shields.io/badge/ESO-Update%2050%20%C2%B7%20API%20101050-orange)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![AI Assisted](https://img.shields.io/badge/AI%20Assisted-Claude%20by%20Anthropic-D97757?logo=anthropic&logoColor=white)
 
 ![Vermilion logo](docs/assets/vermilion-header-4-2.png)
 

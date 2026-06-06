@@ -1,8 +1,8 @@
--- pipeline/acquisition.lua
---
+-- *pipeline/acquisition.lua
+
 -- Stage 1 of the pipeline. Acquires VermilionEvents from the pool and
 -- populates them from the raw ZOS combat-event tuple. No filtering (stage 2),
--- no state mutation (stage 3). A nil return means the pool was exhausted;
+-- no state mutation (stage 3). A nil return means the pool was exhausted.
 -- callers must bump engine.pool.exhausted.
 
 Vermilion = Vermilion or {}
@@ -22,7 +22,6 @@ local function acquire()
   return Vermilion.Metrics.acquire_event()
 end
 
--- Outgoing damage that landed on enemy HP (eDPS branch).
 function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
@@ -34,12 +33,10 @@ function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_unit_id = targetUnitId  or 0
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
-  ev.source_unit_id = sourceUnitId  or 0   -- for the filter's source-attribution guard
+  ev.source_unit_id = sourceUnitId  or 0
   return ev
 end
 
--- Outgoing damage absorbed by an enemy damage shield (ShDPS branch).
--- result is always ACTION_RESULT_DAMAGE_SHIELDED here (enforced at subscription).
 function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
@@ -51,7 +48,7 @@ function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_unit_id = targetUnitId  or 0
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
-  ev.source_unit_id = sourceUnitId  or 0   -- for the filter's source-attribution guard
+  ev.source_unit_id = sourceUnitId  or 0
   return ev
 end
 

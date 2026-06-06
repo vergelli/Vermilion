@@ -1,4 +1,6 @@
--- The idea is to make a standalon addon "Copybox" in the future.
+-- The idea is to make a standalon addon "Copybox" in the future
+-- for now this is just a simple debug window for dumping text to. 
+-- It's not pretty but it works and it's only loaded in debug mode, so ¯\_(ツ)_/¯
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion

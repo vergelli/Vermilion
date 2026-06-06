@@ -7,14 +7,13 @@ local M = Vermilion.Metrics
 local W_MS        = 5000
 local W_SHIELD_MS = 30000
 
-local damage_out_buf  -- landed damage (eDPS)
-local shield_out_buf  -- enemy-shield-absorbed damage (ShDPS)
+local damage_out_buf  -- (eDPS)
+local shield_out_buf  -- (ShDPS)
 local event_pool
 local log = Vermilion.Log.for_module("metrics")
 
 local SkillColors
 
--- Crit result codes, bound in init (zenimax.constants is loaded by then).
 local CRIT_DMG, CRIT_DOT
 
 local function is_crit(e)
@@ -76,9 +75,6 @@ function M.eDPS(now_ms)  return damage_out_buf:sum(now_ms, "amount") / (W_MS / 1
 function M.ShDPS(now_ms) return shield_out_buf:sum(now_ms, "amount") / (W_SHIELD_MS / 1000) end
 function M.EOS(now_ms)   return M.eDPS(now_ms) + M.ShDPS(now_ms)                            end
 
--- Splits landed damage (eDPS) into its critical and non-critical halves in a
--- single pass over the same window/buffer eDPS uses, so crit + noncrit == eDPS
--- exactly. Returns (crit_dps, noncrit_dps).
 function M.crit_split(now_ms)
   damage_out_buf:trim(now_ms)
   local ws    = W_MS / 1000
@@ -96,14 +92,10 @@ function M.crit_split(now_ms)
   return crit, (total / ws) - crit
 end
 
--- Reused scratch for the per-group breakdown. Cleared (not reallocated) on
--- every pass so the 1 Hz sample loop never churns a fresh table — the hidden
--- second allocation source the gcprobe is built to catch. Sparse semantics are
--- preserved: only groups that took a hit are present after the reset.
 local accum_buckets = {}
 
 local function accumulate(now_ms, buckets)
-  for k in pairs(buckets) do buckets[k] = nil end   -- reset in place, zero-alloc
+  for k in pairs(buckets) do buckets[k] = nil end   --* reset in place for zero alloc !!
   local ws  = W_MS / 1000
   local wss = W_SHIELD_MS / 1000
   local total = 0
@@ -135,10 +127,6 @@ local function accumulate(now_ms, buckets)
   return total
 end
 
--- Single source for the group breakdown: fills the caller-owned `out` array in
--- place (reusing its sub-tables) and publishes the live length via out.count.
--- The allocating variant (former M.eos_groups) was removed — both the live
--- sample path and the presentation snapshot go through here, zero-alloc.
 function M.eos_groups_into(out, now_ms)
   local buckets = accum_buckets
   local total   = accumulate(now_ms, buckets)
@@ -153,6 +141,8 @@ function M.eos_groups_into(out, now_ms)
       slot.share = val / total
     end
 
+    -- out is reused, so its tail holds stale slots from bigger calls.
+    -- sort by hand over 1..n; table.sort would order #out and drag the tail in.
     for i = 2, n do
       local key = out[i]
       local j = i - 1
@@ -163,7 +153,7 @@ function M.eos_groups_into(out, now_ms)
       out[j + 1] = key
     end
   end
-  out.count = n
+  out.count = n   -- readers loop 1..count, never #out
   return n
 end
 

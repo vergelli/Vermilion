@@ -17,7 +17,8 @@ M.init        = NOOP
 
 if not Vermilion.Constants.DEBUG then return end
 
--- ── below this line: only parses / runs when DEBUG=true ─────────────────────
+-- ── below this line only parses / runs when DEBUG=true
+--! "You shall not pass!!!"
 
 local GetGameTimeMilliseconds = Vermilion.zenimax.api.GetGameTimeMilliseconds
 local d           = d
@@ -26,22 +27,22 @@ local tostring    = tostring
 local math_min    = math.min
 local table_sort  = table.sort
 
--- ── config ────────────────────────────────────────────────────────────────
-local EVENT_CAP   = 200   -- ring buffer capacity for discrete events
-local TS_CAP      = 120   -- timeseries samples (1 Hz → 2 min of history)
-local TICK_MS     = 1000  -- sample interval
+-- ── config
+local EVENT_CAP   = 200
+local TS_CAP      = 120
+local TICK_MS     = 1000
 
--- ── state ─────────────────────────────────────────────────────────────────
-local counters    = {}    -- [key:string] = number
-local ev_buf      = {}    -- ring of { t, cat, payload }
-local ev_head     = 0     -- next write index (1-based, wraps)
-local ev_count    = 0     -- total events ever logged (for overflow detection)
-local ts_buf      = {}    -- ring of { t, snap }
+-- ── state
+local counters    = {}
+local ev_buf      = {}
+local ev_head     = 0
+local ev_count    = 0
+local ts_buf      = {}
 local ts_head     = 0
 local ts_count    = 0
 local start_time  = 0
 
--- ── counters ──────────────────────────────────────────────────────────────
+-- ── counters
 function M.bump(key, n)
   counters[key] = (counters[key] or 0) + (n or 1)
 end
@@ -50,14 +51,14 @@ function M.get(key)
   return counters[key] or 0
 end
 
--- ── event log ─────────────────────────────────────────────────────────────
+-- ── event log
 function M.log_event(cat, payload)
   ev_head = (ev_head % EVENT_CAP) + 1
   ev_buf[ev_head] = { t = GetGameTimeMilliseconds(), cat = cat, p = payload }
   ev_count = ev_count + 1
 end
 
--- ── timeseries ────────────────────────────────────────────────────────────
+-- ── timeseries
 local function ts_sample()
   local now = GetGameTimeMilliseconds()
   local snap = {
@@ -222,7 +223,7 @@ function M.full_report(include_gc)
   end
 end
 
--- ── reset ─────────────────────────────────────────────────────────────────
+-- ── reset
 function M.reset()
   counters = {}
   ev_buf   = {}
@@ -234,14 +235,14 @@ function M.reset()
   start_time = GetGameTimeMilliseconds()
 end
 
--- ── init ──────────────────────────────────────────────────────────────────
+-- ── init
 function M.init()
   start_time = GetGameTimeMilliseconds()
   Vermilion.zenimax.events.register_update("Vermilion_DiagTick", TICK_MS, ts_sample)
 end
 
 local gcprobe_scratch = { count = 0 }
-local gcprobe_sink                       -- forces the control alloc to be observable
+local gcprobe_sink
 
 function M.gc_probe_lines(n)
   n = n or 1000
@@ -254,7 +255,7 @@ function M.gc_probe_lines(n)
   local function emit(s) lines[#lines + 1] = s; d("[gcprobe] " .. s) end
 
   local function measure(label, body)
-    for _ = 1, 64 do body() end          -- warm to high-water-mark (skip one-time growth)
+    for _ = 1, 64 do body() end
     for _ = 1, 2 do collectgarbage("collect") end
     local before = collectgarbage("count")
     for _ = 1, n do body() end
@@ -282,7 +283,6 @@ function M.gc_probe_lines(n)
   emit("(temporal buffer cleared)")
   return lines
 end
-
 
 function M.gc_probe(n)
   local lines = M.gc_probe_lines(n)

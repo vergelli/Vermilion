@@ -5,16 +5,16 @@ local M = Vermilion.TemporalBuffer
 local math_floor = math.floor
 local log        = Vermilion.Log.for_module("temporal_buffer")
 
--- ── state ─────────────────────────────────────────────────────────────────
+--* state
 local state = {
   data      = {},
   capacity  = 0,
-  write     = 1,   -- next slot to overwrite (1-based, wraps)
-  count     = 0,   -- active samples (≤ capacity)
+  write     = 1,
+  count     = 0,
   recording = false,
 }
 
--- ── public API ────────────────────────────────────────────────────────────
+--* public API ────────────────────────────────────────────────────────────────
 function M.init(capacity)
   capacity       = math_floor(capacity)
   if capacity < 1 then capacity = 1 end
@@ -28,12 +28,6 @@ function M.init(capacity)
   log:info("init: capacity=", capacity)
 end
 
-
--- `src_groups` is a SHARED scratch the caller reuses every sample. We must NOT
--- store the reference (that would alias every slot to the latest sample) — we
--- copy its values into this slot's OWN pre-allocated array, reusing the sub-
--- tables. Sub-tables grow once to the high-water-mark then are reused forever;
--- entries past `count` are left as harmless stale (the render reads `.count`).
 function M.push(timestamp, eDPS, ShDPS, crit, noncrit, src_groups)
   local slot   = state.data[state.write]
   slot.t       = timestamp
@@ -47,7 +41,7 @@ function M.push(timestamp, eDPS, ShDPS, crit, noncrit, src_groups)
   for i = 1, n do
     local s = src_groups[i]
     local d = dst[i]
-    if d == nil then d = {}; dst[i] = d end   -- one-time growth, then reused
+    if d == nil then d = {}; dst[i] = d end
     d.r = s.r; d.g = s.g; d.b = s.b; d.a = s.a; d.share = s.share
   end
   dst.count = n

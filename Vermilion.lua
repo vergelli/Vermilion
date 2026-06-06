@@ -1,3 +1,10 @@
+--[[
+
+  " ... my only aspiration is that death finds me alive "
+                              — Indio Solari · Jan 17, 1949 – Jun 5, 2026
+
+]]
+
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
 
@@ -107,12 +114,9 @@ local function on_slash(input)
     end
   end
 
-  -- ── window toggle ────────────────────────────────────────────────────────
   if cmd == "graph" then
     Vermilion.Graph.toggle() ; return
   end
-
-  -- ── help ─────────────────────────────────────────────────────────────────
 
   if cmd == "help" then
     d(GetString(VERMILION_HELP_HEADER))
@@ -120,7 +124,6 @@ local function on_slash(input)
     d(GetString(VERMILION_HELP_HELP))
     return
   end
-
 
   Vermilion.Graph.toggle()
 end

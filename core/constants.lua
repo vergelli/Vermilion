@@ -30,8 +30,8 @@ Vermilion.Constants = {
 
   TEMPORAL = {
     UPDATE_NAME          = "VermilionTemporalSample",
-    SAMPLE_RATE_DEFAULT  = 1000,   -- ms interval → 1 Hz
-    TIME_WINDOW_DEFAULT  = 60,     -- seconds
+    SAMPLE_RATE_DEFAULT  = 1000,
+    TIME_WINDOW_DEFAULT  = 60,     -- (seconds)
   },
 
   METRICS = {
@@ -44,8 +44,8 @@ Vermilion.Constants = {
   },
 
   ABILITY_KIND = {
-    DAMAGE_OUT = 1,   -- landed on enemy HP (eDPS)
-    SHIELD_OUT = 2,   -- absorbed by an enemy damage shield (ShDPS)
+    DAMAGE_OUT = 1,   -- this is (eDPS)
+    SHIELD_OUT = 2,   -- (ShDPS)
   },
 
   PROFILER_BUDGETS_MS = {

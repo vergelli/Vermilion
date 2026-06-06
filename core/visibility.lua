@@ -8,7 +8,6 @@ local log = Vermilion.Log.for_module("visibility")
 local in_hud = true
 local user_visible = { graph = false }
 
--- ── apply / persist ───────────────────────────────────────────────────────
 local function apply()
   if VermilionGraphWindow then
     VermilionGraphWindow:SetHidden(not (in_hud and user_visible.graph))
@@ -28,7 +27,6 @@ local function persist()
   sv.graph.visible = user_visible.graph
 end
 
--- ── public API ────────────────────────────────────────────────────────────
 function M.set(key, visible)
   if user_visible[key] == visible then return end
   log:info("set", key, "->", visible and "visible" or "hidden")

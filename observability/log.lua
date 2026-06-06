@@ -64,7 +64,7 @@ function M.for_module(source)
   return setmetatable({ source = source }, Bound)
 end
 
--- ── structured ring buffer ──────────────────────────────────
+--  structured ring buffer
 
 local NOOP = function() end
 M.write        = NOOP
@@ -76,7 +76,8 @@ M.recent_lines = function() return {} end
 
 if not Vermilion.Constants.DEBUG then return end
 
--- ── below this line: only parses when DEBUG=true ────────────────────────
+-- ── below this line: only parses when DEBUG=true
+--! YOU SHALL NOT PAAAASSS!!
 
 local RING_CAPACITY = 1024
 local ring          = {}

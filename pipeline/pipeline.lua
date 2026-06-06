@@ -1,13 +1,18 @@
---* pipeline/pipeline.lua
---*
---* Orchestrator for the event pipeline (acquisition → filter → processing).
---* Owns ZOS event subscriptions and per-ZOS-event bookkeeping (counters, mode
---* pre-check, profiler spans) that doesn't fit the per-event stage contract.
---*
---* Entry points:
---*   M.dispatch_damage_out(...)  — combat handler, player landed damage
---*   M.dispatch_shield_out(...)  — combat handler, DAMAGE_SHIELDED from player
---*   M.init()                    — registers ZOS subscriptions
+---* Event Pipeline Orchestrator.
+
+---* Motivation: To isolate the core logic from the noise of the raw ZOS API. 
+---* Instead of polluting individual pipeline stages with global state, profiling, 
+---* or early-exit checks, this module acts as a strict boundary layer. It handles 
+---* the raw ingest, performs fast-fail validation (errors, zero-hits, active modes), 
+---* updates diagnostic counters, and drives the lifecycle of an event through 
+---* its three phases: Acquisition -> Filter -> Processing.
+---
+--- @module Vermilion.Pipeline
+---
+--- Entry points:
+--- * `M.dispatch_damage_out` - Combat handler for outgoing player damage.
+--- * `M.dispatch_shield_out` - Combat handler for player-applied damage shields.
+--- * `M.init`                - Bootstraps ZOS subscriptions and API hardware filters.
 
 Vermilion = Vermilion or {}
 local Vermilion = Vermilion
@@ -45,8 +50,6 @@ end
 
 local now = Acquisition.now
 
--- Shared body for both kinds: acquire → filter → process, with profiler spans
--- and pool-exhaustion accounting. `acquire_fn` returns a populated event or nil.
 local function run_stages(ev, accepted_key)
   if not ev then
     bump("engine.pool.exhausted")
@@ -66,10 +69,6 @@ local function run_stages(ev, accepted_key)
   end
 end
 
--- ── combat: landed damage (eDPS) ───────────────────────────────────────────
--- Signature (16 args): result, isError, abilityName, abilityGraphic,
--- abilityActionSlotType, sourceName, sourceType, targetName, targetType,
--- hitValue, powerType, damageType, log, sourceUnitId, targetUnitId, abilityId.
 function M.dispatch_damage_out(result, isError, _name, _g, _slot,
                                _src, _sourceType, _tgt, targetType, hit,
                                _pt, _dt, _log, sourceUnitId, targetUnitId, abilityId)
@@ -89,7 +88,6 @@ function M.dispatch_damage_out(result, isError, _name, _g, _slot,
   prof_exit("pipeline.combat_event")
 end
 
--- ── combat: shielded damage (ShDPS) ────────────────────────────────────────
 function M.dispatch_shield_out(result, isError, _name, _g, _slot,
                                _src, _sourceType, _tgt, targetType, hit,
                                _pt, _dt, _log, sourceUnitId, targetUnitId, abilityId)
@@ -109,15 +107,12 @@ function M.dispatch_shield_out(result, isError, _name, _g, _slot,
   prof_exit("pipeline.combat_event")
 end
 
--- ── init: subscribe ZOS events ─────────────────────────────────────────────
 function M.init()
   local E = Vermilion.zenimax.events
 
   Vermilion.Diagnostics.init()
   Vermilion.Metrics.init()
 
-  -- Subscription A: outgoing landed damage. Result triage in the wrapper keeps
-  -- the R_land set out of EVENT_MANAGER's single-value COMBAT_RESULT filter.
   E.register("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT, function(...)
     local r = ...
     if r == ACTION_RESULT_DAMAGE
@@ -133,8 +128,6 @@ function M.init()
   E.add_filter("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
-  -- Subscription B: outgoing shielded damage. Single result code → use the
-  -- native COMBAT_RESULT filter for it.
   E.register("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT, M.dispatch_shield_out)
   E.add_filter("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_COMBAT_RESULT, ACTION_RESULT_DAMAGE_SHIELDED)

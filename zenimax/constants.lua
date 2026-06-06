@@ -1,7 +1,3 @@
--- ZOS constants used by Vermilion, captured by value at module load time.
--- this is the by-value form: M.X = X. Consumers
--- read through Vermilion.zenimax.constants and may local-cache for hot
--- paths.
 
 Vermilion = Vermilion or {}
 Vermilion.zenimax = Vermilion.zenimax or {}
@@ -10,7 +6,7 @@ local Vermilion = Vermilion
 Vermilion.zenimax.constants = {}
 local M = Vermilion.zenimax.constants
 
--- ── event ids ─────────────────────────────────────────────────────────────
+-- event ids
 M.EVENT_ADD_ON_LOADED              = EVENT_ADD_ON_LOADED
 M.EVENT_COMBAT_EVENT               = EVENT_COMBAT_EVENT
 M.EVENT_EFFECT_CHANGED             = EVENT_EFFECT_CHANGED
@@ -22,26 +18,26 @@ M.EVENT_PLAYER_DEACTIVATED         = EVENT_PLAYER_DEACTIVATED
 M.EVENT_PLAYER_COMBAT_STATE        = EVENT_PLAYER_COMBAT_STATE
 M.EVENT_ACTION_SLOT_ABILITY_USED   = EVENT_ACTION_SLOT_ABILITY_USED
 
--- ── EVENT_MANAGER:AddFilterForEvent filter keys ───────────────────────────
+-- EVENT_MANAGER:AddFilterForEvent filter keys
 M.REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE = REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE
 M.REGISTER_FILTER_TARGET_COMBAT_UNIT_TYPE = REGISTER_FILTER_TARGET_COMBAT_UNIT_TYPE
 M.REGISTER_FILTER_COMBAT_RESULT           = REGISTER_FILTER_COMBAT_RESULT
 M.REGISTER_FILTER_IS_ERROR                = REGISTER_FILTER_IS_ERROR
 M.REGISTER_FILTER_UNIT_TAG                = REGISTER_FILTER_UNIT_TAG
 
--- ── combat unit type ──────────────────────────────────────────────────────
+-- combat unit type
 M.COMBAT_UNIT_TYPE_PLAYER     = COMBAT_UNIT_TYPE_PLAYER
 M.COMBAT_UNIT_TYPE_PLAYER_PET = COMBAT_UNIT_TYPE_PLAYER_PET
 M.COMBAT_UNIT_TYPE_GROUP      = COMBAT_UNIT_TYPE_GROUP
 
--- ── action results (heals) ────────────────────────────────────────────────
+-- action results (heals)
 M.ACTION_RESULT_HEAL                = ACTION_RESULT_HEAL
 M.ACTION_RESULT_HOT_TICK            = ACTION_RESULT_HOT_TICK
 M.ACTION_RESULT_CRITICAL_HEAL       = ACTION_RESULT_CRITICAL_HEAL
 M.ACTION_RESULT_HOT_TICK_CRITICAL   = ACTION_RESULT_HOT_TICK_CRITICAL
 M.ACTION_RESULT_HEAL_ABSORBED       = ACTION_RESULT_HEAL_ABSORBED
 
--- ── action results (damage / shield) ──────────────────────────────────────
+-- action results (damage / shield)
 M.ACTION_RESULT_DAMAGE              = ACTION_RESULT_DAMAGE
 M.ACTION_RESULT_DOT_TICK            = ACTION_RESULT_DOT_TICK
 M.ACTION_RESULT_CRITICAL_DAMAGE     = ACTION_RESULT_CRITICAL_DAMAGE
@@ -50,14 +46,14 @@ M.ACTION_RESULT_BLOCKED_DAMAGE      = ACTION_RESULT_BLOCKED_DAMAGE
 M.ACTION_RESULT_FALL_DAMAGE         = ACTION_RESULT_FALL_DAMAGE
 M.ACTION_RESULT_DAMAGE_SHIELDED     = ACTION_RESULT_DAMAGE_SHIELDED
 
--- ── effect results ────────────────────────────────────────────────────────
+-- effect results
 M.EFFECT_RESULT_GAINED        = EFFECT_RESULT_GAINED
 M.EFFECT_RESULT_FADED         = EFFECT_RESULT_FADED
 M.EFFECT_RESULT_UPDATED       = EFFECT_RESULT_UPDATED
 M.EFFECT_RESULT_FULL_REFRESH  = EFFECT_RESULT_FULL_REFRESH
 M.EFFECT_RESULT_TRANSFER      = EFFECT_RESULT_TRANSFER
 
--- ── UI: anchor points ─────────────────────────────────────────────────────
+-- UI: anchor points
 M.TOPLEFT     = TOPLEFT
 M.TOP         = TOP
 M.TOPRIGHT    = TOPRIGHT
@@ -68,19 +64,19 @@ M.BOTTOMLEFT  = BOTTOMLEFT
 M.BOTTOM      = BOTTOM
 M.BOTTOMRIGHT = BOTTOMRIGHT
 
--- ── UI: control types ─────────────────────────────────────────────────────
+-- UI: control types
 M.CT_TEXTURE  = CT_TEXTURE
 M.CT_LABEL    = CT_LABEL
 M.CT_BACKDROP = CT_BACKDROP
 M.CT_CONTROL  = CT_CONTROL
 
--- ── UI: text alignment ────────────────────────────────────────────────────
+-- UI: text alignment
 M.TEXT_ALIGN_LEFT   = TEXT_ALIGN_LEFT
 M.TEXT_ALIGN_CENTER = TEXT_ALIGN_CENTER
 M.TEXT_ALIGN_RIGHT  = TEXT_ALIGN_RIGHT
 M.TEXT_ALIGN_TOP    = TEXT_ALIGN_TOP
 M.TEXT_ALIGN_BOTTOM = TEXT_ALIGN_BOTTOM
 
--- ── UI: roots / sounds ────────────────────────────────────────────────────
+-- UI: roots / sounds
 M.GuiRoot = GuiRoot
 M.SOUNDS  = SOUNDS
