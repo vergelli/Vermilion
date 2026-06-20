@@ -43,6 +43,15 @@ Vermilion.Constants = {
     EVENT_CAPACITY = 4096,
   },
 
+  -- GC pacing (ported from Verditer): drive a little GC each frame so the incremental
+  -- collector never bursts into a render-frame hitch. STEP_KB = step size; INTERVAL_MS
+  -- 0 = every frame. PACING=false disables (A/B).
+  GC = {
+    PACING      = true,
+    STEP_KB     = 2,
+    INTERVAL_MS = 0,
+  },
+
   ABILITY_KIND = {
     DAMAGE_OUT = 1,   -- this is (eDPS)
     SHIELD_OUT = 2,   -- (ShDPS)

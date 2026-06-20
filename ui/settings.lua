@@ -26,9 +26,13 @@ local GuiRoot     = zc.GuiRoot
 local FILL_TEXTURE = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 
+-- Sample-rate cap 5 Hz (ported from Verditer). Nyquist: combat is ~1s-scale and the
+-- per-second metrics are already windowed, so >5 Hz only adds redundant bars. Old 10 Hz
+-- SavedVars clamp to 5 Hz via nearest_idx on load.
+local SAMPLE_MAX_HZ  = 5
 local SAMPLE_PRESETS = {}
 local SAMPLE_LABELS  = {}
-for hz = 1, 10 do
+for hz = 1, SAMPLE_MAX_HZ do
   local ms = math_floor(1000 / hz + 0.5)
   SAMPLE_PRESETS[#SAMPLE_PRESETS + 1] = ms
   SAMPLE_LABELS[ms] = hz .. " Hz"
@@ -104,7 +108,7 @@ local function setup_slider_visuals(track, name_prefix)
   fill:SetAnchor(BOTTOMLEFT, track, BOTTOMLEFT, 0, 0)
   fill:SetTexture(FILL_TEXTURE)
   fill:SetTextureCoords(0, 1, FILL_T, FILL_B)
-  fill:SetColor(0.85, 0.72, 0.45, 0.90)
+  fill:SetColor(0.88, 0.30, 0.26, 0.92)   -- VERMILION crimson (brand colour propagated)
   fill:SetDrawLevel(1)
 
   local thumb = WM:CreateControl(name_prefix .. "Thumb", track, CT_TEXTURE)

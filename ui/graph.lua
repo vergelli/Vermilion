@@ -58,6 +58,28 @@ local VIEW_BY_CRIT    = 3
 local VIEW_LABELS     = { "SKILL", "OUTCOME", "CRIT" }
 local current_view    = VIEW_BY_SKILL
 
+-- ── Hover (Datadog-style, ported from Verditer) ───────────────────────────────
+-- STATIC SESSION ONLY: enabled when stopped on a view with data, while shown. SKILL
+-- (stacked) highlights the hovered group across every bar and dims the rest; OUTCOME/
+-- CRIT show a crosshair + a moment card. The hit index is built during render against
+-- the decimated columns, so the poll is a pure lookup. nil hover_key = no highlight.
+local GetUIMousePosition = api.GetUIMousePosition
+local hover_key  = nil
+local hit = { cols = {}, n = 0 }
+local C_DIM_BIAS = 0.05
+local render_current_view   -- forward decl (hover helpers call it before it's defined)
+
+local FADE_MS = 120
+local card_fader, crosshair_fader
+
+local CARD_W, CARD_H = 196, 56
+local C_CARD_BG     = { r = 0.10, g = 0.04, b = 0.05, a = 0.96 }  -- dark crimson tint
+local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }   -- Vermilion crimson accent
+local C_CARD_STAT   = { r = 0.92, g = 0.84, b = 0.82, a = 1.0 }
+local C_CARD_NAME   = { r = 1.00, g = 0.90, b = 0.88, a = 1.0 }
+local C_CARD_TIME   = { r = 0.72, g = 0.64, b = 0.62, a = 1.0 }
+local C_CROSSHAIR   = { r = 1.00, g = 0.50, b = 0.42, a = 0.50 }
+
 -- small helpers
 local function fmt_val(v)
   return ZO_AbbreviateAndLocalizeNumber(math_floor(v), 0, false)
@@ -247,14 +269,62 @@ local function release_all_pools()
   controls.pool_line_eos:ReleaseAllObjects()
 end
 
-local function slot_geometry(cw)
-  local capacity = Vermilion.TemporalBuffer.capacity()
-  local n        = Vermilion.TemporalBuffer.count()
-  local slot_w   = cw / capacity
-  local bar_gap  = (slot_w > 3) and 1 or 0
-  local bw       = math_max(1, slot_w - bar_gap)
+-- ── Decimation (ported from Verditer; M4-style, specialized to bars) ──────────
+-- Render cost was O(samples): drawing samples × groups controls, which at high
+-- sample-rate × long window blows past the canvas pixel count → freezes / 303
+-- disconnect. Fix: never draw more columns than the canvas has pixels. Bucket the
+-- buffer's logical slots into num_cols pixel columns and fold each with a SPIKE-
+-- PRESERVING reducer. Vermilion is OUTGOING DPS, so "spike" = MAX. Two argmaxes per
+-- column keep the stacks COHERENT + bounded: the eos-peak sample (max eDPS+ShDPS)
+-- gives eDPS/ShDPS/eos_groups for the SKILL + OUTCOME views; the edps-peak sample
+-- (max eDPS) gives noncrit/crit for the CRIT view — each a REAL sample, so a stacked
+-- height never exceeds its global max (independent per-field maxes could overflow the
+-- plot). No hover hit-index here (Vermilion has none) → simpler than Verditer.
+local MIN_COL_PX = 2
+local dec_cols   = {}
+
+local function decimate(cw)
+  local TB       = Vermilion.TemporalBuffer
+  local capacity = TB.capacity()
+  local n        = TB.count()
+  local num_cols = math_floor(cw / MIN_COL_PX)
+  if num_cols < 1 then num_cols = 1 end
+  if num_cols > capacity then num_cols = capacity end
   local offset   = capacity - n
-  return slot_w, bw, offset
+  local m, cur_c = 0, -1
+  local col
+  TB.iterate(function(i, s)
+    local c   = math_floor((offset + i - 1) * num_cols / capacity)
+    local eos = s.eDPS + s.ShDPS
+    if c ~= cur_c then
+      m = m + 1
+      col = dec_cols[m]
+      if not col then col = {}; dec_cols[m] = col end
+      col.c = c; col.t = s.t
+      col.eos_peak = eos;    col.eDPS = s.eDPS; col.ShDPS = s.ShDPS; col.eos_groups = s.eos_groups
+      col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
+      cur_c = c
+    else
+      if eos > col.eos_peak then            -- eos-peak sample → skill height + groups + outcome bars
+        col.eos_peak = eos; col.eDPS = s.eDPS; col.ShDPS = s.ShDPS; col.eos_groups = s.eos_groups
+      end
+      if s.eDPS > col.edps_peak then         -- edps-peak sample → crit-view split
+        col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
+      end
+      col.t = s.t
+    end
+  end)
+  local col_w   = cw / num_cols
+  local bar_gap = (col_w > 3) and 1 or 0
+  return m, num_cols, col_w, bar_gap
+end
+
+-- Pixel-snapped column rect (also kills the moiré): integer left/right via cumulative
+-- rounding so columns tile the pixel grid exactly.
+local function dec_rect(c, num_cols, cw)
+  local left  = math_floor(c       * cw / num_cols + 0.5)
+  local right = math_floor((c + 1) * cw / num_cols + 0.5)
+  return left, right
 end
 
 local function window_extent()
@@ -276,6 +346,235 @@ end
 local rsk_xs, rsk_eos_hs                  = {}, {}
 local rout_xs, rout_edps_hs, rout_eos_hs  = {}, {}, {}
 local rcr_xs, rcr_top_hs                  = {}, {}
+
+-- ── Hover helpers (ported from Verditer) ──────────────────────────────────────
+local function make_fader(control)
+  return { anim = ZO_AlphaAnimation:New(control), control = control, visible = false }
+end
+local function fade_in(f)
+  if not f or f.visible then return end
+  f.visible = true
+  f.anim:FadeIn(0, FADE_MS)
+end
+local function fade_out(f)
+  if not f or not f.visible then return end
+  f.visible = false
+  local control = f.control
+  f.anim:FadeOut(0, FADE_MS, nil, function() control:SetHidden(true) end)
+end
+
+local function hexc(c)
+  return string_format("%02x%02x%02x",
+    math_floor(c.r * 255 + 0.5), math_floor(c.g * 255 + 0.5), math_floor(c.b * 255 + 0.5))
+end
+
+local function hover_allowed()
+  return not Vermilion.TemporalBuffer.is_recording()
+     and Vermilion.TemporalBuffer.count() > 0
+     and not controls.window:IsHidden()
+end
+
+-- SKILL group key is a string ("destruction_staff" / "basic" / "other"); prettify it.
+local function hover_label(band)
+  local k = band.key
+  if not k or k == "" then return "Skill" end
+  if k == "other" then return "Other" end
+  return (tostring(k):gsub("_", " "))
+end
+
+local function stop_hover_poll() zev.unregister_update("VermilionHoverPoll") end
+
+local function hide_hover_ui()
+  fade_out(card_fader)
+  fade_out(crosshair_fader)
+end
+
+-- cursor-following card, built once (parented to the window, above the canvas)
+local function build_hover_card()
+  local WM   = WINDOW_MANAGER
+  local root = WM:CreateControl("VermilionHoverCard", controls.window, zc.CT_CONTROL)
+  root:SetDimensions(CARD_W, CARD_H)
+  root:SetMouseEnabled(false)
+  root:SetDrawLevel(20)
+  root:SetAlpha(0)
+  root:SetHidden(true)
+
+  local bg = WM:CreateControl("VermilionHoverCardBg", root, CT_TEXTURE)
+  bg:SetTexture(FILL_TEXTURE)
+  bg:SetTextureCoords(0, 1, 0, 0.05)
+  bg:SetAnchor(TOPLEFT, root, TOPLEFT, 0, 0)
+  bg:SetAnchor(BOTTOMRIGHT, root, BOTTOMRIGHT, 0, 0)
+  bg:SetColor(C_CARD_BG.r, C_CARD_BG.g, C_CARD_BG.b, C_CARD_BG.a)
+
+  local accent = WM:CreateControl("VermilionHoverCardAccent", root, CT_TEXTURE)
+  accent:SetTexture(FILL_TEXTURE)
+  accent:SetTextureCoords(0, 0.05, 0, 1)
+  accent:SetAnchor(TOPLEFT, root, TOPLEFT, 0, 0)
+  accent:SetAnchor(BOTTOMLEFT, root, BOTTOMLEFT, 0, 0)
+  accent:SetWidth(3)
+  accent:SetColor(C_CARD_ACCENT.r, C_CARD_ACCENT.g, C_CARD_ACCENT.b, 1.0)
+
+  local swatch = WM:CreateControl("VermilionHoverCardSwatch", root, CT_TEXTURE)
+  swatch:SetTexture(FILL_TEXTURE)
+  swatch:SetTextureCoords(0, 1, 0, 0.05)
+  swatch:SetDimensions(10, 10)
+  swatch:SetAnchor(TOPLEFT, root, TOPLEFT, 12, 9)
+
+  local name = WM:CreateControl("VermilionHoverCardName", root, CT_LABEL)
+  name:SetFont("ZoFontGameBold")
+  name:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+  name:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  name:SetAnchor(TOPLEFT, root, TOPLEFT, 28, 6)
+  name:SetDimensions(CARD_W - 36, 16)
+
+  local stat = WM:CreateControl("VermilionHoverCardStat", root, CT_LABEL)
+  stat:SetFont("ZoFontGameSmall")
+  stat:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+  stat:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  stat:SetColor(C_CARD_STAT.r, C_CARD_STAT.g, C_CARD_STAT.b, 1.0)
+  stat:SetAnchor(TOPLEFT, root, TOPLEFT, 12, 24)
+  stat:SetDimensions(CARD_W - 20, 14)
+
+  local time = WM:CreateControl("VermilionHoverCardTime", root, CT_LABEL)
+  time:SetFont("ZoFontGameSmall")
+  time:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+  time:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  time:SetColor(C_CARD_TIME.r, C_CARD_TIME.g, C_CARD_TIME.b, 1.0)
+  time:SetAnchor(TOPLEFT, root, TOPLEFT, 12, 40)
+  time:SetDimensions(CARD_W - 20, 12)
+
+  controls.card = { root = root, swatch = swatch, name = name, stat = stat, time = time }
+end
+
+local function position_card(mx, my)
+  local card = controls.card
+  local sw, sh = GuiRoot:GetDimensions()
+  local x = mx + 16
+  local y = my + 18
+  if x + CARD_W > sw - 4 then x = mx - CARD_W - 16 end
+  if x < 4 then x = 4 end
+  if y + CARD_H > sh - 4 then y = my - CARD_H - 18 end
+  if y < 4 then y = 4 end
+  card.root:ClearAnchors()
+  card.root:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, x, y)
+  fade_in(card_fader)
+end
+
+local function show_card(band, mx, my, elapsed_ms)
+  local card = controls.card
+  if not card then return end
+  card.swatch:SetColor(band.r, band.g, band.b, 1.0)
+  card.name:SetColor(band.r, band.g, band.b, 1.0)
+  card.name:SetText(hover_label(band))
+  local pct = math_floor((band.share or 0) * 100 + 0.5)
+  local val = (band.share or 0) * (band.eos or 0)   -- this group's DPS at the instant
+  card.stat:SetText(string_format("%s DPS  ·  %d%%", fmt_readout(val), pct))
+  card.time:SetText("t  " .. fmt_secs(elapsed_ms or 0))
+  position_card(mx, my)
+end
+
+local function show_moment_card(swatch_c, name_text, stat_text, elapsed_ms, mx, my)
+  local card = controls.card
+  if not card then return end
+  card.swatch:SetColor(swatch_c.r, swatch_c.g, swatch_c.b, 1.0)
+  card.name:SetColor(C_CARD_NAME.r, C_CARD_NAME.g, C_CARD_NAME.b, 1.0)
+  card.name:SetText(name_text)
+  card.stat:SetText(stat_text)
+  card.time:SetText("t  " .. fmt_secs(elapsed_ms or 0))
+  position_card(mx, my)
+end
+
+local function hover_pick(rel_x, height_above)
+  if hit.n == 0 then return nil, nil end
+  local col = nil
+  for i = 1, hit.n do
+    local c = hit.cols[i]
+    if c and rel_x >= c.x0 and rel_x <= c.x1 then col = c; break end
+  end
+  if not col then return nil, nil end
+  local band = nil
+  for b = 1, col.nb do
+    local bd = col.bands[b]
+    if height_above >= bd.lo and height_above <= bd.hi then band = bd; break end
+  end
+  return band, col
+end
+
+local function hover_poll()
+  if not hover_allowed() then
+    if hover_key ~= nil then hover_key = nil; render_current_view() end
+    hide_hover_ui()
+    return
+  end
+  local canvas = controls.canvas
+  local mx, my = GetUIMousePosition()
+  local rel_x  = mx - canvas:GetLeft()
+  local above  = canvas:GetBottom() - my
+  local cw, ch = canvas:GetWidth(), canvas:GetHeight()
+
+  local band, col = nil, nil
+  if rel_x >= 0 and rel_x <= cw and above >= 0 and above <= ch then
+    band, col = hover_pick(rel_x, above)
+  end
+
+  local new = band and band.key or nil
+  if new ~= hover_key then hover_key = new; render_current_view() end
+
+  if not col then hide_hover_ui(); return end
+
+  if controls.crosshair then
+    local cx = math_floor((col.x0 + col.x1) * 0.5)
+    controls.crosshair:ClearAnchors()
+    controls.crosshair:SetAnchor(TOPLEFT,    canvas, TOPLEFT,    cx, 0)
+    controls.crosshair:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, cx, 0)
+    fade_in(crosshair_fader)
+  end
+
+  local elapsed = (col.t and hit.t0) and (col.t - hit.t0) or 0
+  if band then
+    show_card(band, mx, my, elapsed)                                   -- SKILL: group card
+  elseif current_view == VIEW_BY_OUTCOME then
+    show_moment_card(C_EDPS, "Outgoing",
+      string_format("|c%s%s DPS|r  ·  |c%s%s Shld|r",
+        hexc(C_EDPS), fmt_readout(col.edps or 0), hexc(C_SHDPS), fmt_readout(col.shdps or 0)),
+      elapsed, mx, my)
+  elseif current_view == VIEW_BY_CRIT then
+    local tot = (col.crit or 0) + (col.noncrit or 0)
+    local cp  = (tot > 0) and math_floor((col.crit or 0) / tot * 100 + 0.5) or 0
+    show_moment_card(C_CRIT, "Crit",
+      string_format("|c%s%d%% crit|r  ·  %s DPS", hexc(C_CRIT), cp, fmt_readout(tot)),
+      elapsed, mx, my)
+  else
+    fade_out(card_fader)                                               -- SKILL above the stack
+  end
+end
+
+local function update_hover_gate()
+  local on = hover_allowed()
+  if controls.hit then
+    controls.hit:SetMouseEnabled(on)
+    controls.hit:SetHidden(not on)
+  end
+  if not on then
+    stop_hover_poll()
+    hide_hover_ui()
+    if hover_key ~= nil then
+      hover_key = nil
+      if not controls.window:IsHidden() then render_current_view() end
+    end
+  end
+end
+
+local function hit_begin(n) hit.n = n end
+
+local function hit_col(i, x, bw, s)
+  if i == 1 then hit.t0 = s.t end
+  local col = hit.cols[i]
+  if not col then col = { bands = {} }; hit.cols[i] = col end
+  col.x0 = x; col.x1 = x + bw; col.nb = 0; col.t = s.t
+  col.edps = s.eDPS; col.shdps = s.ShDPS; col.crit = s.crit; col.noncrit = s.noncrit
+  return col
+end
 
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
@@ -302,15 +601,23 @@ local function render_by_skill()
   if max_eos <= 0 then hide_grid(controls.grid) return end
   draw_grid(controls.grid, canvas, max_eos, span_ms)
 
-  local slot_w, bw, offset = slot_geometry(cw)
+  local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, eos_hs = rsk_xs, rsk_eos_hs
+  local capture = not Vermilion.TemporalBuffer.is_recording()
+  local hk = hover_key   -- nil = no highlight; else dim every group but this key
+  if capture then hit_begin(m) end
 
-  Vermilion.TemporalBuffer.iterate(function(i, s)
-    local x   = (offset + i - 1) * slot_w
+  for i = 1, m do
+    local s = dec_cols[i]
+    local left, right = dec_rect(s.c, num_cols, cw)
+    local x   = left
+    local bw  = math_max(1, right - left - bar_gap)
     local eos = s.eDPS + s.ShDPS
     local col_h = math_max(0, math_floor(ch_plot * (eos / max_eos) + 0.5))
     xs[i]     = x + bw * 0.5
     eos_hs[i] = col_h
+
+    local col = capture and hit_col(i, left, right - left, s) or nil
 
     local y_off = 0
     local groups = s.eos_groups
@@ -322,14 +629,33 @@ local function render_by_skill()
       t:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, x, -(y_off + TIME_STRIP_H))
       t:SetWidth(bw)
       t:SetHeight(seg_h)
-      t:SetColor(grp.r, grp.g, grp.b, grp.a)
+      if hk ~= nil and grp.key ~= hk then
+        t:SetColor(grp.r * 0.30 + C_DIM_BIAS, grp.g * 0.30 + C_DIM_BIAS,
+                   grp.b * 0.30 + C_DIM_BIAS, 0.28)
+      else
+        t:SetColor(grp.r, grp.g, grp.b, grp.a)
+      end
       t:SetHidden(false)
+
+      if capture then
+        local nb   = col.nb + 1
+        local band = col.bands[nb]
+        if not band then band = {}; col.bands[nb] = band end
+        band.key   = grp.key
+        band.lo    = TIME_STRIP_H + y_off
+        band.hi    = TIME_STRIP_H + y_off + seg_h
+        band.share = grp.share
+        band.eos   = eos        -- column total → group value = share * eos
+        band.r = grp.r; band.g = grp.g; band.b = grp.b
+        col.nb = nb
+      end
+
       y_off = y_off + seg_h
     end
-  end)
+  end
 
-  if slot_w >= 3 then
-    for i = 2, n do
+  if col_w >= 3 then
+    for i = 2, m do
       local le = controls.pool_eos_line:AcquireObject()
       le:ClearAnchors()
       le:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(eos_hs[i-1] + TIME_STRIP_H))
@@ -366,11 +692,17 @@ local function render_by_outcome()
   if max_eos <= 0 then hide_grid(controls.grid) return end
   draw_grid(controls.grid, canvas, max_eos, span_ms)
 
-  local slot_w, bw, offset = slot_geometry(cw)
+  local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, edps_hs, eos_hs = rout_xs, rout_edps_hs, rout_eos_hs
+  local capture = not Vermilion.TemporalBuffer.is_recording()
+  if capture then hit_begin(m) end
 
-  Vermilion.TemporalBuffer.iterate(function(i, s)
-    local x       = (offset + i - 1) * slot_w
+  for i = 1, m do
+    local s = dec_cols[i]
+    local left, right = dec_rect(s.c, num_cols, cw)
+    local x       = left
+    local bw      = math_max(1, right - left - bar_gap)
+    if capture then hit_col(i, left, right - left, s) end
     local edps_h  = math_max(0, math_floor(ch_plot * (s.eDPS  / max_eos) + 0.5))
     local shdps_h = math_max(0, math_floor(ch_plot * (s.ShDPS / max_eos) + 0.5))
     xs[i]      = x + bw * 0.5
@@ -396,10 +728,10 @@ local function render_by_outcome()
       ts:SetColor(C_SHDPS.r, C_SHDPS.g, C_SHDPS.b, C_SHDPS.a)
       ts:SetHidden(false)
     end
-  end)
+  end
 
-  if slot_w >= 3 then
-    for i = 2, n do
+  if col_w >= 3 then
+    for i = 2, m do
       local le = controls.pool_line_edps:AcquireObject()
       le:ClearAnchors()
       le:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(edps_hs[i-1] + TIME_STRIP_H))
@@ -453,11 +785,17 @@ local function render_by_crit()
   if max_edps <= 0 then hide_grid(controls.grid) return end
   draw_grid(controls.grid, canvas, max_edps, span_ms)
 
-  local slot_w, bw, offset = slot_geometry(cw)
+  local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, top_hs = rcr_xs, rcr_top_hs
+  local capture = not Vermilion.TemporalBuffer.is_recording()
+  if capture then hit_begin(m) end
 
-  Vermilion.TemporalBuffer.iterate(function(i, s)
-    local x         = (offset + i - 1) * slot_w
+  for i = 1, m do
+    local s = dec_cols[i]
+    local left, right = dec_rect(s.c, num_cols, cw)
+    local x         = left
+    local bw        = math_max(1, right - left - bar_gap)
+    if capture then hit_col(i, left, right - left, s) end
     local noncrit_h = math_max(0, math_floor(ch_plot * (s.noncrit / max_edps) + 0.5))
     local crit_h    = math_max(0, math_floor(ch_plot * (s.crit    / max_edps) + 0.5))
     xs[i]     = x + bw * 0.5
@@ -482,10 +820,10 @@ local function render_by_crit()
       tc:SetColor(C_CRIT.r, C_CRIT.g, C_CRIT.b, C_CRIT.a)
       tc:SetHidden(false)
     end
-  end)
+  end
 
-  if slot_w >= 3 then
-    for i = 2, n do
+  if col_w >= 3 then
+    for i = 2, m do
       local lt = controls.pool_line_edps:AcquireObject()
       lt:ClearAnchors()
       lt:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(top_hs[i-1] + TIME_STRIP_H))
@@ -497,7 +835,7 @@ local function render_by_crit()
   end
 end
 
-local function render_current_view()
+function render_current_view()
   if current_view == VIEW_BY_SKILL then
     render_by_skill()
   elseif current_view == VIEW_BY_OUTCOME then
@@ -511,6 +849,7 @@ local function refresh_button_colors()
   local recording = Vermilion.TemporalBuffer.is_recording()
   controls.btn_record:SetEnabled(not recording)
   controls.btn_stop:SetEnabled(recording)
+  update_hover_gate()
 end
 
 local function persist_view()
@@ -522,12 +861,15 @@ local function set_view(v)
   current_view = v
   controls.view_label:SetText(VIEW_LABELS[v])
   persist_view()
+  hover_key = nil   -- changing view drops any highlight from the old one
   if Vermilion.TemporalBuffer.count() == 0 then
     controls.no_data:SetHidden(false)
+    update_hover_gate()
     return
   end
   controls.no_data:SetHidden(true)
   render_current_view()
+  update_hover_gate()
 end
 
 local prof_enter = Vermilion.Profiler.enter
@@ -599,6 +941,7 @@ end
 
 function M.on_close_click()
   Vermilion.Visibility.set("graph", false)
+  stop_hover_poll(); hide_hover_ui(); hover_key = nil
   release_all_pools()
 end
 
@@ -646,7 +989,9 @@ function M.toggle()
   Vermilion.Visibility.set("graph", now_visible)
   if now_visible then
     render_current_view()
+    update_hover_gate()
   else
+    stop_hover_poll(); hide_hover_ui(); hover_key = nil
     release_all_pools()
   end
 end
@@ -706,6 +1051,17 @@ function M.init()
   controls.btn_record:SetText(GetString(VERMILION_GRAPH_RECORD))
   controls.btn_stop:SetText(GetString(VERMILION_GRAPH_STOP))
   controls.btn_flush:SetText(GetString(VERMILION_GRAPH_FLUSH))
+
+  -- colour-code the action buttons (brand colour propagated, ported from Verditer):
+  -- record = Vermilion crimson, stop = amber, flush = danger red.
+  local function tint_btn(btn, r, g, b)
+    btn:SetNormalFontColor(r, g, b, 1)
+    btn:SetMouseOverFontColor(math.min(1, r + 0.12), math.min(1, g + 0.12), math.min(1, b + 0.12), 1)
+    btn:SetPressedFontColor(r * 0.85, g * 0.85, b * 0.85, 1)
+  end
+  tint_btn(controls.btn_record, 0.95, 0.42, 0.34)   -- Vermilion crimson
+  tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)   -- amber
+  tint_btn(controls.btn_flush,  0.80, 0.30, 0.28)   -- danger red
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.no_data:SetText(GetString(VERMILION_GRAPH_NO_DATA))
@@ -715,6 +1071,37 @@ function M.init()
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
 
   controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
+
+  -- hover (Datadog scrubber): card + crosshair + transparent hit layer over the canvas
+  build_hover_card()
+  card_fader = make_fader(controls.card.root)
+
+  local crosshair = WINDOW_MANAGER:CreateControl("VermilionGraphCrosshair", controls.canvas, CT_TEXTURE)
+  crosshair:SetTexture(FILL_TEXTURE)
+  crosshair:SetTextureCoords(0, 0.05, 0, 1)
+  crosshair:SetWidth(1)
+  crosshair:SetColor(C_CROSSHAIR.r, C_CROSSHAIR.g, C_CROSSHAIR.b, C_CROSSHAIR.a)
+  crosshair:SetDrawLevel(15)
+  crosshair:SetAnchor(TOPLEFT,    controls.canvas, TOPLEFT,    0, 0)
+  crosshair:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, 0, 0)
+  crosshair:SetAlpha(0)
+  crosshair:SetHidden(true)
+  controls.crosshair = crosshair
+  crosshair_fader = make_fader(crosshair)
+
+  local hit_layer = WINDOW_MANAGER:CreateControl("VermilionGraphHit", controls.canvas, zc.CT_CONTROL)
+  hit_layer:SetAnchorFill(controls.canvas)
+  hit_layer:SetMouseEnabled(false)
+  hit_layer:SetHidden(true)
+  hit_layer:SetHandler("OnMouseEnter", function()
+    if hover_allowed() then zev.register_update("VermilionHoverPoll", 50, hover_poll) end
+  end)
+  hit_layer:SetHandler("OnMouseExit", function()
+    stop_hover_poll(); hide_hover_ui()
+    if hover_key ~= nil then hover_key = nil; render_current_view() end
+  end)
+  controls.hit = hit_layer
+
   update_header(0)
   zev.register_update("VermilionHeaderTick", 1000, header_tick)
   refresh_button_colors()

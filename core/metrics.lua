@@ -139,6 +139,7 @@ function M.eos_groups_into(out, now_ms)
       local c = SkillColors.group_color(g)
       slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
       slot.share = val / total
+      slot.key = g   -- stable group id (string) for the hover highlight + card name
     end
 
     -- out is reused, so its tail holds stale slots from bigger calls.

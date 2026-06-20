@@ -43,6 +43,7 @@ function M.push(timestamp, eDPS, ShDPS, crit, noncrit, src_groups)
     local d = dst[i]
     if d == nil then d = {}; dst[i] = d end
     d.r = s.r; d.g = s.g; d.b = s.b; d.a = s.a; d.share = s.share
+    d.key = s.key   -- stable group id (hover highlight + card name)
   end
   dst.count = n
 
