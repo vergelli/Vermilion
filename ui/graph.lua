@@ -103,16 +103,11 @@ local C_CARD_NAME   = { r = 1.00, g = 0.90, b = 0.88, a = 1.0 }
 local C_CARD_TIME   = { r = 0.72, g = 0.64, b = 0.62, a = 1.0 }
 local C_CROSSHAIR   = { r = 1.00, g = 0.50, b = 0.42, a = 0.50 }
 
-local C_CRIT_NONE = { r = 0.55, g = 0.55, b = 0.55, a = 0.85 }
-local C_CRIT_TEXT = { r = 0.92, g = 0.86, b = 0.80, a = 1.0 }
-
-local CRIT_GAUGE = {
-  idle  = "Vermilion/assets/crit/crit_idle.dds",
-  below = "Vermilion/assets/crit/crit_below.dds",
-  on    = "Vermilion/assets/crit/crit_on.dds",
-  above = "Vermilion/assets/crit/crit_above.dds",
-}
-local CRIT_MARGIN = 5
+local C_CRIT_IDLE  = { r = 0.55, g = 0.55, b = 0.55, a = 0.85 }
+local C_CRIT_BELOW = { r = 0.90, g = 0.32, b = 0.28, a = 1.0 }
+local C_CRIT_ON    = { r = 0.95, g = 0.78, b = 0.30, a = 1.0 }
+local C_CRIT_ABOVE = { r = 0.42, g = 0.85, b = 0.45, a = 1.0 }
+local CRIT_MARGIN  = 5
 
 -- small helpers
 local function fmt_val(v)
@@ -138,8 +133,10 @@ local function update_header(eos)
   controls.dps_icon:SetTexture(eos > 0 and DPS_ICON_ACTIVE or DPS_ICON_IDLE)
 end
 
-local function set_gauge(state)
-  if controls.gauge then controls.gauge:SetTexture(CRIT_GAUGE[state]) end
+local function apply_crit(c, txt)
+  controls.crit:SetText(txt)
+  controls.crit:SetColor(c.r, c.g, c.b, c.a)
+  if controls.icon then controls.icon:SetColor(c.r, c.g, c.b, c.a) end
 end
 
 local function update_crit(now)
@@ -147,23 +144,19 @@ local function update_crit(now)
   local crit, noncrit = Vermilion.Metrics.crit_split(now)
   local tot = crit + noncrit
   if tot <= 0 then
-    controls.crit:SetText("—")
-    controls.crit:SetColor(C_CRIT_NONE.r, C_CRIT_NONE.g, C_CRIT_NONE.b, C_CRIT_NONE.a)
-    set_gauge("idle")
+    apply_crit(C_CRIT_IDLE, "—")
     return
   end
   local pct = math_floor(crit / tot * 100 + 0.5)
-  controls.crit:SetText(pct .. "%")
-  controls.crit:SetColor(C_CRIT_TEXT.r, C_CRIT_TEXT.g, C_CRIT_TEXT.b, C_CRIT_TEXT.a)
-  local state
+  local c
   if pct < crit_threshold_pct - CRIT_MARGIN then
-    state = "below"
+    c = C_CRIT_BELOW
   elseif pct > crit_threshold_pct + CRIT_MARGIN then
-    state = "above"
+    c = C_CRIT_ABOVE
   else
-    state = "on"
+    c = C_CRIT_ON
   end
-  set_gauge(state)
+  apply_crit(c, pct .. "%")
 end
 
 local function header_tick()
@@ -1201,11 +1194,7 @@ function M.on_flush_click()
   refresh_button_colors()
   controls.status:SetText("")
   update_header(0)
-  if controls.crit then
-    controls.crit:SetText("—")
-    controls.crit:SetColor(C_CRIT_NONE.r, C_CRIT_NONE.g, C_CRIT_NONE.b, C_CRIT_NONE.a)
-    set_gauge("idle")
-  end
+  if controls.crit then apply_crit(C_CRIT_IDLE, "—") end
   controls.no_data:SetHidden(false)
 end
 
@@ -1289,7 +1278,7 @@ function M.init()
   controls.readout       = VermilionGraphWindowReadoutLabel
   controls.dps_icon      = VermilionGraphWindowDpsIcon
   controls.crit          = VermilionGraphWindowCritLabel
-  controls.gauge         = VermilionGraphWindowCritGauge
+  controls.icon          = VermilionGraphWindowCritIcon
 
   DamageTypeColors = Vermilion.DamageTypeColors
 
@@ -1351,9 +1340,7 @@ function M.init()
   controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
 
   crit_threshold_pct = sv.graph.crit_threshold_pct or crit_threshold_pct
-  controls.crit:SetText("—")
-  controls.crit:SetColor(C_CRIT_NONE.r, C_CRIT_NONE.g, C_CRIT_NONE.b, C_CRIT_NONE.a)
-  set_gauge("idle")
+  apply_crit(C_CRIT_IDLE, "—")
 
   build_hover_card()
   card_fader = make_fader(controls.card.root)
