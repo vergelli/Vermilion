@@ -64,10 +64,19 @@ for pct = 0, 100, 5 do
 end
 local VPALPHA_DEFAULT = 30
 
-local controls        = {}
-local current_sample  = SAMPLE_DEFAULT
-local current_twindow = TWINDOW_DEFAULT
-local current_vpalpha = VPALPHA_DEFAULT
+local CRITTHRESH_PRESETS = {}
+local CRITTHRESH_LABELS  = {}
+for pct = 0, 100, 5 do
+  CRITTHRESH_PRESETS[#CRITTHRESH_PRESETS + 1] = pct
+  CRITTHRESH_LABELS[pct] = pct .. "%"
+end
+local CRITTHRESH_DEFAULT = 50
+
+local controls          = {}
+local current_sample    = SAMPLE_DEFAULT
+local current_twindow   = TWINDOW_DEFAULT
+local current_vpalpha   = VPALPHA_DEFAULT
+local current_critthresh = CRITTHRESH_DEFAULT
 
 local function nearest_idx(presets, ms)
   local bi, bd = 1, math.huge
@@ -151,6 +160,7 @@ local function refresh_all_sliders()
   update_slider(c.track_sample,  c.fill_sample,  c.thumb_sample,  c.label_sample,  SAMPLE_PRESETS,  SAMPLE_LABELS,  current_sample)
   update_slider(c.track_twindow, c.fill_twindow, c.thumb_twindow, c.label_twindow, TWINDOW_PRESETS, TWINDOW_LABELS, current_twindow)
   update_slider(c.track_vpalpha, c.fill_vpalpha, c.thumb_vpalpha, c.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
+  update_slider(c.track_critthresh, c.fill_critthresh, c.thumb_critthresh, c.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
 end
 
 function M.toggle()
@@ -224,16 +234,32 @@ function M.on_vpalpha_track_click(control)
   update_slider(controls.track_vpalpha, controls.fill_vpalpha, controls.thumb_vpalpha, controls.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
 end
 
+function M.on_critthresh_track_click(control)
+  local cx      = GetUIMousePosition()
+  local track_w = control:GetWidth()
+  if track_w <= 0 then return end
+  local pct = math_max(0, math_min(1, (cx - control:GetLeft()) / track_w))
+  local idx = math_max(1, math_min(#CRITTHRESH_PRESETS, math_floor(pct * (#CRITTHRESH_PRESETS - 1) + 0.5) + 1))
+  current_critthresh = CRITTHRESH_PRESETS[idx]
+  log:info("crit_threshold ->", current_critthresh, "%")
+  persist_graph("crit_threshold_pct", current_critthresh)
+  Vermilion.Graph.set_crit_threshold(current_critthresh)
+  update_slider(controls.track_critthresh, controls.fill_critthresh, controls.thumb_critthresh, controls.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
+end
+
 function M.on_reset_click()
   log:info("reset to defaults")
-  current_sample  = SAMPLE_DEFAULT
-  current_twindow = TWINDOW_DEFAULT
-  current_vpalpha = VPALPHA_DEFAULT
+  current_sample     = SAMPLE_DEFAULT
+  current_twindow    = TWINDOW_DEFAULT
+  current_vpalpha    = VPALPHA_DEFAULT
+  current_critthresh = CRITTHRESH_DEFAULT
   persist_temporal("sample_rate_ms", current_sample)
   persist_temporal("time_window_s",  current_twindow)
   persist_graph("viewport_alpha_pct", current_vpalpha)
+  persist_graph("crit_threshold_pct", current_critthresh)
   reinit_buffer()
   Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
+  Vermilion.Graph.set_crit_threshold(current_critthresh)
   refresh_all_sliders()
 end
 
@@ -245,6 +271,7 @@ function M.snapshot()
     sample_rate_hz      = hz,
     time_window_s       = current_twindow,
     viewport_alpha_pct  = current_vpalpha,
+    crit_threshold_pct  = current_critthresh,
     temporal_capacity   = capacity,
     capacity_warn_above = CAPACITY_WARN_THRESHOLD,
   }
@@ -266,11 +293,13 @@ function M.init()
   sv.settings = sv.settings or {}
   sv.graph    = sv.graph    or {}
 
-  current_sample  = SAMPLE_PRESETS [nearest_idx(SAMPLE_PRESETS,  sv.temporal.sample_rate_ms     or SAMPLE_DEFAULT)]
-  current_twindow = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, sv.temporal.time_window_s      or TWINDOW_DEFAULT)]
-  current_vpalpha = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]
+  current_sample     = SAMPLE_PRESETS [nearest_idx(SAMPLE_PRESETS,  sv.temporal.sample_rate_ms     or SAMPLE_DEFAULT)]
+  current_twindow    = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, sv.temporal.time_window_s      or TWINDOW_DEFAULT)]
+  current_vpalpha    = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]
+  current_critthresh = CRITTHRESH_PRESETS[nearest_idx(CRITTHRESH_PRESETS, sv.graph.crit_threshold_pct or CRITTHRESH_DEFAULT)]
 
   reinit_buffer()
+  Vermilion.Graph.set_crit_threshold(current_critthresh)
 
   controls.window         = VermilionSettingsPanel
   controls.window_title   = VermilionSettingsPanelWindowTitle
@@ -286,6 +315,9 @@ function M.init()
   controls.title_vpalpha  = VermilionSettingsPanelVPAlphaTitle
   controls.label_vpalpha  = VermilionSettingsPanelVPAlphaLabel
   controls.track_vpalpha  = VermilionSettingsPanelSliderTrackVPAlpha
+  controls.title_critthresh = VermilionSettingsPanelCritThreshTitle
+  controls.label_critthresh = VermilionSettingsPanelCritThreshLabel
+  controls.track_critthresh = VermilionSettingsPanelSliderTrackCritThresh
   controls.reset_btn      = VermilionSettingsPanelResetBtn
   controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
   controls.unknown_label  = VermilionSettingsPanelUnknownLabel
@@ -310,10 +342,15 @@ function M.init()
   controls.title_vpalpha:SetColor(0.75, 0.75, 0.75, 1)
   controls.label_vpalpha:SetColor(0.95, 0.80, 0.20, 1)
 
+  controls.title_critthresh:SetText(GetString(VERMILION_SETTING_CRIT_THRESHOLD))
+  controls.title_critthresh:SetColor(0.75, 0.75, 0.75, 1)
+  controls.label_critthresh:SetColor(0.95, 0.80, 0.20, 1)
+
   local c = controls
   c.fill_sample,  c.thumb_sample  = setup_slider_visuals(c.track_sample,  "VermilionSettingsSample")
   c.fill_twindow, c.thumb_twindow = setup_slider_visuals(c.track_twindow, "VermilionSettingsTWindow")
   c.fill_vpalpha, c.thumb_vpalpha = setup_slider_visuals(c.track_vpalpha, "VermilionSettingsVPAlpha")
+  c.fill_critthresh, c.thumb_critthresh = setup_slider_visuals(c.track_critthresh, "VermilionSettingsCritThresh")
 
   if sv.settings.x and sv.settings.y then
     controls.window:ClearAnchors()

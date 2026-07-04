@@ -82,7 +82,7 @@ function M.dispatch_damage_out(result, isError, _name, _g, _slot,
 
   local t = now()
   prof_enter("pipeline.combat_event.acquisition")
-  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
+  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, _dt)
   prof_exit("pipeline.combat_event.acquisition")
   run_stages(ev, "engine.damage.accepted")
   prof_exit("pipeline.combat_event")

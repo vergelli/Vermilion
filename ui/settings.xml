@@ -13,7 +13,7 @@
                      movable="true"
                      mouseEnabled="true">
 
-      <Dimensions x="280" y="290"/>
+      <Dimensions x="280" y="326"/>
 
       <OnMoveStop>Vermilion.Settings.on_move_stop()</OnMoveStop>
 
@@ -122,6 +122,30 @@
           <Anchor point="TOPRIGHT" offsetX="-14" offsetY="139"/>
           <Dimensions y="14"/>
           <OnMouseUp>Vermilion.Settings.on_vpalpha_track_click(self)</OnMouseUp>
+        </Control>
+
+        <!-- ── Row 4: Crit-rate threshold ──────────────────────────────── -->
+        <Label name="$(parent)CritThreshTitle"
+               font="ZoFontGameSmall"
+               horizontalAlignment="LEFT"
+               verticalAlignment="CENTER">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="162"/>
+          <Dimensions x="160" y="12"/>
+        </Label>
+
+        <Label name="$(parent)CritThreshLabel"
+               font="ZoFontGameSmall"
+               horizontalAlignment="RIGHT"
+               verticalAlignment="CENTER">
+          <Anchor point="TOPRIGHT" offsetX="-14" offsetY="162"/>
+          <Dimensions x="80" y="12"/>
+        </Label>
+
+        <Control name="$(parent)SliderTrackCritThresh" mouseEnabled="true">
+          <Anchor point="TOPLEFT"  offsetX="14"  offsetY="177"/>
+          <Anchor point="TOPRIGHT" offsetX="-14" offsetY="177"/>
+          <Dimensions y="14"/>
+          <OnMouseUp>Vermilion.Settings.on_critthresh_track_click(self)</OnMouseUp>
         </Control>
 
         <!-- ── Unknown Contributions entry (opens the assignment window) ── -->
