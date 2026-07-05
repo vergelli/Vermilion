@@ -105,12 +105,12 @@ jobs:
       - name: Verify staged textures
         # The bug that broke the released glow: assets/ omitted from the zip.
         # Fail loudly if ANY texture referenced as "Vermilion/assets/...dds" in
-        # the XML is missing from staging. `for` (not pipe-to-while) so the
+        # XML or Lua is missing from staging. `for` (not pipe-to-while) so the
         # missing flag survives in the main shell.
         run: |
           missing=0
-          refs=$(grep -rhoE 'Vermilion/assets/[A-Za-z0-9_./-]+\.dds' ui/ | sort -u)
-          if [ -z "$refs" ]; then echo "::warning::no Vermilion/assets textures referenced in ui/ XML"; fi
+          refs=$(grep -rhoE 'Vermilion/assets/[A-Za-z0-9_./-]+\.dds' ui/ core/ pipeline/ lib/ observability/ zenimax/ Vermilion.lua | sort -u)
+          if [ -z "$refs" ]; then echo "::warning::no Vermilion/assets textures referenced in code"; fi
           for ref in $refs; do
             rel="${ref#Vermilion/}"
             if [ -f "staging/Vermilion/$rel" ]; then
@@ -120,6 +120,11 @@ jobs:
               missing=1
             fi
           done
+          if ! diff -rq assets staging/Vermilion/assets; then
+            echo "::error::staging/Vermilion/assets does not match repo assets/"
+            missing=1
+          fi
+          echo "ok: assets/ tree matches staging ($(find assets -type f | wc -l) files)"
           if [ "$missing" -ne 0 ]; then exit 1; fi
 
       - name: Verify folder casing
