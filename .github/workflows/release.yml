@@ -82,6 +82,14 @@ jobs:
             exit 1
           fi
 
+      - name: Verify DEBUG key is off
+        run: |
+          if ! grep -qE '^\s*DEBUG\s*=\s*false' core/constants.lua; then
+            echo "::error::DEBUG is not false in core/constants.lua — never ship a dev build"
+            exit 1
+          fi
+          echo "DEBUG key verified off."
+
       - name: Stage release files
         # ALLOWLIST. Manifest-loaded code PLUS assets/ (textures referenced by
         # XML but not in the manifest file list). If you add a new top-level
@@ -101,6 +109,19 @@ jobs:
             Vermilion.lua \
             Vermilion.txt \
             staging/Vermilion/
+
+      - name: Strip hidden and junk files from staging
+        # ESOUI rejects any dot-prefixed file in the zip, including empty
+        # .gitkeep placeholders. Belt and suspenders on top of the allowlist.
+        run: |
+          find staging -name ".*" -not -name "." -not -name ".." -print -exec rm -rf {} + || true
+          find staging \( -name "Thumbs.db" -o -name "desktop.ini" -o -name ".DS_Store" -o -name "__MACOSX" \) -print -exec rm -rf {} + || true
+          leftover=$(find staging -name ".*" -not -name "." -not -name ".." | wc -l)
+          if [ "$leftover" -ne 0 ]; then
+            echo "::error::hidden files still present in staging"
+            exit 1
+          fi
+          echo "Staging clean of hidden/junk files."
 
       - name: Verify staged textures
         # The bug that broke the released glow: assets/ omitted from the zip.

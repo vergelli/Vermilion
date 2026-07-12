@@ -3,6 +3,15 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [0.9.0] - 2026-07-12
+
+- New DAMAGE TYPE view: your damage split and colored by damage type (fire, shock, poison, disease, bleed, physical, magic and friends), with per-type icons.
+- New crit threshold setting (0-100%, default 50%) driving the crit display.
+- Crit display redrawn with UI components instead of textures: crisper at every scale.
+- Smoother memory behavior: incremental garbage-collection pacing (no more GC spikes mid-fight).
+- Sample rate is now capped at 5 Hz (was 10). The 6-10 Hz options doubled the cost for no perceptible visual gain; saved settings above 5 Hz are clamped automatically.
+- Release pipeline hardening: staged-texture guard, hidden-file strip and a dev-keys-off check.
+
 ## [0.8.0] - 2026-06-07
 
 First public beta — the crimson twin of [Verdant](https://www.esoui.com/downloads/info4557-Verdant.html).
