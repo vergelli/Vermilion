@@ -158,6 +158,19 @@
           <Dimensions x="92" y="26"/>
         </Label>
 
+        <Label name="$(parent)CritLabel"
+               font="ZoFontGame"
+               horizontalAlignment="RIGHT"
+               verticalAlignment="CENTER">
+          <Anchor point="RIGHT" relativeTo="$(parent)SettingsBtn" relativePoint="LEFT" offsetX="-6" offsetY="0"/>
+          <Dimensions x="34" y="18"/>
+        </Label>
+
+        <Texture name="$(parent)CritIcon" textureFile="EsoUI/Art/LFG/LFG_icon_dps.dds">
+          <Anchor point="RIGHT" relativeTo="$(parent)CritLabel" relativePoint="LEFT" offsetX="-3" offsetY="0"/>
+          <Dimensions x="20" y="20"/>
+        </Texture>
+
         <!-- View navigation: [<<] [SKILL] [>] — in the controls row, far right,
              matching Verdant's layout (the DPS readout moved up to the title). -->
         <Button name="$(parent)PrevViewBtn"

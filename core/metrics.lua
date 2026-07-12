@@ -13,6 +13,7 @@ local event_pool
 local log = Vermilion.Log.for_module("metrics")
 
 local SkillColors
+local DamageTypeColors
 
 local CRIT_DMG, CRIT_DOT
 
@@ -40,7 +41,8 @@ function M.init()
   damage_out_buf = RingBuffer.new(W_MS,        2048, release_to_pool)
   shield_out_buf = RingBuffer.new(W_SHIELD_MS,  512, release_to_pool)
 
-  SkillColors = Vermilion.SkillColors
+  SkillColors     = Vermilion.SkillColors
+  DamageTypeColors = Vermilion.DamageTypeColors
 
   local zc = Vermilion.zenimax.constants
   CRIT_DMG = zc.ACTION_RESULT_CRITICAL_DAMAGE
@@ -139,6 +141,7 @@ function M.eos_groups_into(out, now_ms)
       local c = SkillColors.group_color(g)
       slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
       slot.share = val / total
+      slot.key = g   -- stable group id (string) for the hover highlight + card name
     end
 
     -- out is reused, so its tail holds stale slots from bigger calls.
@@ -154,6 +157,143 @@ function M.eos_groups_into(out, now_ms)
     end
   end
   out.count = n   -- readers loop 1..count, never #out
+  return n
+end
+
+local function sort_shares_desc(out, n)
+  for i = 2, n do
+    local key = out[i]
+    local ks  = key.share
+    local j   = i - 1
+    while j >= 1 and out[j].share < ks do
+      out[j + 1] = out[j]
+      j = j - 1
+    end
+    out[j + 1] = key
+  end
+end
+
+local ab_amt = {}
+local ab_grp = {}
+
+function M.eos_abilities_into(out, now_ms)
+  for k in pairs(ab_amt) do ab_amt[k] = nil end
+  for k in pairs(ab_grp) do ab_grp[k] = nil end
+  local ws    = W_MS / 1000
+  local wss   = W_SHIELD_MS / 1000
+  local total = 0
+
+  damage_out_buf:trim(now_ms)
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e   = damage_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local id = e.ability_id or 0
+      local r  = amt / ws
+      ab_amt[id] = (ab_amt[id] or 0) + r
+      if ab_grp[id] == nil then ab_grp[id] = SkillColors.group_of(id) end
+      total = total + r
+    end
+  end
+
+  shield_out_buf:trim(now_ms)
+  for i = shield_out_buf.head, shield_out_buf.tail do
+    local e   = shield_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local id = e.ability_id or 0
+      local r  = amt / wss
+      ab_amt[id] = (ab_amt[id] or 0) + r
+      if ab_grp[id] == nil then ab_grp[id] = SkillColors.group_of(id) end
+      total = total + r
+    end
+  end
+
+  local n = 0
+  if total > 0 then
+    for id, amt in pairs(ab_amt) do
+      n = n + 1
+      local slot = out[n]
+      if not slot then slot = {}; out[n] = slot end
+      local g = ab_grp[id] or "other"
+      local c = SkillColors.group_color(g)
+      slot.id = id; slot.share = amt / total; slot.key = g
+      slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
+    end
+    sort_shares_desc(out, n)
+  end
+  out.count = n
+  return n
+end
+
+local dt_buckets = {}
+
+function M.dtype_groups_into(out, now_ms)
+  for k in pairs(dt_buckets) do dt_buckets[k] = nil end
+  local ws    = W_MS / 1000
+  local total = 0
+  damage_out_buf:trim(now_ms)
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e   = damage_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local r  = amt / ws
+      local dt = e.damage_type or 0
+      dt_buckets[dt] = (dt_buckets[dt] or 0) + r
+      total = total + r
+    end
+  end
+  local n = 0
+  if total > 0 then
+    for dt, val in pairs(dt_buckets) do
+      n = n + 1
+      local slot = out[n]
+      if not slot then slot = {}; out[n] = slot end
+      local c = DamageTypeColors.lookup(dt)
+      slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
+      slot.share = val / total
+      slot.key = dt
+    end
+    sort_shares_desc(out, n)
+  end
+  out.count = n
+  return n
+end
+
+local dta_amt = {}
+local dta_dt  = {}
+
+function M.dtype_abilities_into(out, now_ms)
+  for k in pairs(dta_amt) do dta_amt[k] = nil end
+  for k in pairs(dta_dt)  do dta_dt[k]  = nil end
+  local ws    = W_MS / 1000
+  local total = 0
+  damage_out_buf:trim(now_ms)
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e   = damage_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local id = e.ability_id or 0
+      local r  = amt / ws
+      dta_amt[id] = (dta_amt[id] or 0) + r
+      if dta_dt[id] == nil then dta_dt[id] = e.damage_type or 0 end
+      total = total + r
+    end
+  end
+  local n = 0
+  if total > 0 then
+    for id, amt in pairs(dta_amt) do
+      n = n + 1
+      local slot = out[n]
+      if not slot then slot = {}; out[n] = slot end
+      local dt = dta_dt[id] or 0
+      local c  = DamageTypeColors.lookup(dt)
+      slot.id = id; slot.share = amt / total; slot.key = dt
+      slot.r = c.r; slot.g = c.g; slot.b = c.b; slot.a = c.a
+    end
+    sort_shares_desc(out, n)
+  end
+  out.count = n
   return n
 end
 

@@ -341,6 +341,9 @@ function M.unknown_lines()
   return lines
 end
 
+function M.ability_icon(id) return GetAbilityIcon(id) or "" end
+function M.ability_name(id) return GetAbilityName(id) or ("#" .. tostring(id)) end
+
 function M.group_shares(buf, now_ms, predicate)
   buf:trim(now_ms)
   local buckets = {}

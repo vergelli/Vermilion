@@ -3,7 +3,7 @@ local Vermilion = Vermilion
 
 Vermilion.Constants = {
   ADDON_NAME    = "Vermilion",
-  VERSION       = "0.8.0",
+  VERSION       = "0.9.0",
   SLASH_COMMAND = "/vermilion",
 
   DEBUG         = false,
@@ -41,6 +41,15 @@ Vermilion.Constants = {
 
   POOL = {
     EVENT_CAPACITY = 4096,
+  },
+
+  -- GC pacing (ported from Verditer): drive a little GC each frame so the incremental
+  -- collector never bursts into a render-frame hitch. STEP_KB = step size; INTERVAL_MS
+  -- 0 = every frame. PACING=false disables (A/B).
+  GC = {
+    PACING      = true,
+    STEP_KB     = 2,
+    INTERVAL_MS = 0,
   },
 
   ABILITY_KIND = {

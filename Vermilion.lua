@@ -145,6 +145,7 @@ local function on_addon_loaded()
 
 
   if C.DEBUG then Vermilion.Probe.init() end
+  Vermilion.GC.init()          -- GC pacing (ported): smooth the incremental collector
   Vermilion.Pipeline.init()
   Vermilion.Logo.init()
   Vermilion.Settings.init()
