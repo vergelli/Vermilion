@@ -3,6 +3,10 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [0.9.1] - 2026-07-12
+
+- The damage-type icon on the hover card doubles in size (14px chip to a 28px icon spanning the name and stat lines); the SKILL view keeps its color chip untouched.
+
 ## [0.9.0] - 2026-07-12
 
 - New DAMAGE TYPE view: your damage split and colored by damage type (fire, shock, poison, disease, bleed, physical, magic and friends), with per-type icons.
