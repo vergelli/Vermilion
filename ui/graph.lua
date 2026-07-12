@@ -545,13 +545,31 @@ local function position_card(mx, my)
   fade_in(card_fader)
 end
 
+local function card_layout(card, iconMode)
+  if card.iconMode == iconMode then return end
+  card.iconMode = iconMode
+  local s = iconMode and 28 or 14
+  local textX = iconMode and 46 or 28
+  card.swatch:SetDimensions(s, s)
+  card.swatch:ClearAnchors()
+  card.swatch:SetAnchor(TOPLEFT, card.root, TOPLEFT, iconMode and 10 or 12, iconMode and 6 or 7)
+  card.name:ClearAnchors()
+  card.name:SetAnchor(TOPLEFT, card.root, TOPLEFT, textX, 6)
+  card.name:SetDimensions(CARD_W - textX - 8, 16)
+  card.stat:ClearAnchors()
+  card.stat:SetAnchor(TOPLEFT, card.root, TOPLEFT, iconMode and textX or 12, 24)
+  card.stat:SetDimensions(CARD_W - (iconMode and textX or 12) - 8, 14)
+end
+
 local function swatch_solid(card, r, g, b)
+  card_layout(card, false)
   card.swatch:SetTexture(FILL_TEXTURE)
   card.swatch:SetTextureCoords(0, 1, 0, 0.05)
   card.swatch:SetColor(r, g, b, 1.0)
 end
 
 local function swatch_icon(card, path)
+  card_layout(card, true)
   card.swatch:SetTexture(path)
   card.swatch:SetTextureCoords(0, 1, 0, 1)
   card.swatch:SetColor(1, 1, 1, 1)
