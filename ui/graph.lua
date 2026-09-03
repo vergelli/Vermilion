@@ -768,6 +768,7 @@ local function render_by_skill()
 
   local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, eos_hs = rsk_xs, rsk_eos_hs
+  local bwu = math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
   if capture then hit_begin(m) end
@@ -776,7 +777,7 @@ local function render_by_skill()
     local s = dec_cols[i]
     local left, right = dec_rect(s.c, num_cols, cw)
     local x   = left
-    local bw  = math_max(1, right - left - bar_gap)
+    local bw  = bwu
     local eos = s.eDPS + s.ShDPS
     local col_h = math_max(0, math_floor(ch_plot * (eos / max_eos) + 0.5))
     xs[i]     = x + bw * 0.5
@@ -868,6 +869,7 @@ local function render_by_type()
 
   local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, edps_hs = rty_xs, rty_edps_hs
+  local bwu = math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
   if capture then hit_begin(m) end
@@ -876,7 +878,7 @@ local function render_by_type()
     local s = dec_cols[i]
     local left, right = dec_rect(s.c, num_cols, cw)
     local x    = left
-    local bw   = math_max(1, right - left - bar_gap)
+    local bw   = bwu
     local edps = s.edps_peak or 0
     local col_h = math_max(0, math_floor(ch_plot * (edps / max_edps) + 0.5))
     xs[i]      = x + bw * 0.5
@@ -959,6 +961,7 @@ local function render_by_outcome()
 
   local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, edps_hs, eos_hs = rout_xs, rout_edps_hs, rout_eos_hs
+  local bwu = math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   if capture then hit_begin(m) end
 
@@ -966,7 +969,7 @@ local function render_by_outcome()
     local s = dec_cols[i]
     local left, right = dec_rect(s.c, num_cols, cw)
     local x       = left
-    local bw      = math_max(1, right - left - bar_gap)
+    local bw      = bwu
     if capture then hit_col(i, left, right - left, s) end
     local edps_h  = math_max(0, math_floor(ch_plot * (s.eDPS  / max_eos) + 0.5))
     local shdps_h = math_max(0, math_floor(ch_plot * (s.ShDPS / max_eos) + 0.5))
@@ -1052,6 +1055,7 @@ local function render_by_crit()
 
   local m, num_cols, col_w, bar_gap = decimate(cw)
   local xs, top_hs = rcr_xs, rcr_top_hs
+  local bwu = math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   if capture then hit_begin(m) end
 
@@ -1059,7 +1063,7 @@ local function render_by_crit()
     local s = dec_cols[i]
     local left, right = dec_rect(s.c, num_cols, cw)
     local x         = left
-    local bw        = math_max(1, right - left - bar_gap)
+    local bw        = bwu
     if capture then hit_col(i, left, right - left, s) end
     local noncrit_h = math_max(0, math_floor(ch_plot * (s.noncrit / max_edps) + 0.5))
     local crit_h    = math_max(0, math_floor(ch_plot * (s.crit    / max_edps) + 0.5))
