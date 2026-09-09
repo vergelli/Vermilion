@@ -23,6 +23,12 @@ local CASES = {
   "button_manners",
   "settings_panel",
   "user_profiles",
+  "pixel_grid",
+  "grow_to_fill",
+  "view_tabs",
+  "light_mode",
+  "report_card",
+  "polish",
 }
 
 local passed, failed = 0, 0

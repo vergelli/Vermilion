@@ -48,6 +48,11 @@ local function on_slash(input)
     elseif cmd == "autorec" then
       for _, line in ipairs(Vermilion.AutoRecord.report_lines()) do d("[Vm] " .. line) end
       return
+    elseif cmd == "grid" then
+      local on = not Vermilion.Graph.pixel_grid()
+      Vermilion.Graph.set_pixel_grid(on)
+      d("[Vm] pixel grid: " .. (on and "on" or "off"))
+      return
     elseif cmd == "sessions" then
       for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
       return
