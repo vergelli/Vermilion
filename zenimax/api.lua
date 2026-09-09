@@ -19,6 +19,7 @@ M.GetWorldName            = GetWorldName
 M.GetString = GetString
 
 M.IsUnitGrouped           = IsUnitGrouped
+M.IsUnitInCombat          = IsUnitInCombat
 M.GetGroupSize            = GetGroupSize
 M.GetUnitName             = GetUnitName
 M.GetUnitDisplayName      = GetUnitDisplayName
