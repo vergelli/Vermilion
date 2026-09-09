@@ -6,6 +6,8 @@ Vermilion.Constants = {
   VERSION       = "0.9.1",
   SLASH_COMMAND = "/vermilion",
 
+  DEV           = false,
+  MODE          = "",
   DEBUG         = false,
 
   SV_TABLE   = "VermilionSavedVars",
@@ -66,3 +68,5 @@ Vermilion.Constants = {
     ["graph.sample_tick"]                 = 15.0,
   },
 }
+
+Vermilion.Constants.DEBUG = (Vermilion.Constants.DEV == true and Vermilion.Constants.MODE == "DEBUG")
