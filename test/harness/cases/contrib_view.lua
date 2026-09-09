@@ -57,16 +57,25 @@ return function(H)
     if c._hidden == false and name:find("^VermilionContribLbl") and c._text == "Big Hit" then big_rows = big_rows + 1 end
   end
   ok(big_rows == 1, "a skill with two ability ids renders as one row, got " .. big_rows)
-  ok(texts["Shield"], "type column must read Shield for the ward")
-  ok(texts[Vermilion.DamageTypeColors.name(DAMAGE_TYPE_FIRE)] and texts[Vermilion.DamageTypeColors.name(DAMAGE_TYPE_POISON)],
-     "type column must name the damage types")
+  ok(texts["Shield"] == nil and texts[Vermilion.DamageTypeColors.name(DAMAGE_TYPE_FIRE)] == nil, "the type column carries icons, not words")
 
-  local icons = 0
+  local icons, type_icons = 0, {}
   for _, c in ipairs(H.controls) do
     local name = c._name or ""
-    if c._hidden == false and name:find("^VermilionContribIcon") then icons = icons + 1 end
+    if c._hidden == false and name:find("^VermilionContribIcon") then
+      icons = icons + 1
+      if (c._tex or ""):find("dtype/", 1, true) or (c._tex or ""):find("tabIcon_shield", 1, true) then type_icons[c._tex] = true end
+    end
   end
-  ok(icons == 3, "one icon per row, got " .. icons)
+  ok(icons == 6, "an ability icon and a type icon per row, got " .. icons)
+  ok(type_icons["Vermilion/assets/dtype/fire.dds"] and type_icons["Vermilion/assets/dtype/poison.dds"], "damage rows wear their damage-type icon")
+  ok(type_icons["EsoUI/Art/Inventory/inventory_tabIcon_shield_up.dds"], "the shield row wears the shield icon")
+  local zebra = 0
+  for _, c in ipairs(H.controls) do
+    local name = c._name or ""
+    if c._hidden == false and name:find("^VermilionContribSeg") and c._h == 26 and c._a and math.abs(c._a - 0.025) < 1e-6 then zebra = zebra + 1 end
+  end
+  ok(zebra == 1, "every second row wears a faint band, got " .. zebra)
 
   local widths, rims = {}, 0
   for _, c in ipairs(H.controls) do
@@ -101,6 +110,8 @@ return function(H)
   ok(VermilionHoverCardName._text == "Big Hit", "hovering the first row must name the skill, got " .. tostring(VermilionHoverCardName._text))
   ok(VermilionHoverCardStat._text and VermilionHoverCardStat._text:find("%d+%%") and VermilionHoverCardStat._text:find("estimated", 1, true),
      "row hover must show share and the estimate note, got " .. tostring(VermilionHoverCardStat._text))
+  ok(VermilionHoverCardStat._text:find(Vermilion.DamageTypeColors.name(DAMAGE_TYPE_FIRE), 1, true), "row hover names the damage type, got " .. tostring(VermilionHoverCardStat._text))
+  ok(VermilionHoverCardSwatch._tex == "Vermilion/assets/dtype/fire.dds", "the card swatch is the damage-type icon, got " .. tostring(VermilionHoverCardSwatch._tex))
   ok(VermilionHoverCardStat._text:find("2 parts", 1, true), "row hover must count the merged ability ids, got " .. tostring(VermilionHoverCardStat._text))
   ok(CV.hovered() ~= nil and CV.hovered().name == "Big Hit" and band_count() == 1, "the hovered row wears a band")
   H.state.mouse_y = canvas:GetTop() + canvas:GetHeight() + 40
