@@ -29,6 +29,8 @@ local CASES = {
   "light_mode",
   "report_card",
   "polish",
+  "contrib_view",
+  "scroll_views",
 }
 
 local passed, failed = 0, 0

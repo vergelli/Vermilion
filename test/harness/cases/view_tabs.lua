@@ -8,8 +8,8 @@ return function(H)
   local view_label = VermilionGraphWindowViewLabel
   while view_label._text ~= "SKILL" do G.next_view() end
 
-  local names = { "SKILL", "TYPE", "OUTCOME", "CRIT" }
-  for v = 1, 4 do
+  local names = { "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB" }
+  for v = 1, 5 do
     local lbl = rawget(_G, "VermilionGraphTab" .. v .. "Label")
     local hit = rawget(_G, "VermilionGraphTab" .. v)
     ok(lbl and lbl._text == names[v], "tab " .. v .. " must read " .. names[v])
@@ -31,8 +31,8 @@ return function(H)
   VermilionGraphTab3._onOnMouseUp(VermilionGraphTab3, nil, true)
   ok(#H.sounds == 0, "clicking the active tab stays silent")
 
-  VermilionGraphTab4._onOnMouseUp(VermilionGraphTab4, nil, true)
-  ok(view_label._text == "CRIT", "the last tab reaches CRIT")
+  VermilionGraphTab5._onOnMouseUp(VermilionGraphTab5, nil, true)
+  ok(view_label._text == "CONTRIB", "the last tab reaches CONTRIB")
   G.next_view()
   ok(view_label._text == "SKILL" and VermilionGraphTab1Line._hidden == false, "arrow navigation still updates the tabs")
   ok(G.step_view(1) == true and view_label._text == "TYPE", "the keybind steps forward")
@@ -41,8 +41,8 @@ return function(H)
   local strip = VermilionGraphWindowTabs
   local w = strip:GetWidth()
   ok(w > 0, "the strip must have a width")
-  local tw = math.floor(w / 4)
-  ok(VermilionGraphTab1._w == tw and VermilionGraphTab4._w == tw, "tabs share the strip evenly")
+  local tw = math.floor(w / 5)
+  ok(VermilionGraphTab1._w == tw and VermilionGraphTab5._w == tw, "tabs share the strip evenly")
   ok(VermilionGraphWindowPrevViewBtn._hidden ~= false, "the old arrows are not part of the chrome anymore")
 
   Vermilion.SavedVars.settings.light_mode = true
