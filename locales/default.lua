@@ -49,7 +49,7 @@ ZO_CreateStringId("VERMILION_HELP_HELP",    "  /vermilion help    show this list
 ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analysis")
 ZO_CreateStringId("VERMILION_GRAPH_RECORD",  "Record")
 ZO_CreateStringId("VERMILION_GRAPH_STOP",    "Stop")
-ZO_CreateStringId("VERMILION_GRAPH_FLUSH",   "Flush")
+ZO_CreateStringId("VERMILION_GRAPH_FLUSH",   "New")
 ZO_CreateStringId("VERMILION_GRAPH_NO_DATA", "No data. Press |t14:14:Vermilion/assets/rec.dds|t Record during combat.\nVermilion counts only YOUR damage and shields.")
 
 ZO_CreateStringId("VERMILION_LIB_SAVED",     "Recording saved to the library: %s, %s. Open it with /vermilion lib.")

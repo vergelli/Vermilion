@@ -20,6 +20,8 @@ local MAX_TRACKED = 48
 
 local by_id      = {}
 local by_name    = {}
+local slotted_names = {}
+local slotted_keys  = {}
 local excluded   = {}
 local n_excluded = 0
 local EXCLUDED_CAP = 20
@@ -98,6 +100,35 @@ local function resolve_desc(id)
   return ""
 end
 
+local function skill_key_of(id)
+  local st, li, si = Vermilion.zenimax.api.GetSpecificSkillAbilityKeysByAbilityId(id)
+  if st and st > 0 and li and si then
+    return st * 100000 + li * 1000 + si
+  end
+  return nil
+end
+
+local function scan_slotted()
+  local api = Vermilion.zenimax.api
+  local zc  = Vermilion.zenimax.constants
+  local n   = 0
+  for _, cat in ipairs({ zc.HOTBAR_CATEGORY_PRIMARY, zc.HOTBAR_CATEGORY_BACKUP }) do
+    for slot = 3, 8 do
+      local id = api.GetSlotBoundId(slot, cat)
+      if id and id > 0 then
+        local name = api.GetAbilityName(id)
+        if name and name ~= "" and not slotted_names[name] then
+          slotted_names[name] = true
+          n = n + 1
+        end
+        local key = skill_key_of(id)
+        if key then slotted_keys[key] = true end
+      end
+    end
+  end
+  if n > 0 then log:info("slotted scan:", n, "ability names") end
+end
+
 local function is_enemy_tag(tag)
   if tag == nil or tag == "" then return true end
   if tag == "player" then return false end
@@ -124,6 +155,22 @@ local function get_rec(id)
     if rec.desc == "" then rec.desc = resolve_desc(id) end
     bump("debuffs.alias_merged")
     return rec
+  end
+  if slotted_names[name] then
+    bump("debuffs.skipped_slotted")
+    note_excluded(id, nil, "slotted ability")
+    return nil
+  end
+  local skey = skill_key_of(id)
+  if skey then
+    bump("debuffs.skipped_skill")
+    note_excluded(id, nil, slotted_keys[skey] and "slotted ability (renamed effect)" or "skill effect")
+    return nil
+  end
+  if Vermilion.zenimax.api.IsAbilityPassive and Vermilion.zenimax.api.IsAbilityPassive(id) then
+    bump("debuffs.skipped_passive")
+    note_excluded(id, nil, "passive skill")
+    return nil
   end
   if n_tracked >= MAX_TRACKED then
     bump("debuffs.dropped_capacity")
@@ -249,6 +296,29 @@ function M.on_effect(changeType, abilityId, unitId, endTime, now_ms, unitTag, ef
   end
 end
 
+local function purge_slotted_matches()
+  for i = n_tracked, 1, -1 do
+    local rec = order[i]
+    if slotted_names[rec.name] then
+      bump("debuffs.purged_rescan")
+      note_excluded(rec.ids[1], nil, "slotted ability (bar swap rescan)")
+      for k = 1, rec.n_ids do by_id[rec.ids[k]] = nil end
+      by_name[rec.name] = nil
+      table.remove(order, i)
+      n_tracked = n_tracked - 1
+      n_free = n_free + 1
+      free_recs[n_free] = rec
+    end
+  end
+end
+
+function M.on_bars_changed()
+  if not recording then return end
+  bump("debuffs.bars_rescan")
+  scan_slotted()
+  purge_slotted_matches()
+end
+
 function M.expire_stale(now_ms)
   local now_s = now_ms / 1000
   for i = 1, n_tracked do
@@ -267,6 +337,9 @@ function M.start_session(now_ms)
   wipe(by_name)
   wipe(excluded)
   n_excluded = 0
+  wipe(slotted_names)
+  wipe(slotted_keys)
+  scan_slotted()
   for i = 1, n_tracked do
     local rec = order[i]
     n_free = n_free + 1
@@ -393,11 +466,15 @@ function M.report_lines()
   end
   if n_tracked == 0 then lines[#lines + 1] = "(no debuffs tracked this session)" end
   if n_excluded > 0 then
-    lines[#lines + 1] = string.format("excluded as non-debuffs (%d):", n_excluded)
+    lines[#lines + 1] = string.format("excluded (%d):", n_excluded)
     for name, e in pairs(excluded) do
       lines[#lines + 1] = string.format("  %-28s %s  (id=%d effectType=%d)", name, e.why, e.id, e.et)
     end
   end
+  local sn = {}
+  for name in pairs(slotted_names) do sn[#sn + 1] = name end
+  table_sort(sn)
+  lines[#lines + 1] = "slotted filter: " .. ((#sn > 0) and table.concat(sn, ", ") or "(empty scan)")
   return lines
 end
 

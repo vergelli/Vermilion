@@ -39,6 +39,7 @@ M.GetAbilityIcon                         = GetAbilityIcon
 M.GetSpecificSkillAbilityKeysByAbilityId = GetSpecificSkillAbilityKeysByAbilityId
 M.GetSkillLineId                         = GetSkillLineId
 M.GetAbilityDescription                  = GetAbilityDescription
+M.IsAbilityPassive                       = IsAbilityPassive
 
 M.GetUnitZone      = GetUnitZone
 M.GetTimeStamp     = GetTimeStamp
