@@ -42,6 +42,9 @@ local function on_slash(input)
           .. "  (subcmd: start | stop | save | clear | auto)")
       end
       return
+    elseif cmd == "sound" then
+      Vermilion.Sound.audition(string_match(input, "^%s*%S+%s*(.*)$"))
+      return
     elseif cmd == "autorec" then
       for _, line in ipairs(Vermilion.AutoRecord.report_lines()) do d("[Vm] " .. line) end
       return

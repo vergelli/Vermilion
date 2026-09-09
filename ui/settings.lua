@@ -16,6 +16,7 @@ local math_min           = math.min
 local math_floor         = math.floor
 
 local log         = Vermilion.Log.for_module("settings")
+local Sound       = Vermilion.Sound
 local TOP         = zc.TOP
 local TOPLEFT     = zc.TOPLEFT
 local BOTTOM      = zc.BOTTOM
@@ -169,8 +170,10 @@ function M.toggle()
   if hidden then
     win:SetHidden(false)
     refresh_all_sliders()
+    Sound.play("open")
   else
     win:SetHidden(true)
+    Sound.play("close")
   end
 end
 
@@ -190,6 +193,7 @@ end
 function M.on_logo_click()
   local now = not Vermilion.Logo.is_enabled()
   Vermilion.Logo.set_enabled(now)
+  Sound.play(now and "on" or "off")
   controls.logo_btn:SetText(now and GetString(VERMILION_SETTINGS_LOGO_ON)
                                  or GetString(VERMILION_SETTINGS_LOGO_OFF))
   if not now then d("[Vm] " .. GetString(VERMILION_LOGO_HINT)) end
@@ -270,6 +274,7 @@ function M.on_autorec_click()
     if modes[i] == cur then idx = i break end
   end
   local nxt = modes[(idx % #modes) + 1]
+  Sound.play("page")
   AR.set_mode(nxt)
   controls.autorec_btn:SetText(autorec_label(nxt))
 end
@@ -279,17 +284,38 @@ function M.on_autosave_click()
   sv.settings = sv.settings or {}
   local now = not (sv.settings.session_autosave == true)
   sv.settings.session_autosave = now
+  Sound.play(now and "on" or "off")
   controls.autosave_btn:SetText(autosave_label(now))
 end
 
 function M.on_autostop_click()
   local now = not Vermilion.AutoRecord.get_auto_stop()
   Vermilion.AutoRecord.set_auto_stop(now)
+  Sound.play(now and "on" or "off")
   controls.autostop_btn:SetText(autostop_label(now))
+end
+
+local function sounds_on()
+  local sv = Vermilion.SavedVars
+  return not (sv and sv.settings and sv.settings.sounds == false)
+end
+
+local function sounds_label(on)
+  return on and GetString(VERMILION_SETTINGS_SOUNDS_ON) or GetString(VERMILION_SETTINGS_SOUNDS_OFF)
+end
+
+function M.on_sounds_click()
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  local now = not sounds_on()
+  sv.settings.sounds = now
+  controls.sounds_btn:SetText(sounds_label(now))
+  if now then Sound.play("confirm") end
 end
 
 function M.on_reset_click()
   log:info("reset to defaults")
+  Sound.play("confirm")
   local sv = Vermilion.SavedVars
   if sv and sv.settings then
     Vermilion.AutoRecord.set_mode("off")
@@ -298,6 +324,8 @@ function M.on_reset_click()
     controls.autosave_btn:SetText(autosave_label(false))
     Vermilion.AutoRecord.set_auto_stop(false)
     controls.autostop_btn:SetText(autostop_label(false))
+    sv.settings.sounds = nil
+    controls.sounds_btn:SetText(sounds_label(true))
   end
   current_sample     = SAMPLE_DEFAULT
   current_twindow    = TWINDOW_DEFAULT
@@ -352,6 +380,7 @@ function M.init()
   Vermilion.Graph.set_crit_threshold(current_critthresh)
 
   controls.window         = VermilionSettingsPanel
+  controls.window:SetHidden(true)
   controls.window_title   = VermilionSettingsPanelWindowTitle
 
   VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
@@ -381,6 +410,13 @@ function M.init()
   controls.autorec_btn:SetText(autorec_label(sv.settings.auto_record or "off"))
   controls.autosave_btn:SetText(autosave_label(sv.settings.session_autosave == true))
   controls.autostop_btn:SetText(autostop_label(sv.settings.auto_stop == true))
+  controls.sounds_btn     = VermilionSettingsPanelSoundsBtn
+  controls.sounds_btn:SetText(sounds_label(sounds_on()))
+  zui.tooltip(controls.sounds_btn,   VERMILION_TIP_SOUNDS)
+  zui.tooltip(controls.unknown_btn,  VERMILION_TIP_UNKNOWN)
+  zui.tooltip(controls.logo_btn,     VERMILION_TIP_LOGO)
+  zui.tooltip(controls.reset_btn,    VERMILION_TIP_RESET)
+  zui.tooltip(VermilionSettingsPanelCloseBtn, VERMILION_TIP_CLOSE)
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))

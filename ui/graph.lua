@@ -14,6 +14,7 @@ local math_floor                 = math.floor
 local string_format              = string.format
 
 local log               = Vermilion.Log.for_module("graph")
+local Sound             = Vermilion.Sound
 local TOPLEFT           = zc.TOPLEFT
 local TOPRIGHT          = zc.TOPRIGHT
 local BOTTOMLEFT        = zc.BOTTOMLEFT
@@ -1209,6 +1210,7 @@ function M.current_view() return current_view end
 function M.on_record_click()
   if Vermilion.TemporalBuffer.is_recording() then return end
   log:info("record click")
+  Sound.play("record")
   if not Vermilion.AutoRecord.is_auto_active() then
     Vermilion.AutoRecord.notify_manual_record()
   end
@@ -1236,6 +1238,7 @@ end
 function M.on_stop_click()
   if not Vermilion.TemporalBuffer.is_recording() then return end
   log:info("stop click")
+  Sound.play("stop")
   Vermilion.AutoRecord.notify_manual_stop()
   Vermilion.TemporalBuffer.stop_recording()
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
@@ -1251,6 +1254,7 @@ function M.on_stop_click()
 end
 
 function M.on_flush_click()
+  Sound.play("discard")
   Vermilion.SessionStore.finish_autosave()
   if Vermilion.TemporalBuffer.is_recording() then
     zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
@@ -1270,6 +1274,7 @@ function M.on_flush_click()
 end
 
 function M.on_close_click()
+  Sound.play("close")
   Vermilion.Visibility.set("graph", false)
   stop_hover_poll(); hide_hover_ui(); hover_key = nil
   release_all_pools()
@@ -1298,6 +1303,7 @@ end
 function M.prev_view()
   local v = current_view - 1
   if v < VIEW_BY_SKILL then v = VIEW_BY_CRIT end
+  Sound.play("page")
   release_all_pools()
   set_view(v)
 end
@@ -1305,6 +1311,7 @@ end
 function M.next_view()
   local v = current_view + 1
   if v > VIEW_BY_CRIT then v = VIEW_BY_SKILL end
+  Sound.play("page")
   release_all_pools()
   set_view(v)
 end
@@ -1323,6 +1330,7 @@ function M.toggle()
   local now_visible = not Vermilion.Visibility.get("graph")
   log:info("toggle ->", now_visible and "show" or "hide")
   Vermilion.Visibility.set("graph", now_visible)
+  Sound.play(now_visible and "open" or "close")
   if now_visible then
     render_current_view()
     update_hover_gate()
@@ -1336,19 +1344,23 @@ end
 function M.on_save_click()
   local TB = Vermilion.TemporalBuffer
   if TB.is_recording() then
+    Sound.play("deny")
     d("[Vm] " .. GetString(VERMILION_SAVE_BUSY))
     return false
   end
   if TB.count() == 0 then
+    Sound.play("deny")
     d("[Vm] " .. GetString(VERMILION_SAVE_NOTHING))
     return false
   end
   Vermilion.SessionStore.finish_autosave()
   if not M.save_available() then
+    Sound.play("deny")
     d("[Vm] " .. GetString(VERMILION_SAVE_ALREADY))
     return false
   end
   log:info("manual save")
+  Sound.play("confirm")
   Vermilion.SessionStore.save_now()
   Vermilion.Diagnostics.bump("library.manual_save")
   return true
@@ -1465,6 +1477,7 @@ local function wire_save_hooks()
     controls.saved_start, controls.saved_count = recording_start_ms, Vermilion.TemporalBuffer.count()
     controls.status:SetText(string_format(GetString(VERMILION_SAVE_STATUS), session.head.zone or "?"))
     controls.status:SetColor(0.65, 0.65, 0.65, 1)
+    if session.head.manual then Sound.play("save") end
     refresh_button_colors()
     M.pulse_lib()
     if Vermilion.Library and Vermilion.Library.on_session_saved then
@@ -1549,6 +1562,8 @@ function M.init()
   zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
   zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
   zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
+  zui.tooltip(VermilionGraphWindowSettingsBtn, VERMILION_TIP_SETTINGS)
+  zui.tooltip(VermilionGraphWindowCloseBtn, VERMILION_TIP_CLOSE)
   wire_save_hooks()
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)

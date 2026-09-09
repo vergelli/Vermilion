@@ -28,6 +28,7 @@ zenimax/ui.lua
 zenimax/savedvars.lua
 zenimax/events.lua
 zenimax/scene.lua
+core/sound.lua
 lib/plot/style.lua
 lib/plot/primitives.lua
 lib/plot/pool.lua
