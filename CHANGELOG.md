@@ -3,7 +3,7 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.1] - 2026-09-10
 
 ### Added
 - CONTRIB view: the Type column shows the damage-type icon instead of a word, and the shield rows wear the shield icon. Hover a row and the card carries the same icon with the type's name. Every second row wears a faint band, and each row shows its rank.
