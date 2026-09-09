@@ -67,12 +67,13 @@ local VIEW_BY_SKILL   = 1
 local VIEW_BY_TYPE    = 2
 local VIEW_BY_OUTCOME = 3
 local VIEW_BY_CRIT    = 4
-local VIEW_LABELS     = { "SKILL", "TYPE", "OUTCOME", "CRIT" }
-local VIEW_MIN, VIEW_MAX = VIEW_BY_SKILL, VIEW_BY_CRIT
+local VIEW_BY_CONTRIB = 5
+local VIEW_LABELS     = { "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB" }
+local VIEW_MIN, VIEW_MAX = VIEW_BY_SKILL, VIEW_BY_CONTRIB
 
 local function view_tips()
   if not VIEW_TIPS then
-    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_OUTCOME, VERMILION_VIEWTIP_CRIT }
+    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_OUTCOME, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB }
   end
   return VIEW_TIPS
 end
@@ -367,6 +368,12 @@ local function release_all_pools()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  if controls.pool_c_seg then
+    controls.pool_c_seg:ReleaseAllObjects()
+    controls.pool_c_rim:ReleaseAllObjects()
+    controls.pool_c_icon:ReleaseAllObjects()
+    controls.pool_c_lbl:ReleaseAllObjects()
+  end
 end
 
 local MIN_COL_PX = 6
@@ -1014,6 +1021,10 @@ local function hover_poll()
   end
   local canvas = controls.canvas
   local mx, my = GetUIMousePosition()
+  if current_view == VIEW_BY_CONTRIB then
+    Vermilion.ContribView.hover(mx, my)
+    return
+  end
   local rel_x  = mx - canvas:GetLeft()
   local above  = canvas:GetBottom() - my
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
@@ -1500,6 +1511,17 @@ local function render_by_crit()
 end
 
 function render_current_view()
+  if current_view == VIEW_BY_CONTRIB then
+    release_all_pools()
+    Vermilion.ContribView.render()
+    return
+  end
+  if controls.pool_c_seg then
+    controls.pool_c_seg:ReleaseAllObjects()
+    controls.pool_c_rim:ReleaseAllObjects()
+    controls.pool_c_icon:ReleaseAllObjects()
+    controls.pool_c_lbl:ReleaseAllObjects()
+  end
   if current_view == VIEW_BY_SKILL then
     render_by_skill()
   elseif current_view == VIEW_BY_TYPE then
@@ -1603,6 +1625,7 @@ local function set_view(v)
   style_tabs()
   persist_view()
   hover_key = nil
+  Vermilion.ContribView.reset_scroll()
   if Vermilion.TemporalBuffer.count() == 0 then
     controls.no_data:SetHidden(false)
     update_hover_gate()
@@ -1824,7 +1847,7 @@ function M.is_light_active() return light.active end
 
 function M.prev_view()
   local v = current_view - 1
-  if v < VIEW_BY_SKILL then v = VIEW_BY_CRIT end
+  if v < VIEW_BY_SKILL then v = VIEW_BY_CONTRIB end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -1832,7 +1855,7 @@ end
 
 function M.next_view()
   local v = current_view + 1
-  if v > VIEW_BY_CRIT then v = VIEW_BY_SKILL end
+  if v > VIEW_BY_CONTRIB then v = VIEW_BY_SKILL end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -2036,7 +2059,7 @@ function M.init()
   local sv = Vermilion.SavedVars
   sv.graph = sv.graph or {}
   if sv.graph.view_idx and sv.graph.view_idx >= VIEW_BY_SKILL
-     and sv.graph.view_idx <= VIEW_BY_CRIT then
+     and sv.graph.view_idx <= VIEW_BY_CONTRIB then
     current_view = sv.graph.view_idx
   end
   if sv.graph.x then
@@ -2065,6 +2088,30 @@ function M.init()
   controls.pool_shdps        = make_fill_pool("VermilionShdpsFill")
   controls.pool_line_edps    = make_line_pool("VermilionLineEdps")
   controls.pool_line_eos     = make_line_pool("VermilionLineEos")
+  controls.pool_c_seg = Pool.new("VermilionContribSeg", controls.canvas, CT_TEXTURE,
+    function(c)
+      fill_factory(c)
+      c:SetDrawLevel(2)
+    end,
+    function(c)
+      c:SetHidden(true)
+      c:SetDrawLevel(2)
+    end)
+  controls.pool_c_rim = Pool.new("VermilionContribRim", controls.canvas, CT_TEXTURE,
+    function(c)
+      fill_factory(c)
+      c:SetDrawLevel(3)
+    end, fill_reset)
+  controls.pool_c_icon = Pool.new("VermilionContribIcon", controls.canvas, CT_TEXTURE,
+    function(c) c:SetPixelRoundingEnabled(false) end,
+    function(c) c:SetHidden(true) end)
+  controls.pool_c_lbl = Pool.new("VermilionContribLbl", controls.canvas, CT_LABEL,
+    function(c)
+      c:SetFont("ZoFontGameSmall")
+      c:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+      c:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end,
+    function(c) c:SetHidden(true) end)
 
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
@@ -2216,6 +2263,23 @@ function M.init()
     if hover_key ~= nil then hover_key = nil; render_current_view() end
   end)
   controls.hit = hit_layer
+  hit_layer:SetHandler("OnMouseWheel", function(_, delta)
+    if current_view ~= VIEW_BY_CONTRIB then return end
+    local dir = (delta and delta < 0) and 1 or -1
+    if Vermilion.ContribView.scroll(dir) then
+      hide_hover_ui()
+      render_current_view()
+    end
+  end)
+  Vermilion.ContribView.attach({
+    canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
+    seg = controls.pool_c_seg, rim = controls.pool_c_rim, icon = controls.pool_c_icon, lbl = controls.pool_c_lbl,
+    layout = CHIP, fmt_val = fmt_val, hexc = hexc, hide_grid = hide_grid,
+    show_card = show_moment_card,
+    hide_card = function() fade_out(card_fader) end,
+    hit_reset = function() hit_begin(0) end,
+    rerender = function() render_current_view() end,
+  })
 
   update_header(0)
   zev.register_update("VermilionHeaderTick", 1000, header_tick)

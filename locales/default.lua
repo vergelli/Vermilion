@@ -170,3 +170,13 @@ ZO_CreateStringId("VERMILION_SETTINGS_LIGHT_OFF", "Light Mode while recording: O
 ZO_CreateStringId("VERMILION_SETTING_LIGHT_ALPHA","Light Mode Opacity")
 ZO_CreateStringId("VERMILION_TIP_LIGHT",          "While recording, keep only the graph on screen")
 ZO_CreateStringId("VERMILION_HELP_GRID",          "  /vermilion grid    toggle the pixel-aligned column grid (A/B test)")
+
+ZO_CreateStringId("VERMILION_VIEWTIP_CONTRIB",      "Skills ranked by the damage they dealt over the window, shields included")
+ZO_CreateStringId("VERMILION_CONTRIB_HEAD_CONTRIB", "CONTRIBUTION")
+ZO_CreateStringId("VERMILION_CONTRIB_HEAD_TYPE",    "TYPE")
+ZO_CreateStringId("VERMILION_CONTRIB_HEAD_VALUE",   "VALUE")
+ZO_CreateStringId("VERMILION_CONTRIB_TYPE_SHIELD",  "Shield")
+ZO_CreateStringId("VERMILION_CONTRIB_MORE",         "+%d more  ·  mouse wheel scrolls")
+ZO_CreateStringId("VERMILION_CONTRIB_SCROLLED",     "%d above  ·  %d below")
+ZO_CreateStringId("VERMILION_CONTRIB_TIP_EST",      "estimated over the active window")
+ZO_CreateStringId("VERMILION_CONTRIB_PARTS",        "  ·  %d parts of the skill")
