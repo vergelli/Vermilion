@@ -64,6 +64,7 @@ function M.set_shield_window(ms)
 end
 
 function M.window_seconds() return W_MS / 1000 end
+function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 
 function M.ingest_damage_out(ev)
   if ev.amount > 0 then damage_out_buf:push(ev) else event_pool:release(ev) end
