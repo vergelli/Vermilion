@@ -21,6 +21,8 @@ local CASES = {
   "manual_save",
   "library_flow",
   "button_manners",
+  "settings_panel",
+  "user_profiles",
 }
 
 local passed, failed = 0, 0
