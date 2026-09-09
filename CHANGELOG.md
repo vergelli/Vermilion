@@ -3,7 +3,7 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.0] - 2026-09-10
 
 ### Added
 - Session library: every recording can be kept, named, locked and reopened from the library window; autosave on Stop, a manual Save icon and keybind, the SAVING / SAVED / NOT SAVED status and the content kind of the fight (dungeon, trial, arena, Infinite Archive, battleground, Alliance War, home, overland).
