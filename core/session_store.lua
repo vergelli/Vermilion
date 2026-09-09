@@ -24,10 +24,11 @@ local DESC = {
     { name = "sh",  width = 3, scale = 10000 },
   },
   abilities = {
-    { name = "si", width = 2 },
-    { name = "ch", width = 1 },
-    { name = "id", width = 4 },
-    { name = "sh", width = 2, scale = 1000 },
+    { name = "si",  width = 2 },
+    { name = "ch",  width = 1 },
+    { name = "id",  width = 4 },
+    { name = "key", width = 1 },
+    { name = "sh",  width = 2, scale = 1000 },
   },
 }
 
@@ -109,7 +110,7 @@ function M.capture(cooperative)
     for a = 1, n do
       local e = abilities[a]
       ability_recs[#ability_recs + 1] = {
-        si = si, ch = ch, id = e.id or 0, sh = e.share or 0,
+        si = si, ch = ch, id = e.id or 0, key = key_of(e.key == nil and "other" or e.key), sh = e.share or 0,
       }
     end
   end

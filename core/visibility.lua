@@ -7,13 +7,26 @@ local SCENE_SHOWN = Scene.SCENE_SHOWN
 local log = Vermilion.Log.for_module("visibility")
 local in_hud = true
 local user_visible = { graph = false }
+local restore = {}
+local AUX_WINDOWS = { "VermilionSettingsPanel", "VermilionLibrary", "VermilionAssignPanel" }
 
 local function apply()
   if VermilionGraphWindow then
     VermilionGraphWindow:SetHidden(not (in_hud and user_visible.graph))
   end
-  if VermilionSettingsPanel and not in_hud then
-    VermilionSettingsPanel:SetHidden(true)
+  for _, name in ipairs(AUX_WINDOWS) do
+    local win = _G[name]
+    if win then
+      if in_hud then
+        if restore[name] then
+          win:SetHidden(false)
+          restore[name] = nil
+        end
+      elseif not win:IsHidden() then
+        restore[name] = true
+        win:SetHidden(true)
+      end
+    end
   end
   if Vermilion.Logo then
     Vermilion.Logo.sync(in_hud and not user_visible.graph)

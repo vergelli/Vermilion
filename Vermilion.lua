@@ -146,9 +146,14 @@ local function on_slash(input)
     Vermilion.Graph.toggle() ; return
   end
 
+  if cmd == "lib" then
+    Vermilion.Library.toggle() ; return
+  end
+
   if cmd == "help" then
     d(GetString(VERMILION_HELP_HEADER))
     d(GetString(VERMILION_HELP_GRAPH))
+    d(GetString(VERMILION_HELP_LIB))
     d(GetString(VERMILION_HELP_HELP))
     return
   end
@@ -182,6 +187,7 @@ local function on_addon_loaded()
   Vermilion.Graph.init()
   Vermilion.AutoRecord.init()
   Vermilion.Assign.init()
+  Vermilion.Library.init()
   Vermilion.Visibility.init()
 
   SLASH_COMMANDS[C.SLASH_COMMAND] = on_slash

@@ -41,6 +41,7 @@ M.GetSkillLineId                         = GetSkillLineId
 
 M.GetUnitZone      = GetUnitZone
 M.GetTimeStamp     = GetTimeStamp
+M.GetDateStringFromTimestamp = GetDateStringFromTimestamp
 M.AreUnitsEqual    = AreUnitsEqual
 M.DoesUnitExist    = DoesUnitExist
 M.ReloadUI         = ReloadUI

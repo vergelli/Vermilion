@@ -19,6 +19,7 @@ local CASES = {
   "auto_record",
   "auto_stop",
   "manual_save",
+  "library_flow",
 }
 
 local passed, failed = 0, 0

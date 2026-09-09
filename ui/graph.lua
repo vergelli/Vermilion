@@ -1362,6 +1362,81 @@ function M.toggle_record()
   end
 end
 
+local function corrupt(reason)
+  d("[Vm] " .. string_format(GetString(VERMILION_LIB_CORRUPT), tostring(reason)))
+  return false
+end
+
+local function attach_shares(series, sess, vsf)
+  local gkeys = sess.gkeys or {}
+  local SC = Vermilion.SkillColors
+  local DTC = Vermilion.DamageTypeColors
+  local shares = sess.streams.shares and sess.desc.shares and vsf.unpack(sess.streams.shares, sess.desc.shares)
+  for i = 1, (shares and #shares or 0) do
+    local r = shares[i]
+    local sample = series[r.si]
+    if sample then
+      local key = gkeys[r.key + 1]
+      local field = (r.ch == 0) and "eg" or "dg"
+      local tbl = sample[field]
+      if not tbl then tbl = { count = 0 }; sample[field] = tbl end
+      local c = (r.ch == 0) and SC.group_color(key or "other") or DTC.lookup(key or 0)
+      tbl.count = tbl.count + 1
+      tbl[tbl.count] = { r = c.r, g = c.g, b = c.b, a = c.a, share = r.sh, key = (r.ch == 0) and (key or "other") or (key or 0) }
+    end
+  end
+  local abilities = sess.streams.abilities and sess.desc.abilities and vsf.unpack(sess.streams.abilities, sess.desc.abilities)
+  for i = 1, (abilities and #abilities or 0) do
+    local r = abilities[i]
+    local sample = series[r.si]
+    if sample then
+      local field = (r.ch == 0) and "ea" or "da"
+      local tbl = sample[field]
+      if not tbl then tbl = { count = 0 }; sample[field] = tbl end
+      local key = (r.key ~= nil) and gkeys[r.key + 1] or nil
+      local c
+      if r.ch == 0 then
+        key = key or SC.group_of(r.id)
+        c = SC.group_color(key)
+      else
+        key = key or 0
+        c = DTC.lookup(key)
+      end
+      tbl.count = tbl.count + 1
+      tbl[tbl.count] = { id = r.id, share = r.sh, key = key, r = c.r, g = c.g, b = c.b, a = c.a }
+    end
+  end
+end
+
+function M.load_session(sess)
+  if Vermilion.TemporalBuffer.is_recording() then
+    d("[Vm] " .. GetString(VERMILION_LIB_BUSY))
+    return false
+  end
+  Vermilion.SessionStore.finish_autosave()
+  if not (sess and sess.streams and sess.desc and sess.head) then
+    return corrupt("missing structure")
+  end
+  local vsf = Vermilion.lib.vsf
+  local series, err = vsf.unpack(sess.streams.series, sess.desc.series)
+  if not series then return corrupt(err) end
+  attach_shares(series, sess, vsf)
+
+  release_all_pools()
+  hide_grid(controls.grid)
+  Vermilion.TemporalBuffer.load_session(series)
+  hover_key = nil
+  controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
+  controls.status:SetColor(0.65, 0.65, 0.65, 1)
+  controls.save_locked = true
+  controls.no_data:SetHidden(true)
+  Vermilion.Visibility.set("graph", true)
+  refresh_button_colors()
+  render_current_view()
+  Vermilion.Diagnostics.bump("library.session_loaded")
+  return true
+end
+
 local function wire_save_hooks()
   local SS = Vermilion.SessionStore
   controls.saving_frames = { "SAVING", "SAVING ·", "SAVING · ·", "SAVING · · ·" }
@@ -1404,6 +1479,7 @@ function M.init()
   controls.btn_record    = VermilionGraphWindowRecordBtn
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
+  controls.btn_lib       = VermilionGraphWindowLibBtn
   controls.btn_save      = VermilionGraphWindowSaveBtn
   controls.status        = VermilionGraphWindowStatusLabel
   controls.btn_prev_view = VermilionGraphWindowPrevViewBtn
@@ -1469,6 +1545,7 @@ function M.init()
   zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
   zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
+  zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)
   zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
   zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
   zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
