@@ -841,11 +841,17 @@ local function show_card(band, col, mx, my, elapsed_ms)
   position_card(mx, my)
 end
 
-local function show_moment_card(swatch_c, name_text, stat_text, elapsed_ms, mx, my)
+local SHIELD_ICON = "EsoUI/Art/Inventory/inventory_tabIcon_shield_up.dds"
+
+local function show_moment_card(swatch_c, name_text, stat_text, elapsed_ms, mx, my, icon_path)
   local card = controls.card
   if not card then return end
   size_card(CARD_W)
-  swatch_solid(card, swatch_c.r, swatch_c.g, swatch_c.b)
+  if icon_path then
+    swatch_icon(card, icon_path)
+  else
+    swatch_solid(card, swatch_c.r, swatch_c.g, swatch_c.b)
+  end
   card.name:SetColor(C_CARD_NAME.r, C_CARD_NAME.g, C_CARD_NAME.b, 1.0)
   card.name:SetText(name_text)
   card.stat:SetText(stat_text)
@@ -2425,6 +2431,10 @@ function M.init()
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_c_seg, rim = controls.pool_c_rim, icon = controls.pool_c_icon, lbl = controls.pool_c_lbl,
     layout = CHIP, fmt_val = fmt_val, hexc = hexc, hide_grid = hide_grid,
+    type_icon = function(ch)
+      if ch == -1 then return SHIELD_ICON end
+      return DTYPE_ICON[ch] or DTYPE_ICON[zc.DAMAGE_TYPE_GENERIC]
+    end,
     show_card = show_moment_card,
     hide_card = function() fade_out(card_fader) end,
     hit_reset = function() hit_begin(0) end,

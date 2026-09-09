@@ -5,6 +5,9 @@ All notable changes to Vermilion are documented here. This project follows
 
 ## [Unreleased]
 
+### Added
+- CONTRIB view: the Type column shows the damage-type icon instead of a word, and the shield rows wear the shield icon. Hover a row and the card carries the same icon with the type's name. Every second row wears a faint band.
+
 ### Fixed
 - The damage report of a library session showed zero total and zero hits; it now reads the totals saved with the session.
 - Debuffs never land in Unknown Contributions any more; that window is for abilities that dealt damage.

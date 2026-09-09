@@ -6,7 +6,8 @@ local math_floor    = math.floor
 local string_format = string.format
 local table_sort    = table.sort
 
-local L = { HEADER_H = 20, ROW_H = 24, ROW_GAP = 2, ICON = 18, PAD = 4, TYPE_W = 62, VAL_W = 72, BAR_H = 5, NAME_H = 14 }
+local L = { HEADER_H = 20, ROW_H = 24, ROW_GAP = 2, ICON = 18, PAD = 4, TYPE_W = 40, VAL_W = 72, BAR_H = 5, NAME_H = 14 }
+local C_ZEBRA = { r = 1.0, g = 1.0, b = 1.0, a = 0.025 }
 local C_HEAD   = { r = 0.64, g = 0.60, b = 0.60, a = 0.95 }
 local C_NAME   = { r = 0.94, g = 0.88, b = 0.86, a = 1.0 }
 local C_VAL    = { r = 0.87, g = 0.85, b = 0.83, a = 1.0 }
@@ -242,6 +243,10 @@ function M.render()
 
   for i = 1, show do
     local e = order[i + scroll]
+    if i % 2 == 0 then
+      local zebra = seg(c, 0, y - 1, cw, L.ROW_H + 2, C_ZEBRA.r, C_ZEBRA.g, C_ZEBRA.b, C_ZEBRA.a)
+      zebra:SetDrawLevel(0)
+    end
     if e == hover_row then
       hovered_seen = true
       local band = seg(c, 0, y - 1, cw, L.ROW_H + 2, C_BAND.r, C_BAND.g, C_BAND.b, C_BAND.a)
@@ -256,8 +261,19 @@ function M.render()
 
     label(c, e.name, x_name, y + 1, name_w, L.NAME_H, C_NAME, TEXT_ALIGN_LEFT)
 
-    local tl = label(c, e.type, x_type, y, L.TYPE_W, L.ROW_H, C_VAL, TEXT_ALIGN_LEFT)
-    tl:SetColor(e.tr, e.tg, e.tb, 1)
+    local ticon = c.type_icon and c.type_icon(e.ch) or nil
+    if ticon then
+      local ti = c.icon:AcquireObject()
+      ti:ClearAnchors()
+      ti:SetTexture(ticon)
+      ti:SetDimensions(L.ICON, L.ICON)
+      ti:SetColor(1, 1, 1, 1)
+      ti:SetAnchor(TOPLEFT, canvas, TOPLEFT, x_type + 6, y + (L.ROW_H - L.ICON) / 2)
+      ti:SetHidden(false)
+    else
+      local tl = label(c, e.type, x_type, y, L.TYPE_W, L.ROW_H, C_VAL, TEXT_ALIGN_LEFT)
+      tl:SetColor(e.tr, e.tg, e.tb, 1)
+    end
 
     local disp = math_floor(e.v)
     if e.disp ~= disp then
@@ -320,12 +336,12 @@ function M.hover(mx, my)
         local pct = (tot > 0) and math_floor(e.v / tot * 100 + 0.5) or 0
         if e.hov_pct ~= pct or e.hov_disp ~= e.disp or e.hov_n ~= e.n then
           e.hov_pct, e.hov_disp, e.hov_n = pct, e.disp, e.n
-          e.hov = string_format("|c%02x%02x%02x%s %s|r  ·  %d%%  ·  %s%s",
+          e.hov = string_format("|c%02x%02x%02x%s|r  ·  %s  ·  %d%%  ·  %s%s",
             math_floor(e.tr * 255 + 0.5), math_floor(e.tg * 255 + 0.5), math_floor(e.tb * 255 + 0.5),
-            e.text, e.type, pct, S.est,
+            e.type, e.text, pct, S.est,
             (e.n > 1) and string_format(S.parts, e.n) or "")
         end
-        c.show_card(e, e.name, e.hov, totals.span, mx, my)
+        c.show_card(e, e.name, e.hov, totals.span, mx, my, c.type_icon and c.type_icon(e.ch) or nil)
         return
       end
     end
