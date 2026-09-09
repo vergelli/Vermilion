@@ -98,6 +98,9 @@ return function(H)
   hit._onOnMouseEnter(hit)
   ok(VermilionHoverCardRowName1._hidden == false and tonumber((VermilionHoverCardStat._text or ""):match("|c%x%x%x%x%x%x(%d+)%% crit")) == cp,
      "loaded session must show the same report")
+  ok((VermilionHoverCardRowVal3._text or ""):find("^12"), "a library session reports its saved hits, got " .. tostring(VermilionHoverCardRowVal3._text))
+  local saved_total = (VermilionHoverCardStat._text or ""):match("(%d[%d,%.k]*) total")
+  ok(saved_total ~= nil and saved_total ~= "0", "a library session reports its saved total, got " .. tostring(VermilionHoverCardStat._text))
   hit._onOnMouseExit(hit)
 
   G.on_flush_click()

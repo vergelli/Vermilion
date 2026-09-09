@@ -161,6 +161,14 @@ return function(H)
      and SC.buff_family("Major Maim") == "defense" and SC.buff_family("Minor Defile") == "defense",
      "named debuffs map to their family")
   ok(SC.buff_family("Short Snare") == nil, "anything else has no family")
+  ok(SC.buff_family("Minor Brittle") == "offense" and SC.buff_family("Minor Lifesteal") == "sustain"
+     and SC.buff_family("Minor Magickasteal") == "sustain" and SC.buff_family("Minor Mangle") == "offense",
+     "the arcanist and support debuffs map to a family")
+  ok(SC.buff_family("Burning") == "status" and SC.buff_family("Poisoned") == "status" and SC.buff_family("Overcharged") == "status",
+     "status effects are a family of their own")
+  ok(SC.buff_family("Taunt") == "control" and SC.buff_family("Off Balance") == "control", "taunts and control are a family of their own")
+  local st = SC.buff_family_color("Burning")
+  ok(st and st.r > 0.9 and st.g < 0.7, "status effects wear the ember colour")
   texts = visible_texts()
   ok(texts["[+] 3 always on"] == 1, "three permanent debuffs fold into the strip")
   ok(texts["Short Snare"] == 1, "the situational debuff keeps its lane")
