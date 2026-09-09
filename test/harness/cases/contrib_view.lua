@@ -51,6 +51,7 @@ return function(H)
   end
   ok(texts["CONTRIBUTION"] and texts["TYPE"] and texts["VALUE"], "column headers must render")
   ok(texts["Big Hit"] and texts["Small Hit"] and texts["Ward"], "every ability name must render")
+  ok(texts["1"] and texts["2"] and texts["3"], "every row shows its rank")
   local big_rows = 0
   for _, c in ipairs(H.controls) do
     local name = c._name or ""

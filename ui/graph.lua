@@ -145,10 +145,20 @@ local DPS_ICON_IDLE   = "/esoui/art/treeicons/collection_indexicon_weapons_up.dd
 local DPS_ICON_ACTIVE = "/esoui/art/treeicons/collection_indexicon_weapons_down.dds"
 
 local function update_header(eos)
-  local v = math_floor(eos + 0.5)
+  local idle = eos <= 0 and not Vermilion.TemporalBuffer.is_recording()
+  local v = idle and -1 or math_floor(eos + 0.5)
   if v == last_readout then return end
+  local was_idle = (last_readout == -1)
   last_readout = v
-  controls.readout:SetText(fmt_readout(eos))
+  if idle then
+    controls.readout:SetText(GetString(VERMILION_READOUT_IDLE))
+    controls.readout:SetColor(0.52, 0.48, 0.48, 0.85)
+  else
+    controls.readout:SetText(fmt_readout(eos))
+    if was_idle or last_readout == nil then
+      controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
+    end
+  end
   controls.dps_icon:SetTexture(eos > 0 and DPS_ICON_ACTIVE or DPS_ICON_IDLE)
 end
 
@@ -899,6 +909,7 @@ local function show_rows_card(color, name_text, stat_text, time_text, rows, n_ro
 end
 
 local SUM = { count = 0 }
+local DOM = {}
 
 local function session_summary()
   local TB = Vermilion.TemporalBuffer
@@ -906,11 +917,25 @@ local function session_summary()
   SUM.count = n
   local sum_eos, peak, peak_t, first_t = 0, 0, 0, 0
   local sum_crit, sum_noncrit, active = 0, 0, 0
+  for k in pairs(DOM) do DOM[k] = nil end
+  local dom_total, prev_t = 0, nil
   for i = 1, n do
     local s = TB.at(i)
     local eos = s.eDPS + s.ShDPS
     sum_eos = sum_eos + eos
     if i == 1 then first_t = s.t end
+    if prev_t then
+      local dv = s.eDPS * (s.t - prev_t) / 1000
+      local dg = s.dtype_groups
+      for g = 1, (dg and dg.count or 0) do
+        local e = dg[g]
+        local key = e.key or 0
+        local v = (e.share or 0) * dv
+        DOM[key] = (DOM[key] or 0) + v
+        dom_total = dom_total + v
+      end
+    end
+    prev_t = s.t
     if eos > peak then peak = eos; peak_t = s.t end
     sum_crit = sum_crit + (s.crit or 0)
     sum_noncrit = sum_noncrit + (s.noncrit or 0)
@@ -921,6 +946,15 @@ local function session_summary()
   SUM.peak_t_off = peak_t - first_t
   SUM.crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0
   SUM.active_pct = (n > 0) and (active / n) or 0
+  SUM.dom_type, SUM.dom_pct = nil, 0
+  if dom_total > 0 then
+    local best, best_v = nil, 0
+    for key, v in pairs(DOM) do
+      if v > best_v then best, best_v = key, v end
+    end
+    SUM.dom_type = best
+    SUM.dom_pct = best_v / dom_total
+  end
   SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits = Vermilion.Metrics.totals()
   local ls = controls.loaded_sum
   if ls then
@@ -956,6 +990,10 @@ local function build_summary_text()
     parts[#parts + 1] = string_format("|c%s%s|r |c%s%d%%|r",
       hexc(C_SUM.SHIELD), GetString(VERMILION_SUMMARY_SHIELD), vc,
       math_floor(sm.total_shield / out_total * 100 + 0.5))
+  end
+  if sm.dom_type ~= nil and DTYPE_ICON[sm.dom_type] then
+    parts[#parts + 1] = string_format("|t14:14:%s|t |c%s%d%%|r", DTYPE_ICON[sm.dom_type], vc,
+      math_floor(sm.dom_pct * 100 + 0.5))
   end
   return parts
 end
@@ -1040,6 +1078,11 @@ local function show_report_card()
     add_row(GetString(VERMILION_REPORT_PEAK), fmt_secs(sm.peak_t_off), C_CARD_STAT)
   end
   add_row(GetString(VERMILION_REPORT_ACTIVE), string_format("%d%%", math_floor(sm.active_pct * 100 + 0.5)), C_SUM.ACTIVE)
+  if sm.dom_type ~= nil and DamageTypeColors then
+    local dc = DamageTypeColors.lookup(sm.dom_type)
+    add_row(GetString(VERMILION_REPORT_MAIN_TYPE),
+      string_format("%s  ·  %d%%", DamageTypeColors.name(sm.dom_type) or "?", math_floor(sm.dom_pct * 100 + 0.5)), dc or C_CARD_STAT)
+  end
 
   card.root:SetHeight(CARD_ROWS_Y0 + n_rows * CARD_ROW_H + 6)
   position_card(chip.bg:GetLeft() - 16, chip.bg:GetBottom() - 14)
