@@ -6,7 +6,10 @@ local math_floor    = math.floor
 local string_format = string.format
 local table_sort    = table.sort
 
-local L = { HEADER_H = 20, ROW_H = 24, ROW_GAP = 2, ICON = 18, PAD = 4, TYPE_W = 40, VAL_W = 72, BAR_H = 5, NAME_H = 14 }
+local L = { HEADER_H = 20, ROW_H = 24, ROW_GAP = 2, ICON = 18, PAD = 4, RANK_W = 18, TYPE_W = 40, VAL_W = 72, BAR_H = 5, NAME_H = 14 }
+local C_RANK  = { r = 0.62, g = 0.56, b = 0.55, a = 0.85 }
+local RANK_TEXT = {}
+for i = 1, 64 do RANK_TEXT[i] = tostring(i) end
 local C_ZEBRA = { r = 1.0, g = 1.0, b = 1.0, a = 0.025 }
 local C_HEAD   = { r = 0.64, g = 0.60, b = 0.60, a = 0.95 }
 local C_NAME   = { r = 0.94, g = 0.88, b = 0.86, a = 1.0 }
@@ -215,7 +218,8 @@ function M.render()
   local S = strings()
   local x_val  = cw - L.VAL_W
   local x_type = x_val - L.TYPE_W - L.PAD
-  local x_name = L.PAD + L.ICON + 6
+  local x_icon = L.PAD + L.RANK_W
+  local x_name = x_icon + L.ICON + 6
   local name_w = x_type - x_name - 8
   label(c, S.contrib, L.PAD, top, x_type - L.PAD, L.HEADER_H, C_HEAD, TEXT_ALIGN_LEFT)
   label(c, S.type, x_type, top, L.TYPE_W, L.HEADER_H, C_HEAD, TEXT_ALIGN_LEFT)
@@ -256,8 +260,11 @@ function M.render()
     ic:ClearAnchors()
     ic:SetTexture(e.icon)
     ic:SetDimensions(L.ICON, L.ICON)
-    ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, L.PAD, y + (L.ROW_H - L.ICON) / 2)
+    ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x_icon, y + (L.ROW_H - L.ICON) / 2)
     ic:SetHidden(false)
+
+    local rank = i + scroll
+    label(c, RANK_TEXT[rank] or tostring(rank), 0, y, L.RANK_W, L.ROW_H, C_RANK, TEXT_ALIGN_RIGHT)
 
     label(c, e.name, x_name, y + 1, name_w, L.NAME_H, C_NAME, TEXT_ALIGN_LEFT)
 

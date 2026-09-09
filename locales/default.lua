@@ -200,3 +200,6 @@ ZO_CreateStringId("VERMILION_BUFF_FAM_SUSTAIN",     "Sustain: resources and ulti
 ZO_CreateStringId("VERMILION_BUFF_FAM_MOBILITY",    "Mobility")
 ZO_CreateStringId("VERMILION_BUFF_FAM_STATUS",      "Status effect: burning, poisoned and the rest")
 ZO_CreateStringId("VERMILION_BUFF_FAM_CONTROL",     "Control: taunts, stuns and snares")
+
+ZO_CreateStringId("VERMILION_READOUT_IDLE",     "idle")
+ZO_CreateStringId("VERMILION_REPORT_MAIN_TYPE", "Main damage type")
