@@ -1182,11 +1182,14 @@ function M.current_view() return current_view end
 function M.on_record_click()
   if Vermilion.TemporalBuffer.is_recording() then return end
   log:info("record click")
+  Vermilion.SessionStore.finish_autosave()
   Vermilion.TemporalBuffer.clear()
+  Vermilion.Metrics.session_mark()
   release_all_pools()
   hide_grid(controls.grid)
   controls.no_data:SetHidden(false)
   Vermilion.TemporalBuffer.start_recording()
+  Vermilion.SessionStore.on_session_start()
   Vermilion.Trace.on_record(Vermilion.SavedVars)
   recording_start_ms = GetGameTimeMilliseconds()
   local sv       = Vermilion.SavedVars
@@ -1203,6 +1206,7 @@ function M.on_stop_click()
   Vermilion.TemporalBuffer.stop_recording()
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
+  Vermilion.SessionStore.on_session_stop()
   refresh_button_colors()
   render_current_view()
 end
@@ -1286,7 +1290,13 @@ function M.toggle()
 end
 
 
+function M.on_session_saved(session)
+  d("[Vm] " .. string_format(GetString(VERMILION_LIB_SAVED),
+    session.head.zone or "?", fmt_secs(session.head.dur_ms or 0)))
+end
+
 function M.init()
+  Vermilion.SessionStore.on_saved = M.on_session_saved
   controls.window        = VermilionGraphWindow
   controls.title         = VermilionGraphWindowTitleLabel
   controls.btn_record    = VermilionGraphWindowRecordBtn

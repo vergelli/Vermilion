@@ -13,6 +13,9 @@ local CASES = {
   "zero_alloc",
   "silence",
   "trace_flow",
+  "vsf_codec",
+  "session_store",
+  "content_kind",
 }
 
 local passed, failed = 0, 0
