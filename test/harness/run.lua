@@ -12,6 +12,7 @@ local CASES = {
   "views",
   "zero_alloc",
   "silence",
+  "trace_flow",
 }
 
 local passed, failed = 0, 0

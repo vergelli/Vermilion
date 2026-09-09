@@ -38,4 +38,9 @@ M.GetAbilityIcon                         = GetAbilityIcon
 M.GetSpecificSkillAbilityKeysByAbilityId = GetSpecificSkillAbilityKeysByAbilityId
 M.GetSkillLineId                         = GetSkillLineId
 
+M.GetUnitZone      = GetUnitZone
+M.GetTimeStamp     = GetTimeStamp
+M.AreUnitsEqual    = AreUnitsEqual
+M.DoesUnitExist    = DoesUnitExist
+M.ReloadUI         = ReloadUI
 M.GetUIMousePosition = GetUIMousePosition
