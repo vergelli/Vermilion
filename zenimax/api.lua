@@ -44,3 +44,16 @@ M.AreUnitsEqual    = AreUnitsEqual
 M.DoesUnitExist    = DoesUnitExist
 M.ReloadUI         = ReloadUI
 M.GetUIMousePosition = GetUIMousePosition
+
+M.GetCurrentZoneDungeonDifficulty = GetCurrentZoneDungeonDifficulty
+M.GetMapContentType         = GetMapContentType
+M.IsActiveWorldBattleground = IsActiveWorldBattleground
+M.GetCurrentBattlegroundId  = GetCurrentBattlegroundId
+M.GetBattlegroundTeamSize   = GetBattlegroundTeamSize
+M.IsPlayerInRaid            = IsPlayerInRaid
+M.IsPlayerInEndlessDungeon  = IsPlayerInEndlessDungeon
+M.IsInCyrodiil              = IsInCyrodiil
+M.IsInImperialCity          = IsInImperialCity
+M.GetCurrentZoneHouseId     = GetCurrentZoneHouseId
+M.GetZoneId                 = GetZoneId
+M.GetUnitZoneIndex          = GetUnitZoneIndex

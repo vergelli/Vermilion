@@ -21,6 +21,7 @@ core/gc.lua
 lib/mem/buffer_pool.lua
 lib/mem/ring_buffer.lua
 lib/mem/event.lua
+lib/vsf.lua
 zenimax/constants.lua
 zenimax/api.lua
 zenimax/ui.lua
@@ -48,6 +49,8 @@ pipeline/presentation.lua
 pipeline/pipeline.lua
 core/probe.lua
 core/temporal_buffer.lua
+core/content_kind.lua
+core/session_store.lua
 core/visibility.lua
 ui/settings.xml
 ui/settings.lua

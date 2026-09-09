@@ -42,6 +42,9 @@ local function on_slash(input)
           .. "  (subcmd: start | stop | save | clear | auto)")
       end
       return
+    elseif cmd == "sessions" then
+      for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
+      return
     elseif cmd == "flush" then
       d("[Vm] writing SavedVariables to disk")
       Vermilion.zenimax.api.ReloadUI()
@@ -169,6 +172,7 @@ local function on_addon_loaded()
   if C.DEBUG then Vermilion.Probe.init() end
   Vermilion.GC.init()          -- GC pacing (ported): smooth the incremental collector
   Vermilion.Pipeline.init()
+  Vermilion.SessionStore.init()
   Vermilion.Trace.init()
   Vermilion.Logo.init()
   Vermilion.Settings.init()
