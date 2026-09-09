@@ -68,12 +68,13 @@ local VIEW_BY_TYPE    = 2
 local VIEW_BY_OUTCOME = 3
 local VIEW_BY_CRIT    = 4
 local VIEW_BY_CONTRIB = 5
-local VIEW_LABELS     = { "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB" }
-local VIEW_MIN, VIEW_MAX = VIEW_BY_SKILL, VIEW_BY_CONTRIB
+local VIEW_BY_DEBUFFS = 6
+local VIEW_LABELS     = { "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB", "DEBUFFS" }
+local VIEW_MIN, VIEW_MAX = VIEW_BY_SKILL, VIEW_BY_DEBUFFS
 
 local function view_tips()
   if not VIEW_TIPS then
-    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_OUTCOME, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB }
+    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_OUTCOME, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB, VERMILION_VIEWTIP_DEBUFFS }
   end
   return VIEW_TIPS
 end
@@ -109,7 +110,7 @@ local card_fader, crosshair_fader
 
 local CARD_W, CARD_H = 210, 56
 local CARD_ROW_H     = 16
-local CARD_MAX_ROWS  = 5
+local CARD_MAX_ROWS  = 7
 local CARD_ROWS_Y0   = 54
 local C_CARD_BG     = { r = 0.10, g = 0.04, b = 0.05, a = 0.96 }
 local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }
@@ -374,6 +375,12 @@ local function release_all_pools()
     controls.pool_c_icon:ReleaseAllObjects()
     controls.pool_c_lbl:ReleaseAllObjects()
   end
+  if controls.pool_d_seg then
+    controls.pool_d_seg:ReleaseAllObjects()
+    controls.pool_d_rim:ReleaseAllObjects()
+    controls.pool_d_icon:ReleaseAllObjects()
+    controls.pool_d_lbl:ReleaseAllObjects()
+  end
 end
 
 local MIN_COL_PX = 6
@@ -633,6 +640,14 @@ local function build_hover_card()
   time:SetAnchor(TOPLEFT, root, TOPLEFT, 12, 40)
   time:SetDimensions(CARD_W - 20, 12)
 
+  local desc = WM:CreateControl("VermilionHoverCardDesc", root, CT_LABEL)
+  desc:SetFont("ZoFontGameSmall")
+  desc:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+  desc:SetVerticalAlignment(zc.TEXT_ALIGN_TOP)
+  desc:SetMaxLineCount(0)
+  desc:SetColor(C_CARD_STAT.r, C_CARD_STAT.g, C_CARD_STAT.b, 0.92)
+  desc:SetHidden(true)
+
   local rows = {}
   for i = 1, CARD_MAX_ROWS do
     local y = CARD_ROWS_Y0 + (i - 1) * CARD_ROW_H
@@ -663,7 +678,7 @@ local function build_hover_card()
     rows[i] = { icon = icon, name = rn, val = rv }
   end
 
-  controls.card = { root = root, swatch = swatch, name = name, stat = stat, time = time, rows = rows }
+  controls.card = { root = root, swatch = swatch, name = name, stat = stat, time = time, rows = rows, desc = desc }
 end
 
 local function clear_card_rows(card)
@@ -673,6 +688,19 @@ local function clear_card_rows(card)
     local r = rows[i]
     r.icon:SetHidden(true); r.name:SetHidden(true); r.val:SetHidden(true)
   end
+  if card.desc then card.desc:SetHidden(true) end
+end
+
+local function desc_height(desc)
+  local w = desc:GetWidth()
+  if not w or w < 40 then w = CARD_W - 20 end
+  local text = desc:GetText() or ""
+  local lines = math_floor((#text * 6.4) / w) + 1
+  local est = lines * 14 + 2
+  local dh = desc:GetTextHeight() or 0
+  if dh < est then dh = est end
+  if dh < 12 then dh = 12 end
+  return dh
 end
 
 local function card_guard()
@@ -824,6 +852,43 @@ local function show_moment_card(swatch_c, name_text, stat_text, elapsed_ms, mx, 
   card.time:SetText("t  " .. fmt_secs(elapsed_ms or 0))
   clear_card_rows(card)
   card.root:SetHeight(CARD_H)
+  position_card(mx, my)
+end
+
+local function show_rows_card(color, name_text, stat_text, time_text, rows, n_rows, desc_text, mx, my)
+  local card = controls.card
+  if not card then return end
+  size_card(CARD_W)
+  swatch_solid(card, color.r, color.g, color.b)
+  card.name:SetColor(color.r, color.g, color.b, 1.0)
+  card.name:SetText(name_text)
+  card.stat:SetText(stat_text)
+  card.time:SetText(time_text)
+  clear_card_rows(card)
+  local n = (n_rows < CARD_MAX_ROWS) and n_rows or CARD_MAX_ROWS
+  for i = 1, n do
+    local row = card.rows[i]
+    row.icon:SetHidden(true)
+    row.name:SetText(rows[i][1])
+    row.name:SetColor(C_CARD_STAT.r, C_CARD_STAT.g, C_CARD_STAT.b, 1.0)
+    row.name:SetHidden(false)
+    row.val:SetText(rows[i][2])
+    row.val:SetHidden(false)
+  end
+  local h = CARD_ROWS_Y0 + n * CARD_ROW_H + 4
+  if desc_text and desc_text ~= "" then
+    local desc = card.desc
+    desc:ClearAnchors()
+    desc:SetAnchor(TOPLEFT, card.root, TOPLEFT, 12, h + 2)
+    desc:SetWidth(CARD_W - 20)
+    desc:SetHeight(400)
+    desc:SetText(desc_text)
+    desc:SetHidden(false)
+    local dh = desc_height(desc)
+    desc:SetHeight(dh)
+    h = h + dh + 10
+  end
+  card.root:SetHeight(h)
   position_card(mx, my)
 end
 
@@ -1023,6 +1088,10 @@ local function hover_poll()
   local mx, my = GetUIMousePosition()
   if current_view == VIEW_BY_CONTRIB then
     Vermilion.ContribView.hover(mx, my)
+    return
+  end
+  if current_view == VIEW_BY_DEBUFFS then
+    Vermilion.DebuffsView.hover(mx, my)
     return
   end
   local rel_x  = mx - canvas:GetLeft()
@@ -1516,6 +1585,11 @@ function render_current_view()
     Vermilion.ContribView.render()
     return
   end
+  if current_view == VIEW_BY_DEBUFFS then
+    release_all_pools()
+    Vermilion.DebuffsView.render()
+    return
+  end
   if controls.pool_c_seg then
     controls.pool_c_seg:ReleaseAllObjects()
     controls.pool_c_rim:ReleaseAllObjects()
@@ -1626,6 +1700,9 @@ local function set_view(v)
   persist_view()
   hover_key = nil
   Vermilion.ContribView.reset_scroll()
+  Vermilion.DebuffsView.reset_scroll()
+  Vermilion.DebuffsView.clear_hover()
+  controls.no_data:SetText(GetString((v == VIEW_BY_DEBUFFS) and VERMILION_GRAPH_NO_DEBUFFS or VERMILION_GRAPH_NO_DATA))
   if Vermilion.TemporalBuffer.count() == 0 then
     controls.no_data:SetHidden(false)
     update_hover_gate()
@@ -1657,6 +1734,7 @@ local function on_sample_update()
   Vermilion.TemporalBuffer.push(now, edps, shdps, crit, noncrit,
                                 sample_eos_scratch, sample_eos_abilities,
                                 sample_dtype_groups, sample_dtype_abilities)
+  Vermilion.DebuffTracker.expire_stale(now)
 
   update_header(edps + shdps)
   update_crit(now)
@@ -1695,6 +1773,7 @@ function M.on_record_click()
   Vermilion.SessionStore.on_session_start()
   Vermilion.Trace.on_record(Vermilion.SavedVars)
   recording_start_ms = GetGameTimeMilliseconds()
+  Vermilion.DebuffTracker.start_session(recording_start_ms)
   local sv       = Vermilion.SavedVars
   local interval = (sv and sv.temporal and sv.temporal.sample_rate_ms)
                    or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT
@@ -1716,6 +1795,7 @@ function M.on_stop_click()
   Vermilion.TemporalBuffer.stop_recording()
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
+  Vermilion.DebuffTracker.finalize(GetGameTimeMilliseconds())
   Vermilion.SessionStore.on_session_stop()
   summary_text = build_summary_text()
   if not Vermilion.SessionStore.autosave_pending() then
@@ -1738,6 +1818,7 @@ function M.on_flush_click()
     Vermilion.TemporalBuffer.stop_recording()
   end
   Vermilion.TemporalBuffer.clear()
+  Vermilion.DebuffTracker.reset()
   controls.save_locked = false
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
@@ -1847,7 +1928,7 @@ function M.is_light_active() return light.active end
 
 function M.prev_view()
   local v = current_view - 1
-  if v < VIEW_BY_SKILL then v = VIEW_BY_CONTRIB end
+  if v < VIEW_BY_SKILL then v = VIEW_BY_DEBUFFS end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -1855,7 +1936,7 @@ end
 
 function M.next_view()
   local v = current_view + 1
-  if v > VIEW_BY_CONTRIB then v = VIEW_BY_SKILL end
+  if v > VIEW_BY_DEBUFFS then v = VIEW_BY_SKILL end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -1984,6 +2065,8 @@ function M.load_session(sess)
   release_all_pools()
   hide_grid(controls.grid)
   Vermilion.TemporalBuffer.load_session(series)
+  local steps = (sess.streams.steps and sess.desc.steps) and vsf.unpack(sess.streams.steps, sess.desc.steps) or nil
+  Vermilion.DebuffTracker.load_session(sess.debuffs or {}, steps or {}, 0, sess.head.dur_ms or 0)
   hover_key = nil
   summary_text = build_summary_text()
   controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
@@ -2059,7 +2142,7 @@ function M.init()
   local sv = Vermilion.SavedVars
   sv.graph = sv.graph or {}
   if sv.graph.view_idx and sv.graph.view_idx >= VIEW_BY_SKILL
-     and sv.graph.view_idx <= VIEW_BY_CONTRIB then
+     and sv.graph.view_idx <= VIEW_BY_DEBUFFS then
     current_view = sv.graph.view_idx
   end
   if sv.graph.x then
@@ -2106,6 +2189,30 @@ function M.init()
     function(c) c:SetPixelRoundingEnabled(false) end,
     function(c) c:SetHidden(true) end)
   controls.pool_c_lbl = Pool.new("VermilionContribLbl", controls.canvas, CT_LABEL,
+    function(c)
+      c:SetFont("ZoFontGameSmall")
+      c:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
+      c:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end,
+    function(c) c:SetHidden(true) end)
+  controls.pool_d_seg = Pool.new("VermilionDebuffSeg", controls.canvas, CT_TEXTURE,
+    function(c)
+      fill_factory(c)
+      c:SetDrawLevel(2)
+    end,
+    function(c)
+      c:SetHidden(true)
+      c:SetDrawLevel(2)
+    end)
+  controls.pool_d_rim = Pool.new("VermilionDebuffRim", controls.canvas, CT_TEXTURE,
+    function(c)
+      fill_factory(c)
+      c:SetDrawLevel(3)
+    end, fill_reset)
+  controls.pool_d_icon = Pool.new("VermilionDebuffIcon", controls.canvas, CT_TEXTURE,
+    function(c) c:SetPixelRoundingEnabled(false) end,
+    function(c) c:SetHidden(true) end)
+  controls.pool_d_lbl = Pool.new("VermilionDebuffLbl", controls.canvas, CT_LABEL,
     function(c)
       c:SetFont("ZoFontGameSmall")
       c:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
@@ -2264,13 +2371,46 @@ function M.init()
   end)
   controls.hit = hit_layer
   hit_layer:SetHandler("OnMouseWheel", function(_, delta)
-    if current_view ~= VIEW_BY_CONTRIB then return end
     local dir = (delta and delta < 0) and 1 or -1
-    if Vermilion.ContribView.scroll(dir) then
+    if current_view == VIEW_BY_CONTRIB then
+      if Vermilion.ContribView.scroll(dir) then
+        hide_hover_ui()
+        render_current_view()
+      end
+    elseif current_view == VIEW_BY_DEBUFFS then
+      if Vermilion.DebuffsView.scroll(dir) then
+        hide_hover_ui()
+        render_current_view()
+      end
+    end
+  end)
+  hit_layer:SetHandler("OnMouseUp", function(_, _, upInside)
+    if upInside == false or current_view ~= VIEW_BY_DEBUFFS then return end
+    local mx, my = GetUIMousePosition()
+    if Vermilion.DebuffsView.click(mx, my) then
+      Sound.play(Vermilion.DebuffsView.unfolded() and "on" or "off")
       hide_hover_ui()
+      release_all_pools()
       render_current_view()
     end
   end)
+  Vermilion.DebuffsView.attach({
+    canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
+    seg = controls.pool_d_seg, rim = controls.pool_d_rim, icon = controls.pool_d_icon, lbl = controls.pool_d_lbl,
+    layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, hide_grid = hide_grid, draw_grid = draw_grid,
+    now = GetGameTimeMilliseconds,
+    show_card = show_rows_card,
+    hide_card = function() hide_hover_ui() end,
+    crosshair = function(cx)
+      if not controls.crosshair then return end
+      controls.crosshair:ClearAnchors()
+      controls.crosshair:SetAnchor(TOPLEFT,    controls.canvas, TOPLEFT,    cx, 0)
+      controls.crosshair:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, cx, 0)
+      fade_in(crosshair_fader)
+    end,
+    hit_reset = function() hit_begin(0) end,
+    rerender = function() render_current_view() end,
+  })
   Vermilion.ContribView.attach({
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_c_seg, rim = controls.pool_c_rim, icon = controls.pool_c_icon, lbl = controls.pool_c_lbl,

@@ -31,6 +31,8 @@ local CASES = {
   "polish",
   "contrib_view",
   "scroll_views",
+  "debuff_tracker",
+  "debuffs_view",
 }
 
 local passed, failed = 0, 0

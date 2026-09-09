@@ -17,6 +17,11 @@ local DESC = {
     { name = "crit",    width = 4, scale = 10 },
     { name = "noncrit", width = 4, scale = 10 },
   },
+  steps = {
+    { name = "b", width = 1 },
+    { name = "t", width = 4 },
+    { name = "c", width = 1 },
+  },
   shares = {
     { name = "si",  width = 2 },
     { name = "ch",  width = 1 },
@@ -141,6 +146,26 @@ function M.capture(cooperative)
     return s[name] or 0
   end
 
+  local DT = Vermilion.DebuffTracker
+  local debuffs_meta = {}
+  local steps = {}
+  local n_debuffs = DT and DT.count() or 0
+  if n_debuffs > 64 then n_debuffs = 64 end
+  for i = 1, n_debuffs do
+    local rec = DT.get(i)
+    debuffs_meta[i] = {
+      name = rec.name, id = rec.id, grp = rec.group, desc = rec.desc,
+      uptime_ms = rec.uptime_ms, max_conc = rec.max_conc,
+      unique_units = rec.unique_units or 0, applications = rec.applications or 0,
+      conc_avg = DT.avg_concurrency(rec), longest_gap_ms = rec.longest_gap_ms or 0,
+    }
+    for k = 1, rec.n_steps do
+      local rel = rec.step_t[k] - t0
+      if rel < 0 then rel = 0 end
+      steps[#steps + 1] = { b = i - 1, t = rel, c = rec.step_c[k] }
+    end
+  end
+
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
   local temporal = sv and sv.temporal or {}
@@ -177,9 +202,11 @@ function M.capture(cooperative)
       },
     },
     gkeys = gkeys,
+    debuffs = debuffs_meta,
     desc = DESC,
     streams = {
       series    = vsf.pack(series_get, DESC.series, n_series, ye),
+      steps     = vsf.pack(steps, DESC.steps, nil, ye),
       shares    = vsf.pack(share_recs, DESC.shares, nil, ye),
       abilities = vsf.pack(ability_recs, DESC.abilities, nil, ye),
     },

@@ -341,6 +341,45 @@ function M.unknown_lines()
   return lines
 end
 
+local BUFF_FAMILY_COLORS = {
+  offense  = { r = 0.98, g = 0.60, b = 0.45, a = 0.95 },
+  defense  = { r = 0.45, g = 0.62, b = 0.90, a = 0.95 },
+  sustain  = { r = 0.72, g = 0.94, b = 0.84, a = 0.95 },
+  mobility = { r = 0.75, g = 0.65, b = 0.95, a = 0.95 },
+}
+
+local BUFF_FAMILY_WORDS = {
+  sorcery = "offense", brutality = "offense", prophecy = "offense", savagery = "offense",
+  berserk = "offense", force = "offense", slayer = "offense", courage = "offense",
+  empower = "offense", mending = "offense",
+  breach = "offense", vulnerability = "offense", fracture = "offense",
+  resolve = "defense", ward = "defense", protection = "defense", aegis = "defense",
+  evasion = "defense", toughness = "defense", vitality = "defense",
+  maim = "defense", defile = "defense", cowardice = "defense", uncertainty = "defense", enervation = "defense",
+  intellect = "sustain", endurance = "sustain", fortitude = "sustain", heroism = "sustain",
+  expedition = "mobility", gallop = "mobility",
+  hindrance = "mobility",
+}
+
+local family_cache = {}
+
+function M.buff_family(name)
+  if type(name) ~= "string" or name == "" then return nil end
+  local hit = family_cache[name]
+  if hit ~= nil then return hit or nil end
+  local fam = false
+  local lower = name:lower()
+  local tier, word = lower:match("^(m[ai][jn]or)%s+(%a+)")
+  if tier and word then fam = BUFF_FAMILY_WORDS[word] or false end
+  family_cache[name] = fam
+  return fam or nil
+end
+
+function M.buff_family_color(name)
+  local fam = M.buff_family(name)
+  return fam and BUFF_FAMILY_COLORS[fam] or nil
+end
+
 function M.ability_icon(id) return GetAbilityIcon(id) or "" end
 function M.ability_name(id) return GetAbilityName(id) or ("#" .. tostring(id)) end
 
