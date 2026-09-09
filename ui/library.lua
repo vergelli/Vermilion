@@ -12,6 +12,7 @@ local zui           = Vermilion.zenimax.ui
 local zc            = Vermilion.zenimax.constants
 local zev           = Vermilion.zenimax.events
 local Scene         = Vermilion.zenimax.scene
+local Sound         = Vermilion.Sound
 
 local ROW_H   = 30
 local ROW_GAP = 2
@@ -344,10 +345,14 @@ function M.on_row_click(i)
 end
 
 function M.on_label_save()
-  if not selected then return end
+  if not selected then
+    Sound.play("deny")
+    return
+  end
   local idx = row_session[selected]
   local text = controls.label_edit:GetText() or ""
   if Vermilion.SessionStore.set_label(idx, text) then
+    Sound.play("confirm")
     local keep = selected
     M.refresh()
     selected = keep
@@ -361,6 +366,7 @@ function M.on_open_click()
   if not selected then return end
   local sess = Vermilion.SessionStore.get(row_session[selected])
   if sess and Vermilion.Graph.load_session(sess) then
+    Sound.play("page")
     M.hide()
   end
 end
@@ -371,6 +377,7 @@ function M.on_lock_click()
   local s = Vermilion.SessionStore.get(idx)
   if s then
     Vermilion.SessionStore.set_locked(idx, not s.head.locked)
+    Sound.play("confirm")
     M.refresh()
   end
 end
@@ -435,10 +442,12 @@ function M.on_delete_click()
   if s and s.head.locked then return end
   if not delete_armed then
     arm_delete()
+    Sound.play("deny")
     set_buttons()
     return
   end
   disarm_delete()
+  Sound.play("discard")
   Vermilion.SessionStore.delete(row_session[selected])
   selected = nil
   M.refresh()
@@ -477,11 +486,13 @@ function M.show()
   select_pending()
   sync_label_box()
   Scene.show_top_level(controls.window)
+  Sound.play("open")
 end
 
 function M.hide()
   M.on_thumb_up()
   if controls.window:IsHidden() then return end
+  Sound.play("close")
   Scene.hide_top_level(controls.window)
 end
 

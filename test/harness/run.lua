@@ -20,6 +20,7 @@ local CASES = {
   "auto_stop",
   "manual_save",
   "library_flow",
+  "button_manners",
 }
 
 local passed, failed = 0, 0

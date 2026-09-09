@@ -13,7 +13,7 @@
                      movable="true"
                      mouseEnabled="true">
 
-      <Dimensions x="280" y="386"/>
+      <Dimensions x="280" y="416"/>
 
       <OnMoveStop>Vermilion.Settings.on_move_stop()</OnMoveStop>
 
@@ -173,6 +173,15 @@
           <Anchor point="TOPLEFT" offsetX="144" offsetY="228"/>
           <Dimensions x="122" y="22"/>
           <OnClicked>Vermilion.Settings.on_autostop_click()</OnClicked>
+        </Button>
+
+        <Button name="$(parent)SoundsBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="256"/>
+          <Dimensions x="252" y="22"/>
+          <OnClicked>Vermilion.Settings.on_sounds_click()</OnClicked>
         </Button>
 
         <!-- ── Unknown Contributions entry (opens the assignment window) ── -->

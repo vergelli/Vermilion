@@ -10,7 +10,12 @@ M.WINDOW_MANAGER          = WINDOW_MANAGER
 M.ZO_ObjectPool           = ZO_ObjectPool
 M.CreateControlFromVirtual = CreateControlFromVirtual
 
-M.PlaySound = PlaySound
+local zos_PlaySound = PlaySound
+M.PlaySound = function(id)
+  local sv = Vermilion.SavedVars
+  if sv and sv.settings and sv.settings.sounds == false then return end
+  return zos_PlaySound(id)
+end
 
 function M.tooltip(control, string_id, side)
   control:SetHandler("OnMouseEnter", function(self)

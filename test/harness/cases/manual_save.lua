@@ -20,7 +20,9 @@ return function(H)
   ok(btn._enabled == false, "nothing to save on an empty graph")
 
   H.chat = {}
+  H.sounds = {}
   ok(Vermilion.Graph.on_save_click() == false, "saving an empty graph is refused")
+  ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("deny")), "refusal plays the negative click")
   ok(H.chat_contains("Nothing to save"), "refusal explains there is nothing to save")
   ok(SS.count() == 0, "no session stored for an empty graph")
 
@@ -46,6 +48,7 @@ return function(H)
   ok((btn._alpha or 1) == 1, "the save icon comes back to full alpha")
 
   H.chat = {}
+  H.sounds = {}
   ok(Vermilion.Graph.on_save_click() == true, "manual save accepted")
   ok(status._text and status._text:find("SAVING", 1, true), "while the capture runs the status reads SAVING, got " .. tostring(status._text))
   ok(H.update_registered("VermilionSavingSpin"), "a spinner ticks while saving")
@@ -57,6 +60,9 @@ return function(H)
   ok(SS.get(1).head.manual == true, "a manual save is marked as such")
   ok(SS.get(1).head.zone == "Fungal Grotto", "the stored session carries the zone")
   ok(H.chat_contains("saved to the library"), "the chat line confirms the save")
+  local heard = false
+  for _, snd in ipairs(H.sounds) do if snd == ("sound:" .. Vermilion.Sound.name("save")) then heard = true end end
+  ok(heard, "a manual save is confirmed with its own sound")
   ok(status._text and status._text:find("SAVED", 1, true) and status._text:find("Fungal Grotto", 1, true),
      "the status line reads SAVED with the zone, got " .. tostring(status._text))
   ok(btn._enabled == false, "the icon goes grey once the recording is saved")

@@ -30,6 +30,7 @@ return function(H)
   Vermilion.Settings.on_autostop_click()
   ok(AR.get_auto_stop() == true and sv.settings.auto_stop == true, "the button turns auto-stop on and persists it")
   ok(btn._text == "Auto-stop: On", "the button reads On, got " .. tostring(btn._text))
+  ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("on")), "turning it on confirms with the accept sound")
   ok(H.update_registered("VermilionAutoRecTick"), "auto-stop alone registers the tick")
 
   Vermilion.Graph.on_record_click()
