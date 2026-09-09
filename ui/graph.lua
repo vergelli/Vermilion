@@ -2211,7 +2211,7 @@ function M.init()
   if sv.graph.w then
     controls.window:SetDimensions(sv.graph.w, sv.graph.h)
   end
-  controls.window:SetDimensionConstraints(360, 240, 1000, 700)
+  controls.window:SetDimensionConstraints(400, 240, 1000, 700)
 
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
   VermilionGraphWindowChromeTop   :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)

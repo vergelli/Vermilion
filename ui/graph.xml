@@ -184,19 +184,19 @@
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
           <Anchor point="TOPLEFT" offsetX="204" offsetY="6"/>
-          <Dimensions x="92" y="26"/>
+          <Dimensions x="64" y="26"/>
         </Label>
 
         <Label name="$(parent)CritLabel"
                font="ZoFontGame"
-               horizontalAlignment="RIGHT"
+               horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="RIGHT" relativeTo="$(parent)SettingsBtn" relativePoint="LEFT" offsetX="-6" offsetY="0"/>
-          <Dimensions x="34" y="18"/>
+          <Anchor point="LEFT" relativeTo="$(parent)CritIcon" relativePoint="RIGHT" offsetX="3" offsetY="0"/>
+          <Dimensions x="40" y="18"/>
         </Label>
 
         <Texture name="$(parent)CritIcon" textureFile="EsoUI/Art/LFG/LFG_icon_dps.dds">
-          <Anchor point="RIGHT" relativeTo="$(parent)CritLabel" relativePoint="LEFT" offsetX="-3" offsetY="0"/>
+          <Anchor point="LEFT" relativeTo="$(parent)ReadoutLabel" relativePoint="RIGHT" offsetX="6" offsetY="0"/>
           <Dimensions x="20" y="20"/>
         </Texture>
 

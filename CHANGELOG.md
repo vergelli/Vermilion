@@ -8,7 +8,7 @@ All notable changes to Vermilion are documented here. This project follows
 ### Added
 - CONTRIB view: the Type column shows the damage-type icon instead of a word, and the shield rows wear the shield icon. Hover a row and the card carries the same icon with the type's name. Every second row wears a faint band, and each row shows its rank.
 - The summary chip ends with the icon of the damage type that carried the recording and its share; the damage report names it.
-- The header reads "idle" in grey while nothing is recording, and shows the number again as soon as a recording starts.
+- The header reads "idle" in grey while nothing is recording, and shows the number again as soon as a recording starts. The crit readout now sits right after the damage readout instead of by the gear.
 
 ### Fixed
 - The damage report of a library session showed zero total and zero hits; it now reads the totals saved with the session.
