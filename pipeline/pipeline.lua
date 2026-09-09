@@ -147,6 +147,11 @@ function M.init()
   E.register("Vermilion_E_EffectPlayer", EVENT_EFFECT_CHANGED, M.dispatch_effect_player_src)
   E.add_filter("Vermilion_E_EffectPlayer", EVENT_EFFECT_CHANGED,
     REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
+  if C.EVENT_ACTIVE_WEAPON_PAIR_CHANGED then
+    E.register("Vermilion_E_WeaponPair", C.EVENT_ACTIVE_WEAPON_PAIR_CHANGED, function()
+      Vermilion.DebuffTracker.on_bars_changed()
+    end)
+  end
 
   Log:info("init complete; 2 combat-event handlers and the effect handler registered")
 end
