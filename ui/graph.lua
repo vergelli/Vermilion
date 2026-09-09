@@ -1116,10 +1116,36 @@ function render_current_view()
   end
 end
 
+function M.save_available()
+  local TB = Vermilion.TemporalBuffer
+  local n = TB.count()
+  if TB.is_recording() or n == 0 or controls.save_locked then return false end
+  return not (controls.saved_start == recording_start_ms and controls.saved_count == n)
+end
+
+function M.pulse(btn, name)
+  if not btn then return end
+  controls.pulse_t = controls.pulse_t or {}
+  controls.pulse_t[name] = 0
+  zev.register_update(name, 16, function()
+    local t = controls.pulse_t[name] + 16
+    controls.pulse_t[name] = t
+    if t >= 720 then
+      btn:SetAlpha(1)
+      zev.unregister_update(name)
+      return
+    end
+    btn:SetAlpha(0.35 + 0.65 * math.abs(math.cos((t % 360) / 360 * math.pi)))
+  end)
+end
+
+function M.pulse_lib() M.pulse(controls.btn_lib, "VermilionLibPulse") end
+
 local function refresh_button_colors()
   local recording = Vermilion.TemporalBuffer.is_recording()
   controls.btn_record:SetEnabled(not recording)
   controls.btn_stop:SetEnabled(recording)
+  if controls.btn_save then controls.btn_save:SetEnabled(M.save_available()) end
   update_hover_gate()
 end
 
@@ -1169,7 +1195,8 @@ local function on_sample_update()
   update_crit(now)
 
   local elapsed = math_floor((now - recording_start_ms) / 1000)
-  controls.status:SetText(string_format("%d:%02d", math_floor(elapsed / 60), elapsed % 60))
+  local prefix  = Vermilion.AutoRecord.is_auto_session() and "AUTO " or ""
+  controls.status:SetText(string_format("%s%d:%02d", prefix, math_floor(elapsed / 60), elapsed % 60))
 
   if not controls.window:IsHidden() then
     render_current_view()
@@ -1182,7 +1209,12 @@ function M.current_view() return current_view end
 function M.on_record_click()
   if Vermilion.TemporalBuffer.is_recording() then return end
   log:info("record click")
+  if not Vermilion.AutoRecord.is_auto_active() then
+    Vermilion.AutoRecord.notify_manual_record()
+  end
   Vermilion.SessionStore.finish_autosave()
+  controls.save_locked = false
+  controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
   Vermilion.Metrics.session_mark()
   release_all_pools()
@@ -1198,29 +1230,40 @@ function M.on_record_click()
   zev.register_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME, interval, on_sample_update)
   refresh_button_colors()
   controls.status:SetText("0:00")
+  controls.status:SetColor(0.65, 0.65, 0.65, 1)
 end
 
 function M.on_stop_click()
   if not Vermilion.TemporalBuffer.is_recording() then return end
   log:info("stop click")
+  Vermilion.AutoRecord.notify_manual_stop()
   Vermilion.TemporalBuffer.stop_recording()
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
   Vermilion.SessionStore.on_session_stop()
+  if not Vermilion.SessionStore.autosave_pending() then
+    controls.status:SetText(GetString(VERMILION_SAVE_STATUS_UNSAVED))
+    controls.status:SetColor(0.93, 0.72, 0.36, 1)
+    M.pulse(controls.btn_save, "VermilionSavePulse")
+  end
   refresh_button_colors()
   render_current_view()
 end
 
 function M.on_flush_click()
+  Vermilion.SessionStore.finish_autosave()
   if Vermilion.TemporalBuffer.is_recording() then
     zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
     Vermilion.TemporalBuffer.stop_recording()
   end
   Vermilion.TemporalBuffer.clear()
+  controls.save_locked = false
+  controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
   hide_grid(controls.grid)
   refresh_button_colors()
   controls.status:SetText("")
+  controls.status:SetColor(0.65, 0.65, 0.65, 1)
   update_header(0)
   if controls.crit then apply_crit(C_CRIT_IDLE, "—") end
   controls.no_data:SetHidden(false)
@@ -1290,18 +1333,78 @@ function M.toggle()
 end
 
 
-function M.on_session_saved(session)
-  d("[Vm] " .. string_format(GetString(VERMILION_LIB_SAVED),
-    session.head.zone or "?", fmt_secs(session.head.dur_ms or 0)))
+function M.on_save_click()
+  local TB = Vermilion.TemporalBuffer
+  if TB.is_recording() then
+    d("[Vm] " .. GetString(VERMILION_SAVE_BUSY))
+    return false
+  end
+  if TB.count() == 0 then
+    d("[Vm] " .. GetString(VERMILION_SAVE_NOTHING))
+    return false
+  end
+  Vermilion.SessionStore.finish_autosave()
+  if not M.save_available() then
+    d("[Vm] " .. GetString(VERMILION_SAVE_ALREADY))
+    return false
+  end
+  log:info("manual save")
+  Vermilion.SessionStore.save_now()
+  Vermilion.Diagnostics.bump("library.manual_save")
+  return true
+end
+
+function M.toggle_record()
+  if Vermilion.TemporalBuffer.is_recording() then
+    M.on_stop_click()
+  else
+    M.on_record_click()
+  end
+end
+
+local function wire_save_hooks()
+  local SS = Vermilion.SessionStore
+  controls.saving_frames = { "SAVING", "SAVING ·", "SAVING · ·", "SAVING · · ·" }
+  SS.on_save_begin = function()
+    controls.saving_t = 0
+    controls.status:SetText(controls.saving_frames[1])
+    controls.status:SetColor(0.65, 0.65, 0.65, 1)
+    if controls.btn_save then controls.btn_save:SetAlpha(0.45) end
+    zev.register_update("VermilionSavingSpin", 150, function()
+      local t = controls.saving_t + 1
+      controls.saving_t = t
+      controls.status:SetText(controls.saving_frames[(t % 4) + 1])
+    end)
+  end
+  SS.on_save_end = function(stored)
+    zev.unregister_update("VermilionSavingSpin")
+    if controls.btn_save then controls.btn_save:SetAlpha(1) end
+    if not stored then
+      controls.status:SetText(GetString(VERMILION_SAVE_STATUS_UNSAVED))
+      controls.status:SetColor(0.93, 0.72, 0.36, 1)
+    end
+  end
+  SS.on_saved = function(session)
+    d("[Vm] " .. string_format(GetString(VERMILION_LIB_SAVED),
+      session.head.zone or "?", fmt_secs(session.head.dur_ms or 0)))
+    controls.saved_start, controls.saved_count = recording_start_ms, Vermilion.TemporalBuffer.count()
+    controls.status:SetText(string_format(GetString(VERMILION_SAVE_STATUS), session.head.zone or "?"))
+    controls.status:SetColor(0.65, 0.65, 0.65, 1)
+    refresh_button_colors()
+    M.pulse_lib()
+    if Vermilion.Library and Vermilion.Library.on_session_saved then
+      Vermilion.Library.on_session_saved(session.head.manual == true)
+    end
+  end
 end
 
 function M.init()
-  Vermilion.SessionStore.on_saved = M.on_session_saved
   controls.window        = VermilionGraphWindow
   controls.title         = VermilionGraphWindowTitleLabel
   controls.btn_record    = VermilionGraphWindowRecordBtn
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
+  controls.btn_save      = VermilionGraphWindowSaveBtn
   controls.status        = VermilionGraphWindowStatusLabel
   controls.btn_prev_view = VermilionGraphWindowPrevViewBtn
   controls.view_label    = VermilionGraphWindowViewLabel
@@ -1363,6 +1466,13 @@ function M.init()
   tint_btn(controls.btn_record, 0.95, 0.42, 0.34)
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.80, 0.30, 0.28)
+  zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
+  zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
+  zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
+  zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
+  zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
+  zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
+  wire_save_hooks()
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.no_data:SetText(GetString(VERMILION_GRAPH_NO_DATA))

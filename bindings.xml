@@ -4,6 +4,12 @@
       <Action name="VERMILION_TOGGLE">
         <Down>Vermilion.Visibility.master_toggle()</Down>
       </Action>
+      <Action name="VERMILION_RECORD">
+        <Down>Vermilion.Graph.toggle_record()</Down>
+      </Action>
+      <Action name="VERMILION_SAVE">
+        <Down>Vermilion.Graph.on_save_click()</Down>
+      </Action>
     </Category>
   </Layer>
 </Bindings>

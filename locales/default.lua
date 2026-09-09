@@ -2,6 +2,8 @@ Vermilion = Vermilion or {}
 
 -- Keybinding label shown in ESO Controls settings
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_TOGGLE", "Toggle Vermilion Window")
+ZO_CreateStringId("SI_BINDING_NAME_VERMILION_RECORD", "Start / Stop Recording")
+ZO_CreateStringId("SI_BINDING_NAME_VERMILION_SAVE",   "Save Recording to Library")
 
 -- Debug / status strings. I have a copybox for these, but they should be localized anyway.
 ZO_CreateStringId("VERMILION_PROBE_ON",       "Probe ON. Logging events to chat (rate-limited).")
@@ -59,3 +61,27 @@ ZO_CreateStringId("VERMILION_KIND_BGC",     "Competitive Battleground")
 ZO_CreateStringId("VERMILION_KIND_AVA",     "Alliance War")
 ZO_CreateStringId("VERMILION_KIND_HOUSE",   "Home")
 ZO_CreateStringId("VERMILION_KIND_WORLD",   "Overland")
+
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOREC_OFF",    "Auto-record: Off")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOREC_BOSS",   "Auto-record: Boss fights")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOREC_COMBAT", "Auto-record: Any combat")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOSAVE_ON",    "Autosave: On")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOSAVE_OFF",   "Autosave: Off")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOSTOP_ON",    "Auto-stop: On")
+ZO_CreateStringId("VERMILION_SETTINGS_AUTOSTOP_OFF",   "Auto-stop: Off")
+
+ZO_CreateStringId("VERMILION_TIP_RECORD",    "Start recording. The graph fills up while you fight.")
+ZO_CreateStringId("VERMILION_TIP_STOP",      "Stop recording and freeze the graph for review.")
+ZO_CreateStringId("VERMILION_TIP_FLUSH",     "Clear the graph for a new recording.")
+ZO_CreateStringId("VERMILION_TIP_SAVE",      "Keep this recording in the library")
+ZO_CreateStringId("VERMILION_TIP_PREV_VIEW", "Previous view")
+ZO_CreateStringId("VERMILION_TIP_NEXT_VIEW", "Next view")
+ZO_CreateStringId("VERMILION_TIP_AUTOREC",   "Let Vermilion start recording on its own: off, boss fights, or any combat")
+ZO_CreateStringId("VERMILION_TIP_AUTOSAVE",  "Save every recording into the library when it stops")
+ZO_CreateStringId("VERMILION_TIP_AUTOSTOP",  "Stop a recording you started by hand a few seconds after combat ends")
+
+ZO_CreateStringId("VERMILION_SAVE_STATUS",         "SAVED  %s")
+ZO_CreateStringId("VERMILION_SAVE_STATUS_UNSAVED", "NOT SAVED")
+ZO_CreateStringId("VERMILION_SAVE_BUSY",           "Stop the recording before saving it.")
+ZO_CreateStringId("VERMILION_SAVE_NOTHING",        "Nothing to save. Record a fight first.")
+ZO_CreateStringId("VERMILION_SAVE_ALREADY",        "This recording is already in the library.")

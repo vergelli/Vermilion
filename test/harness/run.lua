@@ -16,6 +16,9 @@ local CASES = {
   "vsf_codec",
   "session_store",
   "content_kind",
+  "auto_record",
+  "auto_stop",
+  "manual_save",
 }
 
 local passed, failed = 0, 0

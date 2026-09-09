@@ -247,8 +247,58 @@ function M.on_critthresh_track_click(control)
   update_slider(controls.track_critthresh, controls.fill_critthresh, controls.thumb_critthresh, controls.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
 end
 
+local function autorec_label(m)
+  if m == "boss"   then return GetString(VERMILION_SETTINGS_AUTOREC_BOSS)   end
+  if m == "combat" then return GetString(VERMILION_SETTINGS_AUTOREC_COMBAT) end
+  return GetString(VERMILION_SETTINGS_AUTOREC_OFF)
+end
+
+local function autosave_label(on)
+  return on and GetString(VERMILION_SETTINGS_AUTOSAVE_ON) or GetString(VERMILION_SETTINGS_AUTOSAVE_OFF)
+end
+
+local function autostop_label(on)
+  return on and GetString(VERMILION_SETTINGS_AUTOSTOP_ON) or GetString(VERMILION_SETTINGS_AUTOSTOP_OFF)
+end
+
+function M.on_autorec_click()
+  local AR    = Vermilion.AutoRecord
+  local modes = AR.modes()
+  local cur   = AR.get_mode()
+  local idx   = 1
+  for i = 1, #modes do
+    if modes[i] == cur then idx = i break end
+  end
+  local nxt = modes[(idx % #modes) + 1]
+  AR.set_mode(nxt)
+  controls.autorec_btn:SetText(autorec_label(nxt))
+end
+
+function M.on_autosave_click()
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  local now = not (sv.settings.session_autosave == true)
+  sv.settings.session_autosave = now
+  controls.autosave_btn:SetText(autosave_label(now))
+end
+
+function M.on_autostop_click()
+  local now = not Vermilion.AutoRecord.get_auto_stop()
+  Vermilion.AutoRecord.set_auto_stop(now)
+  controls.autostop_btn:SetText(autostop_label(now))
+end
+
 function M.on_reset_click()
   log:info("reset to defaults")
+  local sv = Vermilion.SavedVars
+  if sv and sv.settings then
+    Vermilion.AutoRecord.set_mode("off")
+    controls.autorec_btn:SetText(autorec_label("off"))
+    sv.settings.session_autosave = false
+    controls.autosave_btn:SetText(autosave_label(false))
+    Vermilion.AutoRecord.set_auto_stop(false)
+    controls.autostop_btn:SetText(autostop_label(false))
+  end
   current_sample     = SAMPLE_DEFAULT
   current_twindow    = TWINDOW_DEFAULT
   current_vpalpha    = VPALPHA_DEFAULT
@@ -322,6 +372,15 @@ function M.init()
   controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
   controls.unknown_label  = VermilionSettingsPanelUnknownLabel
   controls.logo_btn       = VermilionSettingsPanelLogoBtn
+  controls.autorec_btn    = VermilionSettingsPanelAutoRecBtn
+  controls.autosave_btn   = VermilionSettingsPanelAutosaveBtn
+  controls.autostop_btn   = VermilionSettingsPanelAutoStopBtn
+  zui.tooltip(controls.autorec_btn,  VERMILION_TIP_AUTOREC)
+  zui.tooltip(controls.autosave_btn, VERMILION_TIP_AUTOSAVE)
+  zui.tooltip(controls.autostop_btn, VERMILION_TIP_AUTOSTOP)
+  controls.autorec_btn:SetText(autorec_label(sv.settings.auto_record or "off"))
+  controls.autosave_btn:SetText(autosave_label(sv.settings.session_autosave == true))
+  controls.autostop_btn:SetText(autostop_label(sv.settings.auto_stop == true))
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))

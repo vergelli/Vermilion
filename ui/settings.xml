@@ -13,7 +13,7 @@
                      movable="true"
                      mouseEnabled="true">
 
-      <Dimensions x="280" y="326"/>
+      <Dimensions x="280" y="386"/>
 
       <OnMoveStop>Vermilion.Settings.on_move_stop()</OnMoveStop>
 
@@ -147,6 +147,33 @@
           <Dimensions y="14"/>
           <OnMouseUp>Vermilion.Settings.on_critthresh_track_click(self)</OnMouseUp>
         </Control>
+
+        <Button name="$(parent)AutoRecBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="200"/>
+          <Dimensions x="252" y="22"/>
+          <OnClicked>Vermilion.Settings.on_autorec_click()</OnClicked>
+        </Button>
+
+        <Button name="$(parent)AutosaveBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="228"/>
+          <Dimensions x="122" y="22"/>
+          <OnClicked>Vermilion.Settings.on_autosave_click()</OnClicked>
+        </Button>
+
+        <Button name="$(parent)AutoStopBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="144" offsetY="228"/>
+          <Dimensions x="122" y="22"/>
+          <OnClicked>Vermilion.Settings.on_autostop_click()</OnClicked>
+        </Button>
 
         <!-- ── Unknown Contributions entry (opens the assignment window) ── -->
         <Button name="$(parent)UnknownBtn" mouseEnabled="true"

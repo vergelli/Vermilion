@@ -42,6 +42,9 @@ local function on_slash(input)
           .. "  (subcmd: start | stop | save | clear | auto)")
       end
       return
+    elseif cmd == "autorec" then
+      for _, line in ipairs(Vermilion.AutoRecord.report_lines()) do d("[Vm] " .. line) end
+      return
     elseif cmd == "sessions" then
       for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
       return
@@ -177,6 +180,7 @@ local function on_addon_loaded()
   Vermilion.Logo.init()
   Vermilion.Settings.init()
   Vermilion.Graph.init()
+  Vermilion.AutoRecord.init()
   Vermilion.Assign.init()
   Vermilion.Visibility.init()
 
