@@ -43,6 +43,8 @@ Six views share one window. Click a tab, or use the Next and Previous view keybi
 
 **DEBUFFS** shows the uptime of the debuffs you put on enemies: one lane per debuff, brighter when more targets carry it at once, folded into an "always on" strip when a debuff stayed up the whole fight. Lanes are coloured by skill line where the debuff has one, and by family otherwise: warm for Major and Minor offense debuffs like Breach and Brittle, blue for defense ones like Maim, mint for sustain, ember for status effects like Burning and Poisoned, khaki for taunts and control. Your own skill effects are not listed here; their damage is in SKILL and CONTRIB.
 
+![DEBUFFS view](docs/assets/debuffs-view-1.0.png)
+
 ## The report
 
 After Stop, the chip in the top corner sums up the recording: average, peak, crit rate, active time and shield share. Hover it for the full report, click it to copy the text into chat.
