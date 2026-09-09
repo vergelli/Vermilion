@@ -24,6 +24,8 @@ return function(H)
     VermilionSettingsPanelUnknownBtn,
     VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn,
+    VermilionSettingsPanelLightBtn,
+    VermilionSettingsPanelSliderTrackLightAlpha,
   }
   for _, c in ipairs(left_col) do
     local r = H.layout(c)

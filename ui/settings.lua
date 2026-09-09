@@ -73,6 +73,14 @@ for pct = 0, 100, 5 do
 end
 local CRITTHRESH_DEFAULT = 50
 
+local LIGHTA_PRESETS = {}
+local LIGHTA_LABELS  = {}
+for pct = 10, 90, 5 do
+  LIGHTA_PRESETS[#LIGHTA_PRESETS + 1] = pct
+  LIGHTA_LABELS[pct] = pct .. "%"
+end
+local LIGHTA_DEFAULT = 40
+
 local USER_PREFIX = "user:"
 
 local function is_user_profile(id)
@@ -127,6 +135,7 @@ local current_twindow    = TWINDOW_DEFAULT
 local current_vpalpha    = VPALPHA_DEFAULT
 local current_critthresh = CRITTHRESH_DEFAULT
 local current_profile    = PROFILE_DEFAULT
+local current_lighta     = LIGHTA_DEFAULT
 local profile_combo
 
 local function nearest_idx(presets, ms)
@@ -302,6 +311,7 @@ local function refresh_all_sliders()
   update_slider(c.track_twindow, c.fill_twindow, c.thumb_twindow, c.label_twindow, TWINDOW_PRESETS, TWINDOW_LABELS, current_twindow)
   update_slider(c.track_vpalpha, c.fill_vpalpha, c.thumb_vpalpha, c.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
   update_slider(c.track_critthresh, c.fill_critthresh, c.thumb_critthresh, c.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
+  update_slider(c.track_lighta, c.fill_lighta, c.thumb_lighta, c.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
   tint_temporal()
 end
 
@@ -423,6 +433,32 @@ function M.on_critthresh_track_click(control)
   Vermilion.Graph.set_crit_threshold(current_critthresh)
   mark_custom()
   update_slider(controls.track_critthresh, controls.fill_critthresh, controls.thumb_critthresh, controls.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
+end
+
+local function light_label(on)
+  return on and GetString(VERMILION_SETTINGS_LIGHT_ON) or GetString(VERMILION_SETTINGS_LIGHT_OFF)
+end
+
+function M.on_light_click()
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  local now = not (sv.settings.light_mode == true)
+  sv.settings.light_mode = now
+  Sound.play(now and "on" or "off")
+  controls.light_btn:SetText(light_label(now))
+  Vermilion.Graph.set_light_enabled(now)
+end
+
+function M.on_lightalpha_track_click(control)
+  local v = track_pick(control, LIGHTA_PRESETS)
+  if not v then return end
+  current_lighta = v
+  log:info("light_alpha ->", current_lighta, "%")
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  sv.settings.light_alpha_pct = current_lighta
+  Vermilion.Graph.set_light_alpha(current_lighta / 100)
+  update_slider(controls.track_lighta, controls.fill_lighta, controls.thumb_lighta, controls.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
 end
 
 function M.on_confirm_yes()
@@ -617,7 +653,12 @@ function M.on_reset_click()
     controls.autostop_btn:SetText(autostop_label(false))
     sv.settings.sounds = nil
     controls.sounds_btn:SetText(sounds_label(true))
+    sv.settings.light_mode = false
+    sv.settings.light_alpha_pct = nil
+    controls.light_btn:SetText(light_label(false))
+    Vermilion.Graph.set_light_enabled(false)
   end
+  current_lighta = LIGHTA_DEFAULT
   if profile_combo then
     profile_combo:SetSelectedItemText(profile_label_for(PROFILE_DEFAULT))
   end
@@ -704,6 +745,10 @@ function M.init()
   controls.autosave_btn   = VermilionSettingsPanelAutosaveBtn
   controls.autostop_btn   = VermilionSettingsPanelAutoStopBtn
   controls.sounds_btn     = VermilionSettingsPanelSoundsBtn
+  controls.light_btn      = VermilionSettingsPanelLightBtn
+  controls.title_lighta   = VermilionSettingsPanelLightAlphaTitle
+  controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
+  controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
   controls.profile_label  = VermilionSettingsPanelProfileLabel
   controls.profile_combo  = VermilionSettingsPanelProfileDropdown
   controls.pname_edit     = VermilionSettingsPanelPNameBoxEdit
@@ -716,6 +761,7 @@ function M.init()
   zui.tooltip(controls.autosave_btn, VERMILION_TIP_AUTOSAVE)
   zui.tooltip(controls.autostop_btn, VERMILION_TIP_AUTOSTOP)
   zui.tooltip(controls.sounds_btn,   VERMILION_TIP_SOUNDS)
+  zui.tooltip(controls.light_btn,    VERMILION_TIP_LIGHT)
   zui.tooltip(controls.unknown_btn,  VERMILION_TIP_UNKNOWN)
   zui.tooltip(controls.logo_btn,     VERMILION_TIP_LOGO)
   zui.tooltip(controls.reset_btn,    VERMILION_TIP_RESET)
@@ -760,12 +806,14 @@ function M.init()
   controls.autosave_btn:SetText(autosave_label(sv.settings.session_autosave == true))
   controls.autostop_btn:SetText(autostop_label(sv.settings.auto_stop == true))
   controls.sounds_btn:SetText(sounds_label(sounds_on()))
+  controls.light_btn:SetText(light_label(sv.settings.light_mode == true))
+  current_lighta = LIGHTA_PRESETS[nearest_idx(LIGHTA_PRESETS, sv.settings.light_alpha_pct or LIGHTA_DEFAULT)]
 
   profile_combo = ZO_ComboBox_ObjectFromContainer(controls.profile_combo)
   profile_combo:SetSortsItems(false)
   rebuild_profile_combo()
 
-  for _, k in ipairs({ "sample", "twindow", "vpalpha", "critthresh" }) do
+  for _, k in ipairs({ "sample", "twindow", "vpalpha", "critthresh", "lighta" }) do
     controls["title_" .. k]:SetColor(0.75, 0.75, 0.75, 1)
     controls["label_" .. k]:SetColor(0.95, 0.80, 0.20, 1)
   end
@@ -773,12 +821,14 @@ function M.init()
   controls.title_twindow:SetText(GetString(VERMILION_SETTING_TIME_WINDOW))
   controls.title_vpalpha:SetText(GetString(VERMILION_SETTING_VIEWPORT_ALPHA))
   controls.title_critthresh:SetText(GetString(VERMILION_SETTING_CRIT_THRESHOLD))
+  controls.title_lighta:SetText(GetString(VERMILION_SETTING_LIGHT_ALPHA))
 
   local c = controls
   c.fill_sample,  c.thumb_sample  = setup_slider_visuals(c.track_sample,  "VermilionSettingsSample")
   c.fill_twindow, c.thumb_twindow = setup_slider_visuals(c.track_twindow, "VermilionSettingsTWindow")
   c.fill_vpalpha, c.thumb_vpalpha = setup_slider_visuals(c.track_vpalpha, "VermilionSettingsVPAlpha")
   c.fill_critthresh, c.thumb_critthresh = setup_slider_visuals(c.track_critthresh, "VermilionSettingsCritThresh")
+  c.fill_lighta, c.thumb_lighta = setup_slider_visuals(c.track_lighta, "VermilionSettingsLightA")
 
   if sv.settings.x and sv.settings.y then
     controls.window:ClearAnchors()

@@ -104,11 +104,13 @@ function M.is_recording() return state.recording end
 
 function M.start_recording()
   state.recording = true
+  if Vermilion.Logo and Vermilion.Logo.set_recording then Vermilion.Logo.set_recording(true) end
   log:info("start_recording")
 end
 
 function M.stop_recording()
   state.recording = false
+  if Vermilion.Logo and Vermilion.Logo.set_recording then Vermilion.Logo.set_recording(false) end
   log:info("stop_recording: count=", state.count, "/", state.capacity)
 end
 

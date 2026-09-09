@@ -10,7 +10,7 @@ return function(H)
     "VermilionSettingsPanelAutoRecBtn", "VermilionSettingsPanelAutosaveBtn", "VermilionSettingsPanelAutoStopBtn",
     "VermilionSettingsPanelSoundsBtn", "VermilionSettingsPanelUnknownBtn", "VermilionSettingsPanelLogoBtn",
     "VermilionSettingsPanelResetBtn", "VermilionSettingsPanelCloseBtn",
-    "VermilionSettingsPanelPSaveBtn", "VermilionSettingsPanelPDeleteBtn",
+    "VermilionSettingsPanelPSaveBtn", "VermilionSettingsPanelPDeleteBtn", "VermilionSettingsPanelLightBtn",
   }
   for _, name in ipairs(BUTTONS) do
     local c = rawget(_G, name)

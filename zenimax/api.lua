@@ -46,6 +46,8 @@ M.AreUnitsEqual    = AreUnitsEqual
 M.DoesUnitExist    = DoesUnitExist
 M.ReloadUI         = ReloadUI
 M.GetUIMousePosition = GetUIMousePosition
+M.GetUIGlobalScale   = GetUIGlobalScale
+M.MouseIsOver        = MouseIsOver
 
 M.GetCurrentZoneDungeonDifficulty = GetCurrentZoneDungeonDifficulty
 M.GetMapContentType         = GetMapContentType

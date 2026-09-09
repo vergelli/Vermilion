@@ -8,11 +8,17 @@ local log = Vermilion.Log.for_module("visibility")
 local in_hud = true
 local user_visible = { graph = false }
 local restore = {}
+local graph_shown = false
 local AUX_WINDOWS = { "VermilionSettingsPanel", "VermilionSettingsConfirm", "VermilionLibrary", "VermilionAssignPanel" }
 
 local function apply()
   if VermilionGraphWindow then
-    VermilionGraphWindow:SetHidden(not (in_hud and user_visible.graph))
+    local show = in_hud and user_visible.graph
+    VermilionGraphWindow:SetHidden(not show)
+    if show and not graph_shown and Vermilion.Graph and Vermilion.Graph.on_shown then
+      Vermilion.Graph.on_shown()
+    end
+    graph_shown = show
   end
   for _, name in ipairs(AUX_WINDOWS) do
     local win = _G[name]
