@@ -3,7 +3,7 @@
 ## Author: Federico Vergelli
 ## Version: 0.9.1
 ## AddOnVersion: 4
-## APIVersion: 101049 101050
+## APIVersion: 101051 101050
 ## SavedVariables: VermilionSavedVars
 
 # This Add-on is not created by, affiliated with, or sponsored by ZeniMax Media Inc. or its affiliates.

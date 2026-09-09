@@ -3,6 +3,12 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Manifest: APIVersion lists the current live patch and the PTS one, so the addon is no longer flagged out of date.
+- Debug tools need two keys in core/constants.lua, DEV and MODE, like the rest of the family. Flipping DEBUG alone does nothing.
+
 ## [0.9.1] - 2026-07-12
 
 - The damage-type icon on the hover card doubles in size (14px chip to a 28px icon spanning the name and stat lines); the SKILL view keeps its color chip untouched.
