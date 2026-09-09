@@ -90,6 +90,14 @@ function M.iterate(fn)
   end
 end
 
+function M.at(i)
+  local n = state.count
+  if i < 1 or i > n then return nil end
+  local cap = state.capacity
+  local oldest = (n >= cap) and state.write or 1
+  return state.data[((oldest - 1 + i - 1) % cap) + 1]
+end
+
 function M.count()        return state.count     end
 function M.capacity()     return state.capacity  end
 function M.is_recording() return state.recording end
