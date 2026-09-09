@@ -39,3 +39,7 @@ luac.out
 *.x86_64
 *.hex
 
+
+test/simlab/out/
+qa/robot/output/
+__pycache__/
