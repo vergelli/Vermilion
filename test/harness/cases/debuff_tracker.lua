@@ -75,6 +75,7 @@ return function(H)
   end
 
   H.ability_names = { [777] = "Twin Debuff", [778] = "Twin Debuff" }
+  local unknown_before = Vermilion.SkillColors.unknown_count()
   G.on_record_click()
   eq(BT.count(), 0, "new session must reset tracked debuffs")
   ok(BT.is_recording(), "tracker must follow recording state")
@@ -84,6 +85,7 @@ return function(H)
   G.on_stop_click()
   eq(BT.count(), 1, "two ability ids with one name merge into one debuff")
   eq(BT.get(1).max_conc, 2, "the merged debuff counts both targets")
+  eq(Vermilion.SkillColors.unknown_count(), unknown_before, "tracking a debuff never files it under Unknown Contributions")
   H.ability_names = nil
 
   H.skill_keys = { [810] = {2, 4, 6}, [40095] = {1, 2, 3}, [811] = {0, 0, 0} }

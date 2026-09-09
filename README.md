@@ -1,159 +1,112 @@
 # Vermilion
 
-![Version](https://img.shields.io/badge/version-0.8.0-blue)
-![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua&logoColor=white)
-![ESO](https://img.shields.io/badge/ESO-Update%2049%20%C2%B7%20API%20101049-orange)
-![ESO](https://img.shields.io/badge/ESO-Update%2050%20%C2%B7%20API%20101050-orange)
+![Vermilion](docs/assets/vermilion-header-4-2.png)
+
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![Lua](https://img.shields.io/badge/Lua-5.1-2C2D72?logo=lua&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-![Vermilion logo](docs/assets/vermilion-header-4-2.png)
+A damage tracker for The Elder Scrolls Online. It records what your damage and shield-cracking did during a fight, then shows you which skills carried it, what kind of damage it was, and which debuffs you kept on the enemy.
 
-> *[Verdant](https://github.com/vergelli/verdant)'s evil sister.*
+The crimson twin of [Verdant](https://github.com/vergelli/verdant).
 
-**Real-time damage analytics for The Elder Scrolls Online**
-
-Vermilion is the crimson twin of **Verdant**, the healer's addon. The spirit is the same — where Verdant counts the life you give back, Vermilion counts the life you take away, and shows it to you while the fight is still hot.
-
----
-
-## Contents
-
-- [Philosophy](#philosophy) — what Vermilion is and isn't
-- [Installation](#installation)
-- [The Graph Window](#the-graph-window) — recording, the three views
-- [Skill Colors & Unknown Contributions](#skill-colors--unknown-contributions)
+- [Install](#install)
+- [The graph](#the-graph)
+- [The report](#the-report)
+- [Session library](#session-library)
 - [Settings](#settings)
-- [Usage](#usage) — commands and keybinds
-- [Core Metrics](#core-metrics) — eDPS, ShDPS, EOS
-- [Known Limitations](#known-limitations)
+- [Commands and keys](#commands-and-keys)
+- [What the numbers mean](#what-the-numbers-mean)
 - [License](#license)
 
----
+## Install
 
-## Philosophy
+Download from [ESOUI](https://www.esoui.com/downloads/info4616-Vermilion.html) or from the [releases page](https://github.com/vergelli/Vermilion/releases), extract into `Documents/Elder Scrolls Online/live/AddOns/`, then `/reloadui`.
 
-**One rule: see your damage as it happens.**
+A small logo appears. Click it to open the graph window, or bind a key. Settings and data are kept per server, so EU, NA and PTS stay separate.
 
-- **Live, not a post-fight report.** A moving trend you read while you fight. Not a log you open afterward.
-- **No dependencies.** No libraries, no companion add-ons. One folder, drop it in, done.
+## The graph
 
----
+Press **Record** before a fight, **Stop** after it. **New** clears the plot for the next one. There is also a keybind for start and stop under Controls, and an auto-record option for boss fights or any combat.
 
-## Installation
+Six views share one window. Click a tab, or use the Next and Previous view keybinds.
 
-1. Download the latest release from ESOUI or [GitHub](https://github.com/vergelli/vermilion).
-2. Drop the `Vermilion` folder into your AddOns directory:
-   ```
-   Documents/Elder Scrolls Online/live/AddOns/Vermilion/
-   ```
-3. Reload with `/reloadui` or restart the game.
-4. The floating logo appears — click it to open the window, or bind a key.
+**SKILL** stacks your damage by class or skill line. Hover a bar to see which abilities were doing the work at that moment. The number next to the sword is your live output.
 
-> Vermilion stores settings and data **per server** — your EU, NA and PTS profiles stay separate.
+![SKILL view](docs/assets/skill-view-1.0.png)
 
----
+**CONTRIB** ranks your abilities by the damage they dealt over the window, with the damage type of each and a bar proportional to the top row. Hover a row for its share; the mouse wheel scrolls when the list does not fit.
 
-## The Graph Window
+![CONTRIB view](docs/assets/contrib-view-1.0.png)
 
-One window, a live DPS readout in the header, and three views. It's movable, resizable, and remembers its place per account.
+**TYPE** stacks the same damage by damage type: fire, shock, poison, bleed, physical, magic and the rest. **OUTCOME** separates what landed on health from what a shield absorbed. **CRIT** separates the critical part of your damage.
 
-![The window](docs/assets/skills-outcome-3.png)
+**DEBUFFS** shows the uptime of the debuffs you put on enemies: one lane per debuff, brighter when more targets carry it at once, folded into an "always on" strip when a debuff stayed up the whole fight. Lanes are coloured by skill line where the debuff has one, and by family otherwise: warm for Major and Minor offense debuffs like Breach and Brittle, blue for defense ones like Maim, mint for sustain, ember for status effects like Burning and Poisoned, khaki for taunts and control. Your own skill effects are not listed here; their damage is in SKILL and CONTRIB.
 
-**Controls:**
+## The report
 
-| Button | Action |
-|---|---|
-| **Record** | Begin capturing samples |
-| **Stop** | Stop recording (existing samples stay visible) |
-| **Flush** | Stop recording and clear the session |
-| **‹‹** view **›** | Cycle between the three views |
+After Stop, the chip in the top corner sums up the recording: average, peak, crit rate, active time and shield share. Hover it for the full report, click it to copy the text into chat.
 
-### Views
+## Session library
 
-**SKILL** — your damage stacked and colored by source: class lines, weapons, guilds, status effects, item procs. It shows which part of your build is doing the work.
-
-![SKILL view](docs/assets/skills-outcome-v1.png)
-
-**CRIT** — your landed damage split into its non-critical base ![](https://img.shields.io/badge/-%20-8C382E?style=flat-square) and its critical cap ![](https://img.shields.io/badge/-%20-FFD147?style=flat-square). Read your crit ratio at a glance and watch it move across a fight.
-
-![CRIT view](docs/assets/crit-outcome-v1.png)
-
-**OUTCOME** — your output split into two stacked bars: 
-
- - ![](https://img.shields.io/badge/-%20-E03D2E?style=flat-square) **eDPS** — landing on the target's health
- - ![](https://img.shields.io/badge/-%20-D966BF?style=flat-square) **ShDPS** — absorbed by the target's damage shields
- 
- Against shield-stacking targets you can see how much of your damage is being eaten versus actually dropping health.
-
-![OUTCOME view](docs/assets/outcome.png)
-
----
-
-## Skill Colors & Unknown Contributions
-
-In the **SKILL** view, every segment is colored by the **class**, **weapon**, **guild**, or **skill line** the ability belongs to, so you can see which source carries your damage.
-
-A few hits — typically item-set procs and enchant glyphs with generic icons — can't be matched to a skill line and show up **grey**. To color them yourself: open **Settings → Unknown Contributions**, pick a category for each, and it applies live (no reload).
-
-![Unknown Contributions](docs/assets/unknown-contributions-2.png)
-
-> **Why grey?** ESO exposes no ability-to-set mapping, so attributing every proc automatically is out of scope to maintain. The assignment window lets you label the handful Vermilion can't, and it persists.
-
-![Assign window](docs/assets/unknown-contributions.png)
-
----
+Every recording can be kept. With Autosave on it happens on Stop; otherwise press the save icon. Open the library from the graph window to reopen a fight, name it, lock it so it never rotates out, or delete it. Double-click a row to open it. Each row shows the kind of content it was recorded in, with a veteran badge where it applies.
 
 ## Settings
 
-Open the **⚙ gear** in the window. All values are saved per account.
+The gear icon opens the settings. Every value is saved per server.
 
-- **Sampling Rate** — how often the graph takes a reading (1–10 Hz).
-- **Time Window** — how much history it holds (15 s – 10 min).
-- **Viewport Alpha** — graph background opacity (0–100%).
-- **Logo** — show or hide the floating logo.
-- **Unknown Contributions** — the color-assignment window.
+![Settings](docs/assets/settings-1.0.png)
 
-> A long window combined with a high sample rate produces a heavy buffer (`time_window_s × sample_hz`). Very high combinations ask the chart to draw thousands of samples per frame and can cost FPS. For now, favor lower sample rates for long windows — a future version will draw long buffers far more efficiently.
+**Profile.** Save the sliders under a name and switch between your own profiles. Touching a slider switches the profile to Custom.
 
----
+**Sampling Rate.** How often the graph takes a reading, 1 to 5 Hz. One reading per second covers everything.
 
-## Usage
+**Time Window.** How much history the live graph holds, 15 seconds to 20 minutes. A stopped recording keeps whatever it captured.
 
-| Action | How |
+**Viewport Alpha.** The opacity of the plot background.
+
+**Crit-rate threshold.** The crit rate you aim for. The live crit readout turns green above it and red below.
+
+**Auto-record.** Off, boss fights, or any combat. Vermilion starts recording on its own and stops a few seconds after combat ends.
+
+**Autosave.** Keep every recording in the library when it stops.
+
+**Auto-stop.** Stop a recording you started by hand a few seconds after combat ends.
+
+**Unknown Contributions.** Give a colour to the few abilities Vermilion cannot place on a skill line, usually set procs and enchant glyphs. Applied live, remembered.
+
+**Logo.** Show or hide the floating logo.
+
+**Sounds.** Vermilion's own clicks, chimes and window sounds.
+
+**Light Mode while recording** and its **Opacity.** While recording, the chrome folds away and only the plot stays on screen, dimmed to the chosen opacity; it comes back on hover.
+
+**Reset to Defaults.** Puts every setting back.
+
+A fast sampling rate on a long window costs frames. If you combine them the sliders turn amber and Vermilion asks you to confirm.
+
+## Commands and keys
+
+| What | How |
 |---|---|
-| Open / close the window | Click the logo, type `/vermilion`, or bind a key |
-| Bind a key | **Controls → Keybindings → Add-Ons → Toggle Vermilion Window** |
-| Switch views | The **‹‹** / **›** arrows in the title bar |
-| Record a session | **Record**, then **Stop** / **Flush** |
-| Open settings | The **⚙** gear icon |
-| Color a grey hit | **Settings → Unknown Contributions** |
-| Show / hide the logo | **Settings → Logo** |
+| Open or close the graph | `/vermilion`, the logo, or the keybind under Controls |
+| Start or stop recording | The buttons, or the keybind |
+| Save a recording | The save icon, or the keybind |
+| Open the session library | `/vermilion lib`, or the book icon in the graph |
+| Next or previous view | The tabs, or the keybinds |
+| Close settings or the library | Its **x**, or Escape |
+| Colour a grey ability | Settings, Unknown Contributions |
+| List all commands | `/vermilion help` |
 
-![Floating toggle](docs/assets/ingame-toggle.png)
+## What the numbers mean
 
-`/vermilion help` lists the commands in chat.
+- **eDPS** is damage that landed on the target's health.
+- **ShDPS** is damage a shield on the target absorbed.
+- **EOS** is the two added together. It is the number in the header.
+- Vermilion counts the hits the game attributes to you. Reactive procs and reflects that the engine files under your name show up as yours.
 
----
+Vermilion does nothing with your healing. That is what Verdant is for.
 
-## Core Metrics
+## License
 
-Three numbers describe your output, mirroring Verdant's healing trio.
-
-**eDPS — Effective Damage Per Second.** Damage that lands on the target's health.
-
-**ShDPS — Shield Damage Per Second.** Damage absorbed by the target's damage shields (your "shield-cracking" pressure).
-
-**EOS — Effective Output Score.** The combined metric, shown live in the header:
-
-$$EOS = eDPS + ShDPS$$
-
-Against an unshielded target, EOS and eDPS are the same. The gap between them *is* the damage being eaten by shields. Exactly what the Outcome view draws.
-
----
-
-## Known Limitations
-
-- **Ability classification is heuristic.** A few hits (set procs, generic-icon enchants) may show grey until labeled. Use **Unknown Contributions** to color them yourself.
-- **Damage attribution follows ESO's source tags.** Vermilion counts hits the game attributes to you; environmental and clearly foreign sources are filtered out.
-- **Very heavy buffers cost FPS.** Maxing sample rate and time window together asks the chart to draw thousands of samples per frame. Keep an eye on the recommended combinations.
+MIT. Source on [GitHub](https://github.com/vergelli/Vermilion). Forks and pull requests are welcome.

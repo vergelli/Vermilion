@@ -199,7 +199,7 @@ local function classify_by_skill_tree_api(abilityId)
   return SKILL_LINE_TO_GROUP[skillLineId]
 end
 
-local function lookup_group(abilityId)
+local function lookup_group(abilityId, quiet)
   if not abilityId or abilityId <= 0 then return "other" end
 
   local g = ability_cache[abilityId]
@@ -222,6 +222,7 @@ local function lookup_group(abilityId)
   g = classify_by_skill_tree_api(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
+  if quiet then return "other" end
   local name = GetAbilityName(abilityId) or "?"
   local icon = GetAbilityIcon(abilityId) or "?"
   unknown_log[abilityId] = name .. "  | icon=" .. icon
@@ -232,6 +233,10 @@ end
 -- ── public classification surface (consumed by core/metrics) ───────────────
 function M.group_of(abilityId)
   return lookup_group(abilityId)
+end
+
+function M.group_of_quiet(abilityId)
+  return lookup_group(abilityId, true)
 end
 
 local FALLBACK = GROUP_COLORS.other
@@ -346,6 +351,18 @@ local BUFF_FAMILY_COLORS = {
   defense  = { r = 0.45, g = 0.62, b = 0.90, a = 0.95 },
   sustain  = { r = 0.72, g = 0.94, b = 0.84, a = 0.95 },
   mobility = { r = 0.75, g = 0.65, b = 0.95, a = 0.95 },
+  status   = { r = 0.96, g = 0.62, b = 0.28, a = 0.95 },
+  control  = { r = 0.80, g = 0.82, b = 0.55, a = 0.95 },
+}
+
+local EFFECT_FAMILY_NAMES = {
+  burning = "status", poisoned = "status", chilled = "status", concussed = "status",
+  overcharged = "status", diseased = "status", hemorrhaging = "status", sundered = "status",
+  chill = "status", concussion = "status", poison = "status",
+  taunt = "control", taunted = "control", stunned = "control", stun = "control",
+  immobilized = "control", immobilize = "control", snared = "control", snare = "control",
+  feared = "control", fear = "control", silenced = "control", silence = "control",
+  ["off balance"] = "control", ["off-balance"] = "control", knockback = "control", knockdown = "control",
 }
 
 local BUFF_FAMILY_WORDS = {
@@ -353,10 +370,12 @@ local BUFF_FAMILY_WORDS = {
   berserk = "offense", force = "offense", slayer = "offense", courage = "offense",
   empower = "offense", mending = "offense",
   breach = "offense", vulnerability = "offense", fracture = "offense",
+  brittle = "offense", mangle = "offense",
   resolve = "defense", ward = "defense", protection = "defense", aegis = "defense",
   evasion = "defense", toughness = "defense", vitality = "defense",
   maim = "defense", defile = "defense", cowardice = "defense", uncertainty = "defense", enervation = "defense",
   intellect = "sustain", endurance = "sustain", fortitude = "sustain", heroism = "sustain",
+  lifesteal = "sustain", magickasteal = "sustain", timidity = "sustain",
   expedition = "mobility", gallop = "mobility",
   hindrance = "mobility",
 }
@@ -370,7 +389,11 @@ function M.buff_family(name)
   local fam = false
   local lower = name:lower()
   local tier, word = lower:match("^(m[ai][jn]or)%s+(%a+)")
-  if tier and word then fam = BUFF_FAMILY_WORDS[word] or false end
+  if tier and word then
+    fam = BUFF_FAMILY_WORDS[word] or false
+  else
+    fam = EFFECT_FAMILY_NAMES[lower] or false
+  end
   family_cache[name] = fam
   return fam or nil
 end

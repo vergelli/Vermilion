@@ -916,6 +916,13 @@ local function session_summary()
   SUM.crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0
   SUM.active_pct = (n > 0) and (active / n) or 0
   SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits = Vermilion.Metrics.totals()
+  local ls = controls.loaded_sum
+  if ls then
+    SUM.total_damage = ls.total_damage or 0
+    SUM.total_shield = ls.total_shield or 0
+    SUM.total_crit   = ls.total_crit or 0
+    SUM.hits         = ls.hits or 0
+  end
   return SUM
 end
 
@@ -1763,6 +1770,7 @@ function M.on_record_click()
   end
   Vermilion.SessionStore.finish_autosave()
   controls.save_locked = false
+  controls.loaded_sum = nil
   controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
   Vermilion.Metrics.session_mark()
@@ -1820,6 +1828,7 @@ function M.on_flush_click()
   Vermilion.TemporalBuffer.clear()
   Vermilion.DebuffTracker.reset()
   controls.save_locked = false
+  controls.loaded_sum = nil
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
   hide_grid(controls.grid)
@@ -2072,6 +2081,7 @@ function M.load_session(sess)
   controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
+  controls.loaded_sum = sess.head.sum
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)
   refresh_button_colors()

@@ -3,6 +3,15 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- The damage report of a library session showed zero total and zero hits; it now reads the totals saved with the session.
+- Debuffs never land in Unknown Contributions any more; that window is for abilities that dealt damage.
+
+### Changed
+- DEBUFFS view: Minor Brittle, Lifesteal, Magickasteal, Mangle and Timidity join the family colours, status effects (Burning, Poisoned, Chilled, Concussed, Overcharged, Diseased, Hemorrhaging, Sundered) wear an ember colour of their own and taunts, stuns and snares a khaki one, so fewer lanes stay grey.
+
 ## [1.0.0] - 2026-09-10
 
 ### Added
