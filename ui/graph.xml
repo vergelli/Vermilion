@@ -100,7 +100,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPRIGHT" offsetX="-8" offsetY="4"/>
+          <Anchor point="TOPRIGHT" offsetX="-8" offsetY="9"/>
           <Dimensions x="18" y="18"/>
           <Textures normal="EsoUI/Art/Buttons/decline_up.dds"
                     pressed="EsoUI/Art/Buttons/decline_down.dds"
