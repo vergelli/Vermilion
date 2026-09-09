@@ -112,6 +112,20 @@ function M.stop_recording()
   log:info("stop_recording: count=", state.count, "/", state.capacity)
 end
 
+local EMPTY_SHARES = { count = 0 }
+
+function M.load_session(samples)
+  M.clear()
+  for i = 1, #samples do
+    local s = samples[i]
+    M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
+           s.eg or EMPTY_SHARES, s.ea or EMPTY_SHARES,
+           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES)
+  end
+  state.recording = false
+  log:info("session loaded: samples=", #samples)
+end
+
 function M.clear()
   log:info("clear: discarding", state.count, "samples")
   state.write = 1
