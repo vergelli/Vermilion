@@ -5,7 +5,22 @@ All notable changes to Vermilion are documented here. This project follows
 
 ## [Unreleased]
 
+### Added
+- Session library: every recording can be kept, named, locked and reopened from the library window; autosave on Stop, a manual Save icon and keybind, the SAVING / SAVED / NOT SAVED status and the content kind of the fight (dungeon, trial, arena, Infinite Archive, battleground, Alliance War, home, overland).
+- Auto-record on boss fights or any combat, with a grace period after combat, and Auto-stop for recordings started by hand.
+- CONTRIB view: abilities ranked by the damage they dealt over the window, with the damage type, a bar coloured by skill line, hover details and mouse-wheel scrolling.
+- DEBUFFS view: the debuffs you put on enemies, one lane per debuff with uptime, targets at once, applications, the always-on strip and a hover card with the ability description.
+- Tab strip for the views with tooltips, Next and Previous view keybinds, a double click on the title bar restores the default size.
+- Summary chip after a recording (AVG, PEAK, CRIT, ACTIVE, SHIELD); hovering it opens the damage report, clicking copies it.
+- Light mode while recording with its own opacity, fade-in on open, a logo heartbeat while a recording runs with the window closed, glyphs on Record and Stop.
+- Settings in sections with user profiles, a question before experimental sample-rate and window combinations, a Sounds toggle and the build version.
+- Sounds on every window and button, all behind the Sounds setting.
+- Offline test lab, replay of recorded fights against an independent oracle and the Robot quality report (nothing under qa/ or test/ ships).
+
 ### Changed
+- Bars sit on a physical-pixel grid: one width and one pitch at any UI scale; a young recording grows to fill the axis, which reads from -15s to now.
+- The window slider reaches 20 minutes.
+- The CopyBox ships in release builds for the report copy.
 - Manifest: APIVersion lists the current live patch and the PTS one, so the addon is no longer flagged out of date.
 - Debug tools need two keys in core/constants.lua, DEV and MODE, like the rest of the family. Flipping DEBUG alone does nothing.
 
