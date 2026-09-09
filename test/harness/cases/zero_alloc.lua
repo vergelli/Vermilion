@@ -31,7 +31,7 @@ return function(H)
   local baseline = H.addon_alloc(ticks) / 10
   Vermilion.Visibility.set("graph", true)
   local label = VermilionGraphWindowViewLabel
-  for _, view in ipairs({ "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB" }) do
+  for _, view in ipairs({ "SKILL", "TYPE", "OUTCOME", "CRIT", "CONTRIB", "DEBUFFS" }) do
     local guard = 0
     while label._text ~= view and guard < 6 do G.next_view(); guard = guard + 1 end
     H.advance(1000)
