@@ -147,7 +147,7 @@ function M.dispatch_damage_out(result, isError, _name, _g, _slot,
 
   local t = now()
   prof_enter("pipeline.combat_event.acquisition")
-  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, _dt)
+  local ev = Acquisition.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, _dt, _tgt)
   prof_exit("pipeline.combat_event.acquisition")
   run_stages(ev, "engine.damage.accepted")
   prof_exit("pipeline.combat_event")
@@ -166,7 +166,7 @@ function M.dispatch_shield_out(result, isError, _name, _g, _slot,
 
   local t = now()
   prof_enter("pipeline.combat_event.acquisition")
-  local ev = Acquisition.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
+  local ev = Acquisition.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, _tgt)
   prof_exit("pipeline.combat_event.acquisition")
   if ev then hold_pending(ev, t) else bump("engine.pool.exhausted") end
   prof_exit("pipeline.combat_event")

@@ -39,7 +39,11 @@ Six views share one window. Click a tab, or use the Next and Previous view keybi
 
 ![CONTRIB view](docs/assets/contrib-view-1.0.png)
 
-**TYPE** stacks the same damage by damage type: fire, shock, poison, bleed, physical, magic and the rest. **OUTCOME** separates what landed on health from what a shield absorbed. **CRIT** separates the critical part of your damage.
+**TYPE** stacks the same damage by damage type: fire, shock, poison, bleed, physical, magic and the rest. **CRIT** separates the critical part of your damage.
+
+**TARGETS** shows who took your damage: one lane per enemy, ordered by the damage they took, each cell hotter where you hit harder and turning orchid where a shield absorbed the hit. It answers whether you focused or spread your damage, when you switched targets, and against whom your damage went into wards. Hover a cell for the numbers at that moment and the shields involved.
+
+In SKILL and TYPE, a faint orchid layer hangs from the top of the plot: its depth is the damage a shield absorbed at that moment, on the same scale as the bars. The bars below are your own damage, absorbed part included. Above every plot view, the ultimate band shows the charge of each bar over time, bright when ready, with a tick at every cast.
 
 **DEBUFFS** shows the uptime of the debuffs you put on enemies: one lane per debuff, brighter when more targets carry it at once, folded into an "always on" strip when a debuff stayed up the whole fight. Lanes are coloured by skill line where the debuff has one, and by family otherwise: warm for Major and Minor offense debuffs like Breach and Brittle, blue for defense ones like Maim, mint for sustain, ember for status effects like Burning and Poisoned, khaki for taunts and control. Your own skill effects are not listed here; their damage is in SKILL and CONTRIB.
 

@@ -36,6 +36,14 @@ local DESC = {
     { name = "sh",  width = 2, scale = 1000 },
     { name = "ab",  width = 2, scale = 1000 },
   },
+  targets = {
+    { name = "si",  width = 2 },
+    { name = "id",  width = 4 },
+    { name = "key", width = 2 },
+    { name = "tt",  width = 1 },
+    { name = "sh",  width = 2, scale = 1000 },
+    { name = "ab",  width = 2, scale = 1000 },
+  },
   ult = {
     { name = "t", width = 4 },
     { name = "v", width = 2 },
@@ -136,6 +144,18 @@ function M.capture(cooperative)
     end
   end
 
+  local target_recs = {}
+  local function harvest_targets(si, targets)
+    if si > 4095 then return end
+    local n = (targets and targets.count) or 0
+    for a = 1, n do
+      local e = targets[a]
+      target_recs[#target_recs + 1] = {
+        si = si, id = e.id or 0, key = key_of(e.name or ""), tt = e.ttype or 0, sh = e.share or 0, ab = e.abs or 0,
+      }
+    end
+  end
+
   local sum_eos, peak_eos = 0, 0
   local sum_edps, peak_edps = 0, 0
   local sum_crit, sum_noncrit = 0, 0
@@ -155,6 +175,7 @@ function M.capture(cooperative)
     harvest_abilities(i, 0, s.eos_abilities)
     harvest_abilities(i, 1, s.dtype_abilities)
     harvest_abilities(i, 2, s.shield_abilities)
+    harvest_targets(i, s.targets)
     if ye and i % ye == 0 then coroutine_yield() end
   end
   local function series_get(r, name)
@@ -254,6 +275,7 @@ function M.capture(cooperative)
       steps     = vsf.pack(steps, DESC.steps, nil, ye),
       shares    = vsf.pack(share_recs, DESC.shares, nil, ye),
       abilities = vsf.pack(ability_recs, DESC.abilities, nil, ye),
+      targets   = vsf.pack(target_recs, DESC.targets, nil, ye),
       ult       = vsf.pack(ult_recs, DESC.ult, nil, ye),
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
