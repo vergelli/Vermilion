@@ -22,7 +22,7 @@ local function acquire()
   return Vermilion.Metrics.acquire_event()
 end
 
-function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, damageType)
+function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, damageType, targetName)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
   if not ev then return nil end
@@ -37,10 +37,11 @@ function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.source_unit_id = sourceUnitId  or 0
   ev.attack_id      = 0
   ev.attack_dtype   = 0
+  ev.target_name    = targetName or ""
   return ev
 end
 
-function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId)
+function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, targetName)
   if (hit or 0) <= 0 then return nil end
   local ev = acquire()
   if not ev then return nil end
@@ -55,6 +56,7 @@ function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.source_unit_id = sourceUnitId  or 0
   ev.attack_id      = 0
   ev.attack_dtype   = 0
+  ev.target_name    = targetName or ""
   return ev
 end
 

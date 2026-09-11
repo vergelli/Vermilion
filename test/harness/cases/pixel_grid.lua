@@ -27,7 +27,7 @@ return function(H)
   Vermilion.Visibility.set("graph", true)
   G.on_flush_click()
   local view_label = VermilionGraphWindowViewLabel
-  while view_label._text ~= "OUTCOME" do G.next_view() end
+  while view_label._text ~= "CRIT" do G.next_view() end
   G.on_record_click()
   for _ = 1, 120 do
     H.damage_out({ hit = 1500 })
