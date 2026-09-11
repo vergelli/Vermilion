@@ -53,7 +53,8 @@ ACTION_RESULT_CRITICAL_DAMAGE   = 2
 ACTION_RESULT_DOT_TICK_CRITICAL = 1073741826
 ACTION_RESULT_BLOCKED_DAMAGE    = 2151
 ACTION_RESULT_FALL_DAMAGE       = 2420
-ACTION_RESULT_DAMAGE_SHIELDED   = 2460
+ACTION_RESULT_DAMAGE_SHIELDED   = 2460
+ACTION_RESULT_KILLING_BLOW      = 2262
 
 EFFECT_RESULT_GAINED       = 1
 EFFECT_RESULT_FADED        = 2
@@ -883,6 +884,17 @@ function H.damage_out(opts)
     "Me", COMBAT_UNIT_TYPE_PLAYER,
     opts.target_name or "Enemy", opts.target_type or COMBAT_UNIT_TYPE_OTHER,
     opts.hit or 1500, 0, opts.damage_type or DAMAGE_TYPE_PHYSICAL, false,
+    opts.source_unit_id or 500, opts.target_unit_id or 900,
+    opts.ability_id or 31, 0)
+end
+
+function H.kill(opts)
+  opts = opts or {}
+  return H.fire(EVENT_COMBAT_EVENT,
+    ACTION_RESULT_KILLING_BLOW, false, "MockStrike", 0, 0,
+    "Me", COMBAT_UNIT_TYPE_PLAYER,
+    opts.target_name or "Enemy", opts.target_type or COMBAT_UNIT_TYPE_OTHER,
+    opts.hit or 0, 0, opts.damage_type or DAMAGE_TYPE_PHYSICAL, false,
     opts.source_unit_id or 500, opts.target_unit_id or 900,
     opts.ability_id or 31, 0)
 end
