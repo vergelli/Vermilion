@@ -134,7 +134,7 @@ local card_fader, crosshair_fader
 
 local CARD_W, CARD_H = 210, 56
 local CARD_ROW_H     = 16
-local CARD_MAX_ROWS  = 11
+local CARD_MAX_ROWS  = 13
 local CARD_ROWS_Y0   = 54
 local C_CARD_BG     = { r = 0.10, g = 0.04, b = 0.05, a = 0.96 }
 local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }
@@ -1161,6 +1161,14 @@ local function show_report_card()
   if sm.top_target then
     add_row(GetString(VERMILION_REPORT_TOP_TARGET),
       string_format("%s  ·  %s", tostring(VIS.tgt_name[sm.top_target] or sm.top_target), fmt_val(sm.top_target_v)), C_LINE_EDPS)
+  end
+  local TVw = Vermilion.TargetsView
+  if TVw and sm.top_target then
+    local on_top, switches, lanes = TVw.focus()
+    if lanes > 1 then
+      add_row(GetString(VERMILION_REPORT_FOCUS_TIME), string_format("%d%%", math_floor(on_top * 100 + 0.5)), C_CARD_STAT)
+      add_row(GetString(VERMILION_REPORT_SWITCHES), tostring(switches), C_CARD_STAT)
+    end
   end
   if sm.top_shield then
     add_row(GetString(VERMILION_REPORT_TOP_SHIELD),

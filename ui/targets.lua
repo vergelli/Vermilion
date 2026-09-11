@@ -47,6 +47,10 @@ for i = 0, 100 do PCT_TEXT[i] = i .. "%" end
 
 local ctx = nil
 local by_id = {}
+local by_name = {}
+local seen = {}
+local dom = {}
+local focus = { on_top = 0, switches = 0, samples = 0 }
 local order = { n = 0 }
 local hit = { n = 0, y0 = {}, y1 = {}, lane = {}, lane_x = 0, lane_w = 0, t0 = 0, span = 0 }
 local totals = { damage = 0, cell_max = 0, t0 = 0, t_hi = 0 }
@@ -79,6 +83,31 @@ local function entry_in(list, id)
   return nil
 end
 
+local function lane_share(list, rec)
+  local sh, ab = 0, 0
+  if rec.is_player then
+    local e = entry_in(list, rec.id)
+    if e then sh, ab = e.share or 0, e.abs or 0 end
+  else
+    for k = 1, (list and list.count or 0) do
+      local e = list[k]
+      if e.name == rec.raw then sh = sh + (e.share or 0); ab = ab + (e.abs or 0) end
+    end
+  end
+  return sh, ab
+end
+
+local function lane_label(rec)
+  if rec.n > 1 then
+    if rec.label_n ~= rec.n then
+      rec.label_n = rec.n
+      rec.label = string_format("%s  ×%d", rec.name, rec.n)
+    end
+    return rec.label
+  end
+  return rec.name ~= "" and rec.name or tostring(rec.id)
+end
+
 local function aggregate()
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()
@@ -92,37 +121,83 @@ local function aggregate()
     local eos = (s.eDPS or 0) + (s.ShDPS or 0)
     local dt = prev_t and (s.t - prev_t) / 1000 or 0
     local list = s.targets
+    local best, best_v = nil, 0
     for k = 1, (list and list.count or 0) do
       local e = list[k]
       local id = e.id or 0
-      local rec = by_id[id]
-      if not rec then rec = { id = id, name = "", raw = nil, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_id[id] = rec end
+      local raw = e.name or ""
+      local is_player = raw:find("^", 1, true) ~= nil
+      local rec
+      if is_player then
+        rec = by_id[id]
+        if not rec then rec = { id = id, name = "", raw = nil, is_player = true, n = 1, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_id[id] = rec end
+      else
+        rec = by_name[raw]
+        if not rec then rec = { id = id, name = "", raw = nil, is_player = false, n = 0, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_name[raw] = rec end
+      end
       if rec.gen ~= gen then
         rec.gen = gen
         rec.total = 0
         rec.abs = 0
+        rec.n = is_player and 1 or 0
         order.n = order.n + 1
         order[order.n] = rec
       end
-      if e.name and e.name ~= rec.raw then
-        rec.raw = e.name
-        rec.name = (e.name:gsub("%^%a+$", ""))
+      if raw ~= rec.raw then
+        rec.raw = raw
+        rec.name = (raw:gsub("%^%a+$", ""))
+      end
+      if not is_player and seen[id] ~= gen then
+        seen[id] = gen
+        rec.n = rec.n + 1
+        rec.id = id
       end
       rec.ttype = e.ttype or rec.ttype
       local v = (e.share or 0) * eos
-      if v > totals.cell_max then totals.cell_max = v end
       if dt > 0 then
         rec.total = rec.total + v * dt
         rec.abs = rec.abs + (e.abs or 0) * eos * dt
         totals.damage = totals.damage + v * dt
       end
+      if v > best_v then best, best_v = rec, v end
     end
+    dom[i] = best
     if i == 1 then totals.t0 = s.t end
     totals.t_hi = s.t
     prev_t = s.t
   end
   for k = order.n + 1, #order do order[k] = nil end
+  for k = n + 1, #dom do dom[k] = nil end
   if order.n > 1 then table_sort(order, by_total_desc) end
+  totals.cell_max = 0
+  for i = 1, n do
+    local s = TB.at(i)
+    local eos = (s.eDPS or 0) + (s.ShDPS or 0)
+    for r = 1, order.n do
+      local sh = lane_share(s.targets, order[r])
+      local v = sh * eos
+      if v > totals.cell_max then totals.cell_max = v end
+    end
+  end
+  local top = order[1]
+  local on_top, switches, counted, prev = 0, 0, 0, nil
+  for i = 1, n do
+    local d = dom[i]
+    if d then
+      counted = counted + 1
+      if d == top then on_top = on_top + 1 end
+      if prev and d ~= prev then switches = switches + 1 end
+      prev = d
+    end
+  end
+  focus.samples = counted
+  focus.on_top = (counted > 0) and (on_top / counted) or 0
+  focus.switches = switches
+end
+
+function M.focus()
+  aggregate()
+  return focus.on_top, focus.switches, order.n, focus.samples
 end
 
 local function cell(c, canvas, x0, x1, y, row_h, level, dim)
@@ -144,12 +219,11 @@ local function cell(c, canvas, x0, x1, y, row_h, level, dim)
   seg:SetHidden(false)
 end
 
-local function pressure_at(TB, k, id)
+local function pressure_at(TB, k, rec)
   local s = TB.at(k)
   if not s then return 0 end
-  local e = entry_in(s.targets, id)
-  if not e then return 0 end
-  return (e.share or 0) * ((s.eDPS or 0) + (s.ShDPS or 0))
+  local sh = lane_share(s.targets, rec)
+  return sh * ((s.eDPS or 0) + (s.ShDPS or 0))
 end
 
 function M.attach(t) ctx = t end
@@ -217,7 +291,7 @@ function M.render()
   for i = 1, rows do
     local rec = order[i + off]
     local y = top + (i - 1) * (row_h + ROW_GAP)
-    local dim = (hk ~= nil and rec.id ~= hk)
+    local dim = (hk ~= nil and rec ~= hk)
     if capture then
       hit.y0[i] = y
       hit.y1[i] = y + row_h
@@ -234,7 +308,7 @@ function M.render()
 
     local lbl = c.lbl:AcquireObject()
     lbl:ClearAnchors()
-    lbl:SetText(rec.name ~= "" and rec.name or tostring(rec.id))
+    lbl:SetText(lane_label(rec))
     lbl:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
     lbl:SetMaxLineCount(1)
     lbl:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS)
@@ -309,7 +383,7 @@ function M.render()
     val:SetHidden(false)
 
     local run_x0, run_x1, run_lv = nil, nil, -1
-    local v_prev, v_here, v_next = 0, pressure_at(TB, 1, rec.id), pressure_at(TB, 2, rec.id)
+    local v_prev, v_here, v_next = 0, pressure_at(TB, 1, rec), pressure_at(TB, 2, rec)
     for k = 1, ns do
       local s = TB.at(k)
       local level = 0
@@ -331,7 +405,7 @@ function M.render()
         if level > 0 then run_x0, run_x1, run_lv = x0, x1, level
         else run_x0 = nil end
       end
-      v_prev, v_here, v_next = v_here, v_next, pressure_at(TB, k + 2, rec.id)
+      v_prev, v_here, v_next = v_here, v_next, pressure_at(TB, k + 2, rec)
     end
     if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
   end
@@ -375,7 +449,7 @@ function M.hover(mx, my)
       if rel_y >= hit.y0[i] and rel_y <= hit.y1[i] then rec = hit.lane[i] break end
     end
   end
-  local new = rec and rec.id or nil
+  local new = rec or nil
   if new ~= hover_id then hover_id = new; c.rerender() end
   if not rec or hit.span <= 0 then
     c.hide_card()
@@ -386,10 +460,11 @@ function M.hover(mx, my)
   if frac > 1 then frac = 1 end
   local t_abs = hit.t0 + frac * hit.span
   local s = sample_at(t_abs)
-  local e = s and entry_in(s.targets, rec.id) or nil
   local eos = s and ((s.eDPS or 0) + (s.ShDPS or 0)) or 0
-  local v = e and (e.share or 0) * eos or 0
-  local av = e and (e.abs or 0) * eos or 0
+  local sh, ab = 0, 0
+  if s then sh, ab = lane_share(s.targets, rec) end
+  local v = sh * eos
+  local av = ab * eos
   local S = strings()
   local stat
   if av > 0 then
@@ -422,7 +497,7 @@ function M.hover(mx, my)
   end
   c.crosshair(math_floor(rel_x))
   local col = (av > 0) and C_ORCHID or C_HEAT
-  c.show_card(col, rec.name ~= "" and rec.name or tostring(rec.id), stat,
+  c.show_card(col, lane_label(rec), stat,
     "t  " .. c.fmt_secs(t_abs - hit.t0), ROWS, n_rows, nil, mx, my)
 end
 

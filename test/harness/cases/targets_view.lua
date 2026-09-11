@@ -88,7 +88,7 @@ return function(H)
   end
   ok(labels["Damage"] ~= nil and labels["Share of your output"] ~= nil, "the card carries the enemy's totals and share")
   ok(labels["Absorbed by shields"] ~= nil, "the shielded enemy shows its absorbed total")
-  ok(TV.hovered() == 900, "the hovered lane is tracked")
+  ok(TV.hovered() ~= nil and TV.hovered().id == 900, "the hovered lane is tracked")
   hit._onOnMouseExit(hit)
   H.state.mouse_x, H.state.mouse_y = 400, 300
 
@@ -100,6 +100,14 @@ return function(H)
     if rn and rn._hidden == false and rn._text == "Focused most" then focused = rawget(_G, "VermilionHoverCardRowVal" .. i)._text end
   end
   ok(focused ~= nil and focused:find("Sorc", 1, true) ~= nil, "the report names the enemy you focused most, got " .. tostring(focused))
+  local focus_row, switch_row = nil, nil
+  for i = 1, 13 do
+    local rn = rawget(_G, "VermilionHoverCardRowName" .. i)
+    if rn and rn._hidden == false and rn._text == "Time on main target" then focus_row = rawget(_G, "VermilionHoverCardRowVal" .. i)._text end
+    if rn and rn._hidden == false and rn._text == "Target switches" then switch_row = rawget(_G, "VermilionHoverCardRowVal" .. i)._text end
+  end
+  ok(focus_row == "100%", "the Sorc took the most pressure in every sample, got " .. tostring(focus_row))
+  ok(switch_row == "0", "no target switch happened, got " .. tostring(switch_row))
   sum_hit._onOnMouseExit(sum_hit)
 
   local sess = Vermilion.SessionStore.capture()
@@ -112,6 +120,29 @@ return function(H)
   local lrows, ln = TV.rows()
   ok(ln == 2 and lrows[1].name == "Sorc" and lrows[1].abs > 0, "a library session rebuilds the lanes with names and absorbed totals")
   ok(math.abs(lrows[1].total - rows[1].total) < 1, "the library lane equals the live lane, " .. tostring(lrows[1].total) .. " vs " .. tostring(rows[1].total))
+
+  G.on_flush_click()
+  H.advance(31000)
+  G.on_record_click()
+  for i = 1, 6 do
+    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton", target_unit_id = 910 })
+    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton", target_unit_id = 911 })
+    H.damage_out({ hit = 100, ability_id = 31, target_name = "Skeleton", target_unit_id = 912 })
+    if i > 3 then H.damage_out({ hit = 3000, ability_id = 31, target_name = "Warden^Fx", target_unit_id = 920 }) end
+    H.advance(1000)
+  end
+  G.on_stop_click()
+  local frows, fn = TV.rows()
+  ok(fn == 2, "three skeletons fold into one lane while the player keeps its own, got " .. tostring(fn))
+  local skel = (frows[1].raw == "Skeleton") and frows[1] or frows[2]
+  ok(skel and skel.n == 3 and not skel.is_player, "the folded lane counts its three units")
+  local folded_label = false
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "Skeleton  ×3" then folded_label = true end
+  end
+  ok(folded_label, "the folded lane says how many units it holds")
+  local on_top, switches, lanes = TV.focus()
+  ok(lanes == 2 and switches == 1, "the pressure moved once from the skeletons to the warden, got " .. tostring(switches))
 
   while view_label._text ~= "SKILL" do G.next_view() end
   G.on_flush_click()
