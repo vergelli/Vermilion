@@ -150,7 +150,7 @@ ZO_CreateStringId("VERMILION_TIP_PDELETE",             "Delete the selected save
 ZO_CreateStringId("VERMILION_GRAPH_NOW",        "now")
 ZO_CreateStringId("VERMILION_VIEWTIP_SKILL",    "Damage per second stacked by skill line")
 ZO_CreateStringId("VERMILION_VIEWTIP_TYPE",     "Damage per second stacked by damage type")
-ZO_CreateStringId("VERMILION_VIEWTIP_TARGETS",  "Who took your damage: a lane per enemy, hotter where you hit harder, orchid where a shield absorbed it")
+ZO_CreateStringId("VERMILION_VIEWTIP_TARGETS",  "Damage pressure per enemy over time: a lane per target, hotter where you hit harder")
 ZO_CreateStringId("VERMILION_VIEWTIP_CRIT",     "Critical against non-critical damage")
 ZO_CreateStringId("VERMILION_SUMMARY_AVG",      "AVG")
 ZO_CreateStringId("VERMILION_SUMMARY_PEAK",     "PEAK")

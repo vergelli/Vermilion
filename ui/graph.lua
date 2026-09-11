@@ -92,7 +92,7 @@ local VIEW_BY_TARGETS = 3
 local VIEW_BY_CRIT    = 4
 local VIEW_BY_CONTRIB = 5
 local VIEW_BY_DEBUFFS = 6
-local VIEW_LABELS     = { "SKILL", "TYPE", "TARGETS", "CRIT", "CONTRIB", "DEBUFFS" }
+local VIEW_LABELS     = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS" }
 local VIEW_MIN, VIEW_MAX = VIEW_BY_SKILL, VIEW_BY_DEBUFFS
 
 local function view_tips()
@@ -1225,24 +1225,11 @@ local function hover_poll()
   end
   local canvas = controls.canvas
   local mx, my = GetUIMousePosition()
-  if current_view == VIEW_BY_CONTRIB then
-    Vermilion.ContribView.hover(mx, my)
-    return
-  end
-  if current_view == VIEW_BY_DEBUFFS then
-    Vermilion.DebuffsView.hover(mx, my)
-    return
-  end
-  if current_view == VIEW_BY_TARGETS then
-    Vermilion.TargetsView.hover(mx, my)
-    return
-  end
-  local rel_x  = mx - canvas:GetLeft()
-  local above  = canvas:GetBottom() - my
-  local cw, ch = canvas:GetWidth(), canvas:GetHeight()
-
   local U = Vermilion.Ultimate
-  if U and U.has_data() and VIS.ult.span and VIS.ult.span > 0 then
+  if U and U.has_data() and VIS.ult.span and VIS.ult.span > 0
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS then
+    local rel_x = mx - canvas:GetLeft()
+    local cw = canvas:GetWidth()
     local rel_y = my - canvas:GetTop() - CHIP.H
     if rel_x >= 0 and rel_x <= cw and rel_y >= 0 and rel_y < VIS.ult.AREA then
       local b = (rel_y < VIS.ult.PAD + VIS.ult.ROW_H + VIS.ult.GAP / 2) and 1 or 2
@@ -1263,6 +1250,22 @@ local function hover_poll()
       end
     end
   end
+
+  if current_view == VIEW_BY_CONTRIB then
+    Vermilion.ContribView.hover(mx, my)
+    return
+  end
+  if current_view == VIEW_BY_DEBUFFS then
+    Vermilion.DebuffsView.hover(mx, my)
+    return
+  end
+  if current_view == VIEW_BY_TARGETS then
+    Vermilion.TargetsView.hover(mx, my)
+    return
+  end
+  local rel_x  = mx - canvas:GetLeft()
+  local above  = canvas:GetBottom() - my
+  local cw, ch = canvas:GetWidth(), canvas:GetHeight()
 
   local band, col = nil, nil
   if rel_x >= 0 and rel_x <= cw and above >= 0 and above <= ch then
@@ -1497,21 +1500,13 @@ local function ult_seg(x0, x1, y, lv, avail, min_x, max_x)
   return min_x, max_x
 end
 
-local function draw_ult_band(span_ms, n)
+local function draw_ult_band_at(t0, span, x_left, bw, t_last)
   local pool, ipool = controls.pool_ult, controls.pool_ult_icon
   pool:ReleaseAllObjects()
   ipool:ReleaseAllObjects()
   local U = Vermilion.Ultimate
-  if not (U and U.has_data()) or n == 0 then return end
-  local TB = Vermilion.TemporalBuffer
-  local t_last = TB.at(n).t
-  local span = axis_span(span_ms, n)
-  if span <= 0 then return end
-  local t0 = t_last - span
+  if not (U and U.has_data()) or span <= 0 then return end
   local canvas = controls.canvas
-  local cw = canvas:GetWidth()
-  local x_left = VIS.ult.ICON + 4
-  local bw = cw - x_left
   local nb = math_floor(bw / 4)
   if nb < 1 then return end
   local st, sv, ns = U.steps()
@@ -1556,7 +1551,7 @@ local function draw_ult_band(span_ms, n)
         end
       end
       if run_x0 then
-        min_x, max_x = ult_seg(run_x0, cw, y, run_lv, run_avail, min_x, max_x)
+        min_x, max_x = ult_seg(run_x0, x_left + bw, y, run_lv, run_avail, min_x, max_x)
       end
       if min_x then
         local rim = pool:AcquireObject()
@@ -1593,6 +1588,18 @@ local function draw_ult_band(span_ms, n)
       end
     end
   end
+end
+
+local function draw_ult_band(span_ms, n)
+  if n == 0 then
+    controls.pool_ult:ReleaseAllObjects()
+    controls.pool_ult_icon:ReleaseAllObjects()
+    return
+  end
+  local t_last = Vermilion.TemporalBuffer.at(n).t
+  local span = axis_span(span_ms, n)
+  local x_left = VIS.ult.ICON + 4
+  draw_ult_band_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, t_last)
 end
 
 local function render_by_skill()
@@ -2823,6 +2830,7 @@ function M.init()
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
+    ult_band = draw_ult_band_at, ult_inset = ult_inset,
     hide_grid = hide_grid, draw_grid = draw_grid,
     now = GetGameTimeMilliseconds,
     show_card = show_rows_card,

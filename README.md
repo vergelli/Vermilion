@@ -41,7 +41,7 @@ Six views share one window. Click a tab, or use the Next and Previous view keybi
 
 **TYPE** stacks the same damage by damage type: fire, shock, poison, bleed, physical, magic and the rest. **CRIT** separates the critical part of your damage.
 
-**TARGETS** shows your damage pressure per enemy over time: one lane per target, ordered by the damage they took, each cell hotter where you hit harder. The bar under each name is the enemy's total, with an orchid tail for the part a shield absorbed. It answers whether you focused or spread your damage, when you switched targets, and against whom your damage went into wards. Hover a cell for the numbers at that moment and the shields involved.
+**PRESSURE** shows your damage pressure per enemy over time: one lane per target, ordered by the damage they took, each cell hotter where you hit harder. A bar chart on the right, row by row, is the accumulated pressure per enemy, with an orchid tail for the part a shield absorbed. It answers whether you focused or spread your damage, when you switched targets, and against whom your damage went into wards. Hover a cell for the numbers at that moment and the shields involved.
 
 In SKILL and TYPE, a faint orchid layer hangs from the top of the plot: its depth is the damage a shield absorbed at that moment, on the same scale as the bars. The bars below are your own damage, absorbed part included. Above every plot view, the ultimate band shows the charge of each bar over time, bright when ready, with a tick at every cast.
 
