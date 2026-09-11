@@ -2240,7 +2240,7 @@ function M.evidence_snapshot()
     local GetAbilityName = rawget(_G, "GetAbilityName")
     for i = 1, cnt do
       local e = list[i]
-      local nm = (e.id and GetAbilityName) and GetAbilityName(e.id) or ""
+      local nm = ((e.id or 0) > 0 and GetAbilityName) and GetAbilityName(e.id) or ((e.id == 0) and GetString(VERMILION_REPORT_SHIELDED) or "")
       parts[#parts + 1] = string_format("%d:%s:%s:%s:%.3f", i, tostring(e.key), tostring(e.id or ""), tostring(nm), e.share or 0)
     end
     parts[#parts + 1] = string_format("sample=%d/%d t=%d eDPS=%.0f ShDPS=%.0f", n, TB.capacity(), s.t or 0, s.eDPS or 0, s.ShDPS or 0)

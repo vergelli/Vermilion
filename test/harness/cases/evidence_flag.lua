@@ -47,7 +47,8 @@ return function(H)
   end
   ok(fl ~= nil, "the flag is a line in the trace")
   ok(fl:find("view=CONTRIB", 1, true) and fl:find("mode=live", 1, true), "the flag freezes the view and the mode: " .. tostring(fl))
-  ok(fl:find("Hardened Ward", 1, true) ~= nil and fl:find("Crystal Frags", 1, true) ~= nil, "the flag lists the rows the user was looking at: " .. tostring(fl))
+  ok(fl:find("Crystal Frags", 1, true) ~= nil and fl:find("Shields cracked", 1, true) ~= nil and fl:find("Hardened Ward", 1, true) == nil,
+     "the flag lists the rows the user was looking at, with the unpaired shield as its own bucket and never the enemy ward: " .. tostring(fl))
   ok(ids >= 1, "the trace records who the player is")
   ok(shielded == 1, "the shield event travels unfiltered in the trace")
 
