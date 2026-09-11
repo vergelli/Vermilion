@@ -96,7 +96,7 @@ local orig_fire = H.fire
 H.fire = function(code, ...)
   if code == EVENT_COMBAT_EVENT then
     local result, isError, _, _, _, _, sourceType, _, targetType, hit, _, _, _, suid = ...
-    if not isError and sourceType == COMBAT_UNIT_TYPE_PLAYER and (hit or 0) > 0 then
+    if not isError and sourceType == COMBAT_UNIT_TYPE_PLAYER and targetType ~= COMBAT_UNIT_TYPE_PLAYER and (hit or 0) > 0 then
       if DMG[result] and (suid or 0) > 0 then
         O.damage[#O.damage + 1] = { t = H.now(), amount = hit }
       elseif result == ACTION_RESULT_DAMAGE_SHIELDED then

@@ -57,7 +57,7 @@ After Stop, the chip in the top corner sums up the recording: average, peak, cri
 
 ## Session library
 
-Every recording can be kept. With Autosave on it happens on Stop; otherwise press the save icon. Open the library from the graph window to reopen a fight, name it, lock it so it never rotates out, or delete it. Double-click a row to open it. Each row shows the kind of content it was recorded in, with a veteran badge where it applies, and a small heat strip of the fight's output so you recognise it at a glance.
+Every recording can be kept. With Autosave on it happens on Stop; otherwise press the save icon. Open the library from the graph window to reopen a fight, name it, lock it so it never rotates out, or delete it. Double-click a row to open it. Each row shows the kind of content it was recorded in, with a veteran badge where it applies.
 
 ## Settings
 

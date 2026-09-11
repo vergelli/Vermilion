@@ -904,8 +904,8 @@ function H.shield_out(opts)
   return H.fire(EVENT_COMBAT_EVENT,
     ACTION_RESULT_DAMAGE_SHIELDED, false, "MockWard", 0, 0,
     "Me", COMBAT_UNIT_TYPE_PLAYER,
-    opts.target_name or "Me", opts.target_type or COMBAT_UNIT_TYPE_PLAYER,
+    opts.target_name or "Enemy", opts.target_type or COMBAT_UNIT_TYPE_OTHER,
     opts.hit or 600, 0, 0, false,
-    opts.source_unit_id or 500, opts.target_unit_id or 500,
+    opts.source_unit_id or 500, opts.target_unit_id or 900,
     opts.ability_id or 41, 0)
 end
