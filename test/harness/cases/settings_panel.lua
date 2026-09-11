@@ -10,7 +10,7 @@ return function(H)
   svg.apply_xml(HARNESS_ROOT .. "/ui/settings.xml")
 
   local panel = H.layout(VermilionSettingsPanel)
-  ok(panel.w == 600 and panel.h == 346, string.format("panel must be 600x346, got %dx%d", panel.w, panel.h))
+  ok(panel.w == 600 and panel.h == 374, string.format("panel must be 600x374, got %dx%d", panel.w, panel.h))
   local left_col = {
     VermilionSettingsPanelProfileDropdown,
     VermilionSettingsPanelSliderTrackSample,

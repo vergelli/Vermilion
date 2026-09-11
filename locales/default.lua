@@ -121,6 +121,9 @@ ZO_CreateStringId("VERMILION_TIP_SOUNDS",   "Vermilion's own clicks, chimes and 
 ZO_CreateStringId("VERMILION_TIP_SETTINGS", "Settings")
 ZO_CreateStringId("VERMILION_TIP_UNKNOWN",  "Give a colour to skills Vermilion does not know yet")
 ZO_CreateStringId("VERMILION_TIP_LOGO",     "Show or hide the logo in the title bar")
+ZO_CreateStringId("VERMILION_SETTINGS_KILLS_ON",  "Kill markers: On")
+ZO_CreateStringId("VERMILION_SETTINGS_KILLS_OFF", "Kill markers: Off")
+ZO_CreateStringId("VERMILION_TIP_KILLS",    "Mark every killing blow with a skull in SKILL, TYPE, CRIT and PRESSURE. Handy in PvP, noisy in a trash pull; the report counts them either way")
 ZO_CreateStringId("VERMILION_TIP_RESET",    "Put every setting back to its default")
 
 ZO_CreateStringId("VERMILION_SETTINGS_PROFILE",        "Profile")
