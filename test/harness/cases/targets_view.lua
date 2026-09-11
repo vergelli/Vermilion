@@ -41,7 +41,7 @@ return function(H)
       if c._h and c._h > 3 and (c._a or 0) > 0.5 then
         cells = cells + 1
         if (c._b or 0) > 0.7 * (c._r or 1) and (c._g or 1) < 0.6 then orchid_cells = orchid_cells + 1 end
-      elseif c._h == 3 and (c._b or 0) > 0.7 and (c._r or 0) > 0.8 then
+      elseif c._h == 3 and (c._b or 0) > 0.7 and (c._r or 0) > 0.8 and (c._g or 1) < 0.6 then
         tails = tails + 1
       end
     end
