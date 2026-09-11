@@ -65,9 +65,9 @@ return function(H)
   while view_label._text ~= "TYPE" do G.next_view() end
   local tfills = hang_fills()
   ok(#tfills >= 1, "the layer hangs in TYPE too")
-  while view_label._text ~= "TARGETS" do G.next_view() end
+  while view_label._text ~= "PRESSURE" do G.next_view() end
   local ofills = hang_fills()
-  ok(#ofills == 0, "TARGETS is a lane view, no layer there")
+  ok(#ofills == 0, "PRESSURE is a lane view, no layer there")
   while view_label._text ~= "CRIT" do G.next_view() end
   local cfills = hang_fills()
   ok(#cfills == 0, "CRIT stays about landed damage, no layer there")
