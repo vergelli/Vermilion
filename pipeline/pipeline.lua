@@ -168,7 +168,9 @@ function M.dispatch_shield_out(result, isError, _name, _g, _slot,
   prof_enter("pipeline.combat_event.acquisition")
   local ev = Acquisition.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, result, sourceUnitId, _tgt)
   prof_exit("pipeline.combat_event.acquisition")
-  if ev then hold_pending(ev, t) else bump("engine.pool.exhausted") end
+  if not ev then bump("engine.pool.exhausted")
+  elseif not Filter.allow(ev) then bump("engine.shield.dropped_filter") release(ev)
+  else hold_pending(ev, t) end
   prof_exit("pipeline.combat_event")
 end
 

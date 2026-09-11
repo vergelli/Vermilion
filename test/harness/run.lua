@@ -39,7 +39,7 @@ local CASES = {
   "ultimate_band",
   "targets_view",
   "kills",
-  "library_spark",
+  "self_damage",
 }
 
 local passed, failed = 0, 0
