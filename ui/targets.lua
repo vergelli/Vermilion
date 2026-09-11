@@ -20,11 +20,10 @@ local C_LANE    = { r = 1.00, g = 0.62, b = 0.58, a = 0.05 }
 local C_ORCHID  = { r = 0.85, g = 0.40, b = 0.75 }
 local C_HEAT    = { r = 0.98, g = 0.55, b = 0.20 }
 local DIM       = 0.30
-local LUT_N     = 64
-local ABS_STEPS = 4
+local LUT_N     = 128
 local RAMP = {
-  { 0.16, 0.05, 0.06 },
-  { 0.48, 0.09, 0.11 },
+  { 0.30, 0.07, 0.09 },
+  { 0.55, 0.10, 0.12 },
   { 0.88, 0.24, 0.18 },
   { 0.98, 0.55, 0.20 },
   { 1.00, 0.90, 0.62 },
@@ -123,7 +122,7 @@ local function aggregate()
   if order.n > 1 then table_sort(order, by_total_desc) end
 end
 
-local function cell(c, canvas, x0, x1, y, row_h, level, absq, dim)
+local function cell(c, canvas, x0, x1, y, row_h, level, dim)
   local seg = c.seg:AcquireObject()
   seg:ClearAnchors()
   seg:SetAnchor(TOPLEFT, canvas, TOPLEFT, x0, y)
@@ -131,19 +130,20 @@ local function cell(c, canvas, x0, x1, y, row_h, level, absq, dim)
   seg:SetHeight(row_h)
   seg:SetDrawLevel(4)
   local col = LUT[level]
-  local r, g, b = col[1], col[2], col[3]
-  if absq > 0 then
-    local f = absq / ABS_STEPS * 0.85
-    r = r + (C_ORCHID.r - r) * f
-    g = g + (C_ORCHID.g - g) * f
-    b = b + (C_ORCHID.b - b) * f
-  end
   if dim then
-    seg:SetColor(r * DIM, g * DIM, b * DIM, 0.35)
+    seg:SetColor(col[1] * DIM, col[2] * DIM, col[3] * DIM, 0.35)
   else
-    seg:SetColor(r, g, b, 0.94)
+    seg:SetColor(col[1], col[2], col[3], 1.0)
   end
   seg:SetHidden(false)
+end
+
+local function pressure_at(TB, k, id)
+  local s = TB.at(k)
+  if not s then return 0 end
+  local e = entry_in(s.targets, id)
+  if not e then return 0 end
+  return (e.share or 0) * ((s.eDPS or 0) + (s.ShDPS or 0))
 end
 
 function M.attach(t) ctx = t end
@@ -234,9 +234,45 @@ function M.render()
     else
       lbl:SetColor(C_NAME.r, C_NAME.g, C_NAME.b, C_NAME.a)
     end
-    lbl:SetDimensions(GUTTER_W - VAL_W - 14, row_h)
+    local name_w = GUTTER_W - VAL_W - 14
+    local bar_room = row_h >= 18 and order[1].total > 0
+    lbl:SetDimensions(name_w, bar_room and (row_h - 6) or row_h)
     lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, y)
     lbl:SetHidden(false)
+
+    if bar_room then
+      local by = y + row_h - 5
+      local track = c.seg:AcquireObject()
+      track:ClearAnchors()
+      track:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, by)
+      track:SetWidth(name_w)
+      track:SetHeight(3)
+      track:SetDrawLevel(3)
+      track:SetColor(1, 1, 1, dim and 0.03 or 0.07)
+      track:SetHidden(false)
+      local bw = math_max(1, math_floor(name_w * rec.total / order[1].total + 0.5))
+      local fill = c.seg:AcquireObject()
+      fill:ClearAnchors()
+      fill:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, by)
+      fill:SetWidth(bw)
+      fill:SetHeight(3)
+      fill:SetDrawLevel(4)
+      fill:SetColor(C_HEAT.r, C_HEAT.g, C_HEAT.b, dim and 0.25 or 0.85)
+      fill:SetHidden(false)
+      if rec.abs > 0 and rec.total > 0 then
+        local aw = math_floor(bw * rec.abs / rec.total + 0.5)
+        if aw >= 1 and aw < bw then
+          local tail = c.seg:AcquireObject()
+          tail:ClearAnchors()
+          tail:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6 + bw - aw, by)
+          tail:SetWidth(aw)
+          tail:SetHeight(3)
+          tail:SetDrawLevel(5)
+          tail:SetColor(C_ORCHID.r, C_ORCHID.g, C_ORCHID.b, dim and 0.25 or 0.92)
+          tail:SetHidden(false)
+        end
+      end
+    end
 
     local disp = math_floor(rec.total)
     if rec.disp ~= disp then
@@ -257,32 +293,32 @@ function M.render()
     val:SetAnchor(TOPLEFT, canvas, TOPLEFT, GUTTER_W - VAL_W - 6, y)
     val:SetHidden(false)
 
-    local run_x0, run_x1, run_lv, run_aq = nil, nil, -1, -1
+    local run_x0, run_x1, run_lv = nil, nil, -1
+    local v_prev, v_here, v_next = 0, pressure_at(TB, 1, rec.id), pressure_at(TB, 2, rec.id)
     for k = 1, ns do
       local s = TB.at(k)
-      local e = entry_in(s.targets, rec.id)
-      local level, absq = 0, 0
-      if e and (e.share or 0) > 0 and cell_max > 0 then
-        local v = e.share * ((s.eDPS or 0) + (s.ShDPS or 0))
+      local level = 0
+      if cell_max > 0 and (v_here > 0 or v_prev > 0 or v_next > 0) then
+        local v = 0.25 * v_prev + 0.5 * v_here + 0.25 * v_next
+        if v_here <= 0 then v = v * 0.5 end
         level = math_floor(math_sqrt(v / cell_max) * (LUT_N - 1) + 0.5)
         if level < 1 then level = 1 end
         if level > LUT_N - 1 then level = LUT_N - 1 end
-        absq = math_floor((e.abs or 0) / e.share * ABS_STEPS + 0.5)
-        if absq > ABS_STEPS then absq = ABS_STEPS end
       end
       local x0 = lane_x + math_floor((s.t - t0) / span * lane_w + 0.5)
       local nxt = TB.at(k + 1)
       local x1 = nxt and (lane_x + math_floor((nxt.t - t0) / span * lane_w + 0.5)) or (lane_x + lane_w)
       if x1 <= x0 then x1 = x0 + 1 end
-      if level > 0 and run_x0 and level == run_lv and absq == run_aq and x0 <= run_x1 then
+      if level > 0 and run_x0 and level == run_lv and x0 <= run_x1 then
         run_x1 = x1
       else
-        if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, run_aq, dim) end
-        if level > 0 then run_x0, run_x1, run_lv, run_aq = x0, x1, level, absq
+        if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
+        if level > 0 then run_x0, run_x1, run_lv = x0, x1, level
         else run_x0 = nil end
       end
+      v_prev, v_here, v_next = v_here, v_next, pressure_at(TB, k + 2, rec.id)
     end
-    if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, run_aq, dim) end
+    if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
   end
 
   if n > rows then
