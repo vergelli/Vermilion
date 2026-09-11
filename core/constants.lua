@@ -74,3 +74,4 @@ Vermilion.Constants = {
 }
 
 Vermilion.Constants.DEBUG = (Vermilion.Constants.DEV == true and Vermilion.Constants.MODE == "DEBUG")
+Vermilion.Constants.RESEARCH = true

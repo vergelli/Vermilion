@@ -16,6 +16,9 @@
       <Action name="VERMILION_PREV_VIEW">
         <Down>Vermilion.Graph.step_view(-1)</Down>
       </Action>
+      <Action name="VERMILION_FLAG">
+        <Down>Vermilion.Graph.on_flag_click()</Down>
+      </Action>
     </Category>
   </Layer>
 </Bindings>

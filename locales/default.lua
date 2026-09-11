@@ -6,6 +6,7 @@ ZO_CreateStringId("SI_BINDING_NAME_VERMILION_RECORD", "Start / Stop Recording")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_SAVE",   "Save Recording to Library")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_NEXT_VIEW", "Next Graph View")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_PREV_VIEW", "Previous Graph View")
+ZO_CreateStringId("SI_BINDING_NAME_VERMILION_FLAG", "Flag what I see (research)")
 
 -- Debug / status strings. I have a copybox for these, but they should be localized anyway.
 ZO_CreateStringId("VERMILION_PROBE_ON",       "Probe ON. Logging events to chat (rate-limited).")
@@ -76,6 +77,7 @@ ZO_CreateStringId("VERMILION_TIP_RECORD",    "Start recording. The graph fills u
 ZO_CreateStringId("VERMILION_TIP_STOP",      "Stop recording and freeze the graph for review.")
 ZO_CreateStringId("VERMILION_TIP_FLUSH",     "Clear the graph for a new recording.")
 ZO_CreateStringId("VERMILION_TIP_SAVE",      "Keep this recording in the library")
+ZO_CreateStringId("VERMILION_TIP_FLAG", "Flag what you see: freezes this view, the hover card and the rows into the research evidence.")
 ZO_CreateStringId("VERMILION_TIP_PREV_VIEW", "Previous view")
 ZO_CreateStringId("VERMILION_TIP_NEXT_VIEW", "Next view")
 ZO_CreateStringId("VERMILION_TIP_AUTOREC",   "Let Vermilion start recording on its own: off, boss fights, or any combat")

@@ -4,6 +4,8 @@ return function(H)
 
   Vermilion.Metrics.reset()
   Vermilion.Visibility.set("graph", false)
+  local trace_auto = Vermilion.Trace.auto_enabled(Vermilion.SavedVars)
+  Vermilion.Trace.set_auto(Vermilion.SavedVars, false)
   G.on_record_click()
   local warm = Vermilion.TemporalBuffer.capacity() + 10
   for _ = 1, warm do
@@ -42,5 +44,6 @@ return function(H)
 
   G.on_stop_click()
   G.on_flush_click()
+  Vermilion.Trace.set_auto(Vermilion.SavedVars, trace_auto)
   Vermilion.Metrics.reset()
 end

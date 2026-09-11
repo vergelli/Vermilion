@@ -1820,6 +1820,7 @@ function M.on_record_click()
   Vermilion.SessionStore.finish_autosave()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_ts = nil
   controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
   Vermilion.Metrics.session_mark()
@@ -1878,6 +1879,7 @@ function M.on_flush_click()
   Vermilion.DebuffTracker.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_ts = nil
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
   hide_grid(controls.grid)
@@ -1928,6 +1930,64 @@ function M.card_state()
   return string_format("hidden=%s alpha=%.2f flag=%s report=%s playing=%s over_chip=%s",
     tostring(root:IsHidden()), root:GetAlpha(), tostring(f.visible), tostring(f.report),
     tostring(f.anim:IsPlaying()), tostring(controls.summary ~= nil and api.MouseIsOver(controls.summary.hit)))
+end
+
+local function ctl_text(c)
+  if not c then return "" end
+  if c.GetText then return tostring(c:GetText() or "") end
+  return tostring(rawget(c, "_text") or "")
+end
+
+function M.evidence_snapshot()
+  local TB = Vermilion.TemporalBuffer
+  local parts = {}
+  parts[#parts + 1] = "view=" .. (VIEW_LABELS[current_view] or "?")
+  parts[#parts + 1] = "status=" .. ctl_text(controls.status)
+  local mode = "stopped"
+  if TB.is_recording() then mode = "live"
+  elseif controls.loaded_ts then mode = "lib:" .. tostring(controls.loaded_ts) end
+  parts[#parts + 1] = "mode=" .. mode
+  parts[#parts + 1] = "hover=" .. tostring(hover_key)
+  local card = rawget(_G, "VermilionHoverCard")
+  if card and not card:IsHidden() then
+    parts[#parts + 1] = "card=" .. ctl_text(rawget(_G, "VermilionHoverCardName"))
+      .. " / " .. ctl_text(rawget(_G, "VermilionHoverCardStat"))
+      .. " / " .. ctl_text(rawget(_G, "VermilionHoverCardTime"))
+    for i = 1, 12 do
+      local rn = rawget(_G, "VermilionHoverCardRowName" .. i)
+      if not rn or rn:IsHidden() then break end
+      parts[#parts + 1] = "row" .. i .. "=" .. ctl_text(rn) .. "=" .. ctl_text(rawget(_G, "VermilionHoverCardRowVal" .. i))
+    end
+  end
+  local n = TB.count()
+  if n > 0 then
+    local s = TB.at(n)
+    local list = s.eos_groups
+    if current_view == VIEW_BY_TYPE then list = s.dtype_groups
+    elseif current_view == VIEW_BY_CONTRIB then list = s.eos_abilities end
+    local cnt = list and list.count or 0
+    if cnt > 16 then cnt = 16 end
+    local GetAbilityName = rawget(_G, "GetAbilityName")
+    for i = 1, cnt do
+      local e = list[i]
+      local nm = (e.id and GetAbilityName) and GetAbilityName(e.id) or ""
+      parts[#parts + 1] = string_format("%d:%s:%s:%s:%.3f", i, tostring(e.key), tostring(e.id or ""), tostring(nm), e.share or 0)
+    end
+    parts[#parts + 1] = string_format("sample=%d/%d t=%d eDPS=%.0f ShDPS=%.0f", n, TB.capacity(), s.t or 0, s.eDPS or 0, s.ShDPS or 0)
+  end
+  return table.concat(parts, " | ")
+end
+
+function M.on_flag_click()
+  local where, k = Vermilion.Trace.flag(M.evidence_snapshot(), Vermilion.SavedVars)
+  if not where then
+    Sound.play("deny")
+    d("[Vm] evidence: the research trace is not available in this build")
+    return false
+  end
+  Sound.play("confirm")
+  d(string_format("[Vm] evidence flag #%d (%s) -> %s", k, VIEW_LABELS[current_view] or "?", where))
+  return true
 end
 
 function M.on_title_double_click()
@@ -2131,6 +2191,7 @@ function M.load_session(sess)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
+  controls.loaded_ts = sess.head.ts
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)
   refresh_button_colors()
@@ -2184,6 +2245,7 @@ function M.init()
   controls.btn_flush     = VermilionGraphWindowFlushBtn
   controls.btn_lib       = VermilionGraphWindowLibBtn
   controls.btn_save      = VermilionGraphWindowSaveBtn
+  controls.btn_flag      = VermilionGraphWindowFlagBtn
   controls.status        = VermilionGraphWindowStatusLabel
   controls.btn_prev_view = VermilionGraphWindowPrevViewBtn
   controls.view_label    = VermilionGraphWindowViewLabel
@@ -2298,6 +2360,8 @@ function M.init()
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
   zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)
   zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
+  zui.tooltip(controls.btn_flag,      VERMILION_TIP_FLAG)
+  controls.btn_flag:SetHidden(not Vermilion.Constants.RESEARCH)
   zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
   zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
   zui.tooltip(VermilionGraphWindowSettingsBtn, VERMILION_TIP_SETTINGS)

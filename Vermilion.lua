@@ -23,7 +23,7 @@ local function on_slash(input)
   local cmd = string_match(string_lower(input), "^%s*(%S+)") or ""
 
 
-  if DEBUG then
+  if DEBUG or Vermilion.Constants.RESEARCH then
     if cmd == "trace" then
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       if sub == "start" then Vermilion.Trace.start()
@@ -42,7 +42,24 @@ local function on_slash(input)
           .. "  (subcmd: start | stop | save | clear | auto)")
       end
       return
-    elseif cmd == "sound" then
+    elseif cmd == "flush" then
+      d("[Vm] writing SavedVariables to disk")
+      Vermilion.zenimax.api.ReloadUI()
+      return
+    elseif cmd == "evidence" then
+      local sv = Vermilion.SavedVars
+      local ring = sv and sv.traces
+      d("[Vm] evidence: " .. Vermilion.Trace.status_line()
+        .. "  staged traces=" .. tostring(ring and #ring or 0)
+        .. "  flags=" .. tostring(Vermilion.Trace.flags_staged(sv))
+        .. "  auto=" .. (Vermilion.Trace.auto_enabled(sv) and "ON" or "OFF"))
+      d("[Vm] evidence: record (or auto-record) as usual, press the flag when something looks wrong, then /vermilion flush")
+      return
+    end
+  end
+
+  if DEBUG then
+    if cmd == "sound" then
       Vermilion.Sound.audition(string_match(input, "^%s*%S+%s*(.*)$"))
       return
     elseif cmd == "autorec" then
@@ -55,10 +72,6 @@ local function on_slash(input)
       return
     elseif cmd == "sessions" then
       for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
-      return
-    elseif cmd == "flush" then
-      d("[Vm] writing SavedVariables to disk")
-      Vermilion.zenimax.api.ReloadUI()
       return
     elseif cmd == "on" then
       Vermilion.Probe.set_enabled(true)

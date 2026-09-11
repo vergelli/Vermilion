@@ -2,7 +2,7 @@ return function(H)
   local function ok(cond, msg) if not cond then error(msg, 2) end end
   local T = Vermilion.Trace
 
-  if not Vermilion.Constants.DEBUG then
+  if not (Vermilion.Constants.DEBUG or Vermilion.Constants.RESEARCH) then
     T.start()
     T.stop()
     local sv = {}
@@ -44,7 +44,9 @@ return function(H)
 
   local SV = Vermilion.SavedVars
   T.clear(SV)
-  ok(not T.auto_enabled(SV), "auto-trace is off by default")
+  ok(T.auto_enabled(SV) == (Vermilion.Constants.RESEARCH == true), "auto-trace defaults to the research flag")
+  ok(sv.trace.player and sv.trace.player.name ~= nil, "a trace carries the player's identity")
+  T.set_auto(SV, false)
   Vermilion.Graph.on_flush_click()
   Vermilion.Graph.on_record_click()
   H.damage_out({ hit = 100 })
@@ -62,9 +64,15 @@ return function(H)
     Vermilion.Graph.on_stop_click()
     counts[round] = SV.trace.count
   end
-  ok(#SV.traces == 3, "the ring keeps three traces, got " .. tostring(#SV.traces))
-  ok(SV.traces[3] == SV.trace, "the newest trace mirrors sv.trace")
-  ok(SV.traces[1].count == counts[2] and SV.traces[3].count == counts[4], "the oldest trace is evicted first")
+  local RING = Vermilion.Constants.RESEARCH and 6 or 3
+  local kept = math.min(4, RING)
+  ok(#SV.traces == kept, "the ring keeps " .. kept .. " traces, got " .. tostring(#SV.traces))
+  ok(SV.traces[#SV.traces] == SV.trace, "the newest trace mirrors sv.trace")
+  if RING < 4 then
+    ok(SV.traces[1].count == counts[2] and SV.traces[3].count == counts[4], "the oldest trace is evicted first")
+  else
+    ok(SV.traces[1].count == counts[1] and SV.traces[4].count == counts[4], "a research ring keeps every recording of the night")
+  end
   ok(counts[4] > counts[1], "each recording stages only its own events")
 
   H.reloads = 0

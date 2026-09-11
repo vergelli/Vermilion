@@ -9,6 +9,9 @@ local SIG = {
   BO = "s",
   GR = "bnsn",
   PU = "snnnnn",
+  ID = "sssn",
+  ZN = "s",
+  FL = "s",
 }
 
 function M.decode_line(line)

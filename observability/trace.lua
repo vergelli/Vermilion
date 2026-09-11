@@ -14,9 +14,10 @@ M.on_record   = NOOP
 M.on_stop     = NOOP
 M.set_auto    = NOOP
 M.auto_enabled = function() return false end
+M.flag        = function() return nil end
 M.status_line = function() return "trace disabled (DEBUG=false)" end
 
-if not Vermilion.Constants.DEBUG then return end
+if not (Vermilion.Constants.DEBUG or Vermilion.Constants.RESEARCH) then return end
 
 local d       = d
 local select  = select
@@ -28,7 +29,10 @@ local GetGameTimeMilliseconds = api.GetGameTimeMilliseconds
 
 local CAP       = 40000
 local CHUNK_MAX = 1800
-local RING      = 3
+local RING      = Vermilion.Constants.RESEARCH and 6 or 3
+local FLAG_MAX  = 1500
+local FLAGS_CAP = 40
+local RESEARCH  = Vermilion.Constants.RESEARCH == true
 
 local CONST_NAMES = {
   "ACTION_RESULT_DAMAGE", "ACTION_RESULT_CRITICAL_DAMAGE", "ACTION_RESULT_DOT_TICK",
@@ -47,9 +51,19 @@ local CONST_NAMES = {
   "DAMAGE_TYPE_BLEED",
 }
 
-local lines  = {}
-local n      = 0
-local active = false
+local lines   = {}
+local n       = 0
+local active  = false
+local own_uid = 0
+local nflags  = 0
+
+local function player_identity()
+  local G = _G
+  local raw  = (G.GetRawUnitName and G.GetRawUnitName("player")) or ""
+  local name = api.GetUnitName("player") or ""
+  local disp = (G.GetDisplayName and G.GetDisplayName()) or ""
+  return raw, name, disp
+end
 
 local function fld(v)
   local tv = type(v)
@@ -99,8 +113,16 @@ local function rec_bosses()
   rec("BO", table.concat(names, "|"))
 end
 
+local function rec_identity()
+  local raw, name, disp = player_identity()
+  rec("ID", raw, name, disp, own_uid)
+  rec("ZN", (api.GetUnitZone and api.GetUnitZone("player")) or "")
+end
+
 function M.start()
   active = true
+  nflags = 0
+  rec_identity()
   rec_group()
   rec_bosses()
   d("[trace] capturing (" .. n .. "/" .. CAP .. " events)")
@@ -125,7 +147,37 @@ local function reset()
   lines  = {}
   n      = 0
   active = false
+  nflags = 0
 end
+
+function M.flag(snapshot, sv)
+  snapshot = tostring(snapshot or "")
+  if #snapshot > FLAG_MAX then snapshot = snapshot:sub(1, FLAG_MAX) end
+  if active then
+    nflags = nflags + 1
+    rec("FL", snapshot)
+    return "trace", nflags
+  end
+  if not sv then return nil end
+  sv.evidence = sv.evidence or { flags = {} }
+  sv.evidence.flags = sv.evidence.flags or {}
+  local fl = sv.evidence.flags
+  fl[#fl + 1] = {
+    ts   = (api.GetTimeStamp and api.GetTimeStamp()) or 0,
+    t    = GetGameTimeMilliseconds(),
+    zone = (api.GetUnitZone and api.GetUnitZone("player")) or "",
+    text = snapshot,
+  }
+  while #fl > FLAGS_CAP do table.remove(fl, 1) end
+  return "staged", #fl
+end
+
+function M.flags_staged(sv)
+  local fl = sv and sv.evidence and sv.evidence.flags
+  return fl and #fl or 0
+end
+
+function M.own_uid() return own_uid end
 
 function M.save(sv)
   local chunks = {}
@@ -145,9 +197,13 @@ function M.save(sv)
     consts[k] = rawget(_G, k)
   end
   local temporal = sv.temporal or {}
+  local raw, name, disp = player_identity()
   local entry = {
     version   = 2,
     build     = Vermilion.Constants.VERSION,
+    research  = RESEARCH,
+    player    = { raw = raw, name = name, display = disp, uid = own_uid },
+    flags     = nflags,
     settings  = {
       sample_rate_ms = temporal.sample_rate_ms or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT,
       time_window_s  = temporal.time_window_s or Vermilion.Constants.TEMPORAL.TIME_WINDOW_DEFAULT,
@@ -169,7 +225,9 @@ function M.save(sv)
 end
 
 function M.auto_enabled(sv)
-  return sv and sv.debug and sv.debug.auto_trace == true or false
+  local dbg = sv and sv.debug
+  if dbg and dbg.auto_trace ~= nil then return dbg.auto_trace == true end
+  return RESEARCH
 end
 
 function M.set_auto(sv, on)
@@ -192,11 +250,19 @@ end
 
 function M.status_line()
   return "trace " .. (active and "ACTIVE" or "idle") .. "  events=" .. n .. "/" .. CAP
+    .. "  flags=" .. nflags .. "  uid=" .. own_uid
 end
 
 function M.init()
   zev.register("Vermilion_Trace_CE", C.EVENT_COMBAT_EVENT, function(...) rec("CE", ...) end)
-  zev.register("Vermilion_Trace_EF", C.EVENT_EFFECT_CHANGED, function(...) rec("EF", ...) end)
+  zev.register("Vermilion_Trace_EF", C.EVENT_EFFECT_CHANGED, function(...)
+    local unitTag, unitId = select(4, ...), select(14, ...)
+    if unitTag == "player" and type(unitId) == "number" and unitId > 0 and unitId ~= own_uid then
+      own_uid = unitId
+      if active then rec_identity() end
+    end
+    rec("EF", ...)
+  end)
   zev.register("Vermilion_Trace_CS", C.EVENT_PLAYER_COMBAT_STATE, function(in_combat) rec("CS", in_combat) end)
   if C.EVENT_UNIT_DEATH_STATE_CHANGED then
     zev.register("Vermilion_Trace_DE", C.EVENT_UNIT_DEATH_STATE_CHANGED, function(tag, dead) rec("DE", tag, dead) end)
