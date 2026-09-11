@@ -210,14 +210,15 @@ function M.init()
   E.add_filter("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
-  if C.ACTION_RESULT_KILLING_BLOW then
-    E.register("Vermilion_E_Kill", EVENT_COMBAT_EVENT, function(_r, _err, _name, _g, _slot, _src, _st, tgt, _tt, _hit, _pt, _dt, _log, _suid, targetUnitId, abilityId)
-      Vermilion.Kills.on_kill(now(), targetUnitId, tgt, abilityId)
-    end)
-    E.add_filter("Vermilion_E_Kill", EVENT_COMBAT_EVENT,
-      REGISTER_FILTER_COMBAT_RESULT, C.ACTION_RESULT_KILLING_BLOW)
-    E.add_filter("Vermilion_E_Kill", EVENT_COMBAT_EVENT,
-      REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
+  local function on_kill_event(_r, _err, _name, _g, _slot, _src, _st, tgt, _tt, _hit, _pt, _dt, _log, _suid, targetUnitId, abilityId)
+    Vermilion.Kills.on_kill(now(), targetUnitId, tgt, abilityId)
+  end
+  local kill_results = { C.ACTION_RESULT_DIED_XP or 2262, C.ACTION_RESULT_KILLING_BLOW or 2265 }
+  for i = 1, #kill_results do
+    local name = "Vermilion_E_Kill" .. i
+    E.register(name, EVENT_COMBAT_EVENT, on_kill_event)
+    E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_COMBAT_RESULT, kill_results[i])
+    E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
   end
 
   E.register("Vermilion_E_EffectPlayer", EVENT_EFFECT_CHANGED, M.dispatch_effect_player_src)

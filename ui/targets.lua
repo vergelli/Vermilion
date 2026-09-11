@@ -23,6 +23,7 @@ local C_ORCHID  = { r = 0.85, g = 0.40, b = 0.75 }
 local C_HEAT    = { r = 0.98, g = 0.55, b = 0.20 }
 local DIM       = 0.30
 local Heat      = Vermilion.Heat
+local UNIT_ENEMY_PLAYER = Vermilion.zenimax.constants.COMBAT_UNIT_TYPE_OTHER
 local LUT_N     = Heat.N
 
 local PCT_TEXT = {}
@@ -109,7 +110,7 @@ local function aggregate()
       local e = list[k]
       local id = e.id or 0
       local raw = e.name or ""
-      local is_player = raw:find("^", 1, true) ~= nil
+      local is_player = (e.ttype == UNIT_ENEMY_PLAYER)
       local rec
       if is_player then
         rec = by_id[id]
