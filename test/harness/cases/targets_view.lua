@@ -34,21 +34,26 @@ return function(H)
   local t = TV.totals()
   ok(math.abs((rows[1].total + rows[2].total) - t.damage) < 1e-6, "lane totals add up to the output total")
 
-  local cells, orchid, names = 0, 0, {}
+  local cells, orchid_cells, tails, names = 0, 0, 0, {}
   for _, c in ipairs(H.controls) do
     local name = c._name or ""
-    if c._hidden == false and name:find("^VermilionTargetSeg") and c._h and c._h > 3 and (c._a or 0) > 0.5 then
-      cells = cells + 1
-      if (c._b or 0) > 0.55 and (c._r or 0) > 0.6 then orchid = orchid + 1 end
+    if c._hidden == false and name:find("^VermilionTargetSeg") then
+      if c._h and c._h > 3 and (c._a or 0) > 0.5 then
+        cells = cells + 1
+        if (c._b or 0) > 0.7 * (c._r or 1) and (c._g or 1) < 0.6 then orchid_cells = orchid_cells + 1 end
+      elseif c._h == 3 and (c._b or 0) > 0.7 and (c._r or 0) > 0.8 then
+        tails = tails + 1
+      end
     end
     if c._hidden == false and name:find("^VermilionTargetLbl") and c._text then names[c._text] = true end
   end
   ok(cells >= 4, "the lanes carry heat cells, got " .. cells)
-  ok(orchid >= 1, "cells where a shield absorbed the hit turn orchid, got " .. orchid)
+  ok(orchid_cells == 0, "cells encode pressure only, never the shield, got " .. orchid_cells)
+  ok(tails == 1, "the shielded enemy's gutter bar wears an orchid tail, got " .. tails)
   ok(names["Sorc"] and names["Templar"], "each lane wears its enemy's name")
 
-  local lut0, lut63 = TV.lut(0), TV.lut(63)
-  ok(lut0[1] < 0.3 and lut63[1] > 0.95 and lut63[2] > 0.8, "the heat ramp runs from near black to pale yellow")
+  local lut0, lut_hi = TV.lut(0), TV.lut(127)
+  ok(lut0[1] >= 0.25 and lut0[1] < 0.4 and lut_hi[1] > 0.95 and lut_hi[2] > 0.8, "the heat ramp runs from a visible dark crimson to pale yellow")
 
   local canvas = VermilionGraphWindowViewportCanvas
   local hit = VermilionGraphHit
