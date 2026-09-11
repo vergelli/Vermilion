@@ -105,6 +105,12 @@ end
 
 function M.pending_count() return pending_n end
 
+function M.pending_amount()
+  local sum = 0
+  for i = 1, pending_n do sum = sum + (pending[i].amount or 0) end
+  return sum
+end
+
 local function hold_pending(ev, t)
   M.flush_pending(t)
   if pending_n >= PENDING_CAP then ingest_pending(1) end

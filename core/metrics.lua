@@ -104,7 +104,13 @@ function M.ingest_shield_out(ev)
 end
 
 function M.eDPS(now_ms)  return damage_out_buf:sum(now_ms, "amount") / (W_MS / 1000)        end
-function M.ShDPS(now_ms) return shield_out_buf:sum(now_ms, "amount") / (W_SHIELD_MS / 1000) end
+local function pending_shield()
+  local P = Vermilion.Pipeline
+  if P and P.pending_amount then return P.pending_amount() end
+  return 0
+end
+
+function M.ShDPS(now_ms) return (shield_out_buf:sum(now_ms, "amount") + pending_shield()) / (W_SHIELD_MS / 1000) end
 function M.EOS(now_ms)   return M.eDPS(now_ms) + M.ShDPS(now_ms)                            end
 
 function M.crit_split(now_ms)
