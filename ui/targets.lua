@@ -22,25 +22,8 @@ local C_LANE    = { r = 1.00, g = 0.62, b = 0.58, a = 0.05 }
 local C_ORCHID  = { r = 0.85, g = 0.40, b = 0.75 }
 local C_HEAT    = { r = 0.98, g = 0.55, b = 0.20 }
 local DIM       = 0.30
-local LUT_N     = 128
-local RAMP = {
-  { 0.05, 0.03, 0.53 },
-  { 0.49, 0.01, 0.66 },
-  { 0.80, 0.23, 0.48 },
-  { 0.97, 0.53, 0.19 },
-  { 0.94, 0.98, 0.13 },
-}
-local FADE_IN = 0.22
-
-local LUT = {}
-for i = 0, LUT_N - 1 do
-  local t = i / (LUT_N - 1) * (#RAMP - 1)
-  local k = math_floor(t)
-  if k >= #RAMP - 1 then k = #RAMP - 2 end
-  local f = t - k
-  local a, b = RAMP[k + 1], RAMP[k + 2]
-  LUT[i] = { a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f }
-end
+local Heat      = Vermilion.Heat
+local LUT_N     = Heat.N
 
 local PCT_TEXT = {}
 for i = 0, 100 do PCT_TEXT[i] = i .. "%" end
@@ -207,10 +190,8 @@ local function cell(c, canvas, x0, x1, y, row_h, level, dim)
   seg:SetWidth(math_max(1, x1 - x0))
   seg:SetHeight(row_h)
   seg:SetDrawLevel(4)
-  local col = LUT[level]
-  local a = level / ((LUT_N - 1) * FADE_IN)
-  if a > 1 then a = 1 end
-  a = 0.30 + 0.70 * a
+  local col = Heat.lut(level)
+  local a = Heat.alpha(level)
   if dim then
     seg:SetColor(col[1] * DIM, col[2] * DIM, col[3] * DIM, 0.35 * a)
   else
@@ -542,4 +523,4 @@ function M.hovered() return hover_id end
 function M.clear_hover() hover_id = nil end
 function M.rows() return order, order.n end
 function M.totals() return totals end
-function M.lut(i) return LUT[i] end
+function M.lut(i) return Heat.lut(i) end
