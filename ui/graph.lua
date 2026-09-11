@@ -50,6 +50,14 @@ local LINE_THICKNESS = 2
 local N_HGRID      = 3
 local N_VGRID      = 3
 local TIME_STRIP_H = 18
+local ULT_L = { PAD = 4, ROW_H = 5, GAP = 9, ICON = 14, AREA = 28 }
+local C_ULT_READY = { r = 1.00, g = 0.90, b = 0.30 }
+local C_HANG_FILL = { r = 0.85, g = 0.40, b = 0.75, a = 0.16 }
+local C_HANG_EDGE = { r = 0.85, g = 0.40, b = 0.75, a = 0.85 }
+local function ult_inset()
+  local U = Vermilion.Ultimate
+  return (U and U.has_data()) and ULT_L.AREA or 0
+end
 local C_GRID_LINE = { r = 0.55, g = 0.58, b = 0.70, a = 0.25 }
 local C_GRID_LBL  = { r = 0.82, g = 0.85, b = 0.90, a = 0.92 }
 local C_TIME_LBL  = { r = 0.68, g = 0.70, b = 0.75, a = 0.85 }
@@ -111,7 +119,7 @@ local card_fader, crosshair_fader
 
 local CARD_W, CARD_H = 210, 56
 local CARD_ROW_H     = 16
-local CARD_MAX_ROWS  = 7
+local CARD_MAX_ROWS  = 9
 local CARD_ROWS_Y0   = 54
 local C_CARD_BG     = { r = 0.10, g = 0.04, b = 0.05, a = 0.96 }
 local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }
@@ -380,6 +388,11 @@ local function release_all_pools()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  if controls.pool_hang then
+    controls.pool_hang:ReleaseAllObjects()
+    controls.pool_ult:ReleaseAllObjects()
+    controls.pool_ult_icon:ReleaseAllObjects()
+  end
   if controls.pool_c_seg then
     controls.pool_c_seg:ReleaseAllObjects()
     controls.pool_c_rim:ReleaseAllObjects()
@@ -473,10 +486,10 @@ local function decimate(cw)
         col.eos_peak = eos; col.eDPS = s.eDPS; col.ShDPS = s.ShDPS
         col.eos_groups = s.eos_groups; col.eos_abilities = s.eos_abilities
         col.shield_abilities = s.shield_abilities
+        col.dtype_groups = s.dtype_groups; col.dtype_abilities = s.dtype_abilities
       end
       if s.eDPS > col.edps_peak then
         col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
-        col.dtype_groups = s.dtype_groups; col.dtype_abilities = s.dtype_abilities
       end
       col.t = s.t
     end
@@ -934,7 +947,7 @@ local function session_summary()
     sum_eos = sum_eos + eos
     if i == 1 then first_t = s.t end
     if prev_t then
-      local dv = s.eDPS * (s.t - prev_t) / 1000
+      local dv = eos * (s.t - prev_t) / 1000
       local dg = s.dtype_groups
       for g = 1, (dg and dg.count or 0) do
         local e = dg[g]
@@ -1087,6 +1100,15 @@ local function show_report_card()
     add_row(GetString(VERMILION_REPORT_PEAK), fmt_secs(sm.peak_t_off), C_CARD_STAT)
   end
   add_row(GetString(VERMILION_REPORT_ACTIVE), string_format("%d%%", math_floor(sm.active_pct * 100 + 0.5)), C_SUM.ACTIVE)
+  local us = Vermilion.Ultimate and Vermilion.Ultimate.summary()
+  if us and us.dur_ms > 0 and Vermilion.Ultimate.has_data() then
+    add_row(GetString(VERMILION_REPORT_ULT_READY), string_format("%d%%", math_floor(us.ready_pct * 100 + 0.5)),
+      (us.ready_pct > 0.25) and C_CRIT_BELOW or C_CARD_STAT)
+    local casts = (us.casts > 1)
+      and string_format(GetString(VERMILION_REPORT_APART), us.casts, fmt_secs(us.mean_gap_ms))
+      or tostring(us.casts)
+    add_row(GetString(VERMILION_REPORT_ULT_CASTS), casts, C_CARD_STAT)
+  end
   if sm.dom_type ~= nil and DamageTypeColors then
     local dc = DamageTypeColors.lookup(sm.dom_type)
     add_row(GetString(VERMILION_REPORT_MAIN_TYPE),
@@ -1163,6 +1185,29 @@ local function hover_poll()
   local above  = canvas:GetBottom() - my
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
 
+  local U = Vermilion.Ultimate
+  if U and U.has_data() and ULT_L.span and ULT_L.span > 0 then
+    local rel_y = my - canvas:GetTop() - CHIP.H
+    if rel_x >= 0 and rel_x <= cw and rel_y >= 0 and rel_y < ULT_L.AREA then
+      local b = (rel_y < ULT_L.PAD + ULT_L.ROW_H + ULT_L.GAP / 2) and 1 or 2
+      local t = ULT_L.t0 + (rel_x - ULT_L.xl) / ULT_L.bw * ULT_L.span
+      if t < ULT_L.t0 then t = ULT_L.t0 end
+      if t > ULT_L.t0 + ULT_L.span then t = ULT_L.t0 + ULT_L.span end
+      local id = U.id_at(b, t)
+      if id == 0 then b = 1; id = U.id_at(1, t) end
+      if id > 0 then
+        local pct = U.pct_at(t, b)
+        local ready = pct >= 1
+        local stat = ready and ("|c" .. hexc(C_ULT_READY) .. GetString(VERMILION_ULT_CARD_READY) .. "|r")
+                     or string_format(GetString(VERMILION_ULT_CARD_CHARGED), math_floor(pct * 100 + 0.5))
+        if hover_key ~= nil then hover_key = nil; render_current_view() end
+        show_moment_card(ready and C_ULT_READY or C_VIEWPORT, Vermilion.SkillColors.ability_name(id), stat,
+          (hit.t0 and (t - hit.t0)) or 0, mx, my)
+        return
+      end
+    end
+  end
+
   local band, col = nil, nil
   if rel_x >= 0 and rel_x <= cw and above >= 0 and above <= ch then
     band, col = hover_pick(rel_x, above)
@@ -1182,6 +1227,16 @@ local function hover_poll()
   end
 
   local elapsed = (col.t and hit.t0) and (col.t - hit.t0) or 0
+  local hang = col.hang or 0
+  local from_top = ch - above - CHIP.H - ult_inset()
+  if not band and hang > 0 and from_top >= 0 and from_top <= hang then
+    local sh  = col.shdps or 0
+    local eos = (col.edps or 0) + sh
+    show_moment_card(C_SHDPS, GetString(VERMILION_REPORT_SHIELDED),
+      string_format("|c%s%s DPS|r  ·  %d%%", hexc(C_SHDPS), fmt_readout(sh), (eos > 0) and math_floor(sh / eos * 100 + 0.5) or 0),
+      elapsed, mx, my, DTYPE_ICON[-1])
+    return
+  end
   if band then
     show_card(band, col, mx, my, elapsed)
   elseif current_view == VIEW_BY_OUTCOME then
@@ -1297,11 +1352,160 @@ local function hit_col(i, x, bw, s)
   if i == 1 then hit.t0 = s.t end
   local col = hit.cols[i]
   if not col then col = { bands = {} }; hit.cols[i] = col end
-  col.x0 = x; col.x1 = x + bw; col.nb = 0; col.t = s.t
+  col.x0 = x; col.x1 = x + bw; col.nb = 0; col.t = s.t; col.hang = 0
   col.edps = s.eDPS; col.shdps = s.ShDPS; col.crit = s.crit; col.noncrit = s.noncrit
   col.eos_abilities = s.eos_abilities; col.dtype_abilities = s.dtype_abilities
   col.shield_abilities = s.shield_abilities
   return col
+end
+
+local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture)
+  local top = CHIP.H + ult_inset()
+  local canvas = controls.canvas
+  local pool = controls.pool_hang
+  for i = 1, m do
+    local s = dec_cols[i]
+    local sh = s.ShDPS or 0
+    local h = (sh > 0 and max_scale > 0) and math_floor(ch_plot * (sh / max_scale) + 0.5) or 0
+    if capture and hit.cols[i] then hit.cols[i].hang = h end
+    if h > 0 then
+      local left, right = dec_rect(s.c, num_cols, cw)
+      local bw = bwu or (right - left)
+      local f = pool:AcquireObject()
+      f:ClearAnchors()
+      f:SetAnchor(TOPLEFT, canvas, TOPLEFT, left, top)
+      f:SetWidth(bw)
+      f:SetHeight(h)
+      f:SetColor(C_HANG_FILL.r, C_HANG_FILL.g, C_HANG_FILL.b, C_HANG_FILL.a)
+      f:SetDrawLevel(3)
+      f:SetHidden(false)
+      local e = pool:AcquireObject()
+      e:ClearAnchors()
+      e:SetAnchor(TOPLEFT, canvas, TOPLEFT, left, top + h - 1)
+      e:SetWidth(bw)
+      e:SetHeight(1)
+      e:SetColor(C_HANG_EDGE.r, C_HANG_EDGE.g, C_HANG_EDGE.b, C_HANG_EDGE.a)
+      e:SetDrawLevel(4)
+      e:SetHidden(false)
+    end
+  end
+end
+
+local function ult_seg(x0, x1, y, lv, avail, min_x, max_x)
+  if x1 <= x0 then return min_x, max_x end
+  local seg = controls.pool_ult:AcquireObject()
+  seg:ClearAnchors()
+  seg:SetDrawLevel(6)
+  seg:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x0, y)
+  seg:SetWidth(x1 - x0)
+  seg:SetHeight(ULT_L.ROW_H)
+  if avail then
+    seg:SetColor(C_ULT_READY.r, C_ULT_READY.g, C_ULT_READY.b, 0.95)
+  else
+    seg:SetColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, 0.10 + 0.045 * lv)
+  end
+  seg:SetHidden(false)
+  if not min_x or x0 < min_x then min_x = x0 end
+  if not max_x or x1 > max_x then max_x = x1 end
+  return min_x, max_x
+end
+
+local function draw_ult_band(span_ms, n)
+  local pool, ipool = controls.pool_ult, controls.pool_ult_icon
+  pool:ReleaseAllObjects()
+  ipool:ReleaseAllObjects()
+  local U = Vermilion.Ultimate
+  if not (U and U.has_data()) or n == 0 then return end
+  local TB = Vermilion.TemporalBuffer
+  local t_last = TB.at(n).t
+  local span = axis_span(span_ms, n)
+  if span <= 0 then return end
+  local t0 = t_last - span
+  local canvas = controls.canvas
+  local cw = canvas:GetWidth()
+  local x_left = ULT_L.ICON + 4
+  local bw = cw - x_left
+  local nb = math_floor(bw / 4)
+  if nb < 1 then return end
+  local st, sv, ns = U.steps()
+  local ut, ub, un = U.used()
+  local at, ab, ai, ac, an = U.abilities()
+  local t_hi = t0 + span
+  ULT_L.t0, ULT_L.span, ULT_L.xl, ULT_L.bw = t0, span, x_left, bw
+  for b = 1, 2 do
+    local id = U.id_at(b, t_hi)
+    if id > 0 or b == 1 then
+      local y = CHIP.H + ULT_L.PAD + (b - 1) * (ULT_L.ROW_H + ULT_L.GAP)
+      local k, ka, cost = 1, 0, 0
+      local min_x, max_x
+      local run_x0, run_lv, run_avail = nil, -1, false
+      for bx = 1, nb do
+        local x0 = x_left + math_floor((bx - 1) * bw / nb + 0.5)
+        local bt = t0 + (bx - 1) / nb * span
+        while k < ns and st[k + 1] <= bt do k = k + 1 end
+        while ka < an and at[ka + 1] <= bt do
+          ka = ka + 1
+          if ab[ka] == b then cost = ac[ka] end
+        end
+        local p = -1
+        if bt >= st[1] and bt <= t_last then
+          local c = (cost > 0) and cost or U.cost_at(b, bt)
+          p = sv[k] / c
+          if p > 1 then p = 1 end
+        end
+        if p < 0 then
+          if run_x0 then
+            min_x, max_x = ult_seg(run_x0, x0, y, run_lv, run_avail, min_x, max_x)
+            run_x0 = nil
+          end
+        else
+          local avail = p >= 1
+          local lv = avail and 8 or math_floor(p * 8)
+          if run_x0 and (avail ~= run_avail or lv ~= run_lv) then
+            min_x, max_x = ult_seg(run_x0, x0, y, run_lv, run_avail, min_x, max_x)
+            run_x0 = nil
+          end
+          if not run_x0 then run_x0, run_lv, run_avail = x0, lv, avail end
+        end
+      end
+      if run_x0 then
+        min_x, max_x = ult_seg(run_x0, cw, y, run_lv, run_avail, min_x, max_x)
+      end
+      if min_x then
+        local rim = pool:AcquireObject()
+        rim:ClearAnchors()
+        rim:SetDrawLevel(5)
+        rim:SetAnchor(TOPLEFT, canvas, TOPLEFT, min_x - 1, y - 1)
+        rim:SetWidth(max_x - min_x + 2)
+        rim:SetHeight(ULT_L.ROW_H + 2)
+        rim:SetColor(0.04, 0.02, 0.02, 0.60)
+        rim:SetHidden(false)
+      end
+      for i = 1, un do
+        local t = ut[i]
+        if (ub[i] or 1) == b and t >= t0 and t <= t_hi then
+          local x = x_left + math_floor((t - t0) / span * bw + 0.5)
+          local tick = pool:AcquireObject()
+          tick:ClearAnchors()
+          tick:SetDrawLevel(7)
+          tick:SetAnchor(TOPLEFT, canvas, TOPLEFT, x - 1, y - 2)
+          tick:SetWidth(2)
+          tick:SetHeight(ULT_L.ROW_H + 4)
+          tick:SetColor(1, 1, 1, 0.9)
+          tick:SetHidden(false)
+        end
+      end
+      if id > 0 then
+        local icon = ipool:AcquireObject()
+        icon:ClearAnchors()
+        icon:SetTexture(Vermilion.SkillColors.ability_icon(id))
+        icon:SetDimensions(ULT_L.ICON, ULT_L.ICON)
+        icon:SetColor(1, 1, 1, 0.95)
+        icon:SetAnchor(TOPLEFT, canvas, TOPLEFT, 0, y - math_floor((ULT_L.ICON - ULT_L.ROW_H) / 2))
+        icon:SetHidden(false)
+      end
+    end
+  end
 end
 
 local function render_by_skill()
@@ -1311,6 +1515,7 @@ local function render_by_skill()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  controls.pool_hang:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
   if n == 0 then
@@ -1323,12 +1528,12 @@ local function render_by_skill()
   local canvas = controls.canvas
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
   if cw <= 4 or ch <= 4 then return end
-  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H)
+  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - ult_inset())
 
   local max_eos, span_ms = window_extent(n)
   if max_eos <= 0 then hide_grid(controls.grid) return end
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H)
+  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
   local xs, eos_hs = rsk_xs, rsk_eos_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -1393,6 +1598,8 @@ local function render_by_skill()
       le:SetHidden(false)
     end
   end
+  draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture)
+  draw_ult_band(span_ms, n)
 end
 
 local function render_by_type()
@@ -1402,6 +1609,7 @@ local function render_by_type()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  controls.pool_hang:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
   if n == 0 then
@@ -1414,12 +1622,12 @@ local function render_by_type()
   local canvas = controls.canvas
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
   if cw <= 4 or ch <= 4 then return end
-  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H)
+  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - ult_inset())
 
-  local max_edps, span_ms = edps_extent(n)
+  local max_edps, span_ms = window_extent(n)
   if max_edps <= 0 then hide_grid(controls.grid) return end
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H)
+  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
   local xs, edps_hs = rty_xs, rty_edps_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -1431,7 +1639,7 @@ local function render_by_type()
     local left, right = dec_rect(s.c, num_cols, cw)
     local x    = left
     local bw   = bwu
-    local edps = s.edps_peak or 0
+    local edps = s.eos_peak or 0
     local col_h = math_max(0, math_floor(ch_plot * (edps / max_edps) + 0.5))
     xs[i]      = x + bw * 0.5
     edps_hs[i] = col_h
@@ -1484,6 +1692,8 @@ local function render_by_type()
       le:SetHidden(false)
     end
   end
+  draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture)
+  draw_ult_band(span_ms, n)
 end
 
 local function render_by_outcome()
@@ -1493,6 +1703,7 @@ local function render_by_outcome()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  controls.pool_hang:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
   if n == 0 then
@@ -1505,12 +1716,12 @@ local function render_by_outcome()
   local canvas = controls.canvas
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
   if cw <= 4 or ch <= 4 then return end
-  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H)
+  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - ult_inset())
 
   local max_eos, span_ms = window_extent(n)
   if max_eos <= 0 then hide_grid(controls.grid) return end
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H)
+  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
   local xs, edps_hs, eos_hs = rout_xs, rout_edps_hs, rout_eos_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -1568,6 +1779,7 @@ local function render_by_outcome()
       lo:SetHidden(false)
     end
   end
+  draw_ult_band(span_ms, n)
 end
 
 local function render_by_crit()
@@ -1577,6 +1789,7 @@ local function render_by_crit()
   controls.pool_shdps:ReleaseAllObjects()
   controls.pool_line_edps:ReleaseAllObjects()
   controls.pool_line_eos:ReleaseAllObjects()
+  controls.pool_hang:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
   if n == 0 then
@@ -1589,12 +1802,12 @@ local function render_by_crit()
   local canvas = controls.canvas
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
   if cw <= 4 or ch <= 4 then return end
-  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H)
+  local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - ult_inset())
 
   local max_edps, span_ms = edps_extent(n)
   if max_edps <= 0 then hide_grid(controls.grid) return end
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H)
+  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
   local xs, top_hs = rcr_xs, rcr_top_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -1643,6 +1856,7 @@ local function render_by_crit()
       lt:SetHidden(false)
     end
   end
+  draw_ult_band(span_ms, n)
 end
 
 function render_current_view()
@@ -1845,6 +2059,7 @@ function M.on_record_click()
   Vermilion.Trace.on_record(Vermilion.SavedVars)
   recording_start_ms = GetGameTimeMilliseconds()
   Vermilion.DebuffTracker.start_session(recording_start_ms)
+  Vermilion.Ultimate.start_session(recording_start_ms)
   local sv       = Vermilion.SavedVars
   local interval = (sv and sv.temporal and sv.temporal.sample_rate_ms)
                    or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT
@@ -1868,6 +2083,7 @@ function M.on_stop_click()
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
   Vermilion.DebuffTracker.finalize(GetGameTimeMilliseconds())
+  Vermilion.Ultimate.finalize(GetGameTimeMilliseconds())
   Vermilion.SessionStore.on_session_stop()
   summary_text = build_summary_text()
   if not Vermilion.SessionStore.autosave_pending() then
@@ -1891,6 +2107,7 @@ function M.on_flush_click()
   end
   Vermilion.TemporalBuffer.clear()
   Vermilion.DebuffTracker.reset()
+  Vermilion.Ultimate.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
   controls.saved_start, controls.saved_count = nil, nil
@@ -2143,6 +2360,14 @@ function M.load_session(sess)
   Vermilion.TemporalBuffer.load_session(series)
   local steps = (sess.streams.steps and sess.desc.steps) and vsf.unpack(sess.streams.steps, sess.desc.steps) or nil
   Vermilion.DebuffTracker.load_session(sess.debuffs or {}, steps or {}, 0, sess.head.dur_ms or 0)
+  if sess.streams.ult and sess.desc.ult then
+    local ult_steps = vsf.unpack(sess.streams.ult, sess.desc.ult)
+    local ult_used  = (sess.streams.ultu and sess.desc.ultu) and vsf.unpack(sess.streams.ultu, sess.desc.ultu) or nil
+    local ult_abil  = (sess.streams.ulta and sess.desc.ulta) and vsf.unpack(sess.streams.ulta, sess.desc.ulta) or nil
+    Vermilion.Ultimate.load_session(ult_steps or {}, ult_used or {}, ult_abil or {})
+  else
+    Vermilion.Ultimate.reset()
+  end
   hover_key = nil
   summary_text = build_summary_text()
   controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
@@ -2248,6 +2473,14 @@ function M.init()
   controls.pool_shdps        = make_fill_pool("VermilionShdpsFill")
   controls.pool_line_edps    = make_line_pool("VermilionLineEdps")
   controls.pool_line_eos     = make_line_pool("VermilionLineEos")
+  controls.pool_hang         = make_fill_pool("VermilionHangFill")
+  controls.pool_ult          = make_fill_pool("VermilionGraphUlt")
+  controls.pool_ult_icon     = Pool.new("VermilionGraphUltIcon", controls.canvas, CT_TEXTURE,
+    function(c)
+      if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
+      c:SetDrawLevel(8)
+    end,
+    function(c) c:SetHidden(true) end)
   controls.pool_c_seg = Pool.new("VermilionContribSeg", controls.canvas, CT_TEXTURE,
     function(c)
       fill_factory(c)

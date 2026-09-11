@@ -36,6 +36,20 @@ local DESC = {
     { name = "sh",  width = 2, scale = 1000 },
     { name = "ab",  width = 2, scale = 1000 },
   },
+  ult = {
+    { name = "t", width = 4 },
+    { name = "v", width = 2 },
+  },
+  ultu = {
+    { name = "t",   width = 4 },
+    { name = "bar", width = 1 },
+  },
+  ulta = {
+    { name = "t",    width = 4 },
+    { name = "bar",  width = 1 },
+    { name = "id",   width = 4 },
+    { name = "cost", width = 2 },
+  },
 }
 
 M.DESC = DESC
@@ -169,6 +183,34 @@ function M.capture(cooperative)
     end
   end
 
+  local U = Vermilion.Ultimate
+  local ust, usv, usn = U.steps()
+  local ult_recs = {}
+  for i = 1, usn do
+    local v = math_floor(usv[i] + 0.5)
+    if v < 0 then v = 0 end
+    if v > 65535 then v = 65535 end
+    local rel = ust[i] - t0
+    if rel < 0 then rel = 0 end
+    ult_recs[i] = { t = rel, v = v }
+  end
+  local uut, uub, uun = U.used()
+  local ultu_recs = {}
+  for i = 1, uun do
+    local rel = uut[i] - t0
+    if rel < 0 then rel = 0 end
+    ultu_recs[i] = { t = rel, bar = uub[i] or 1 }
+  end
+  local uat, uab, uai, uac, uan = U.abilities()
+  local ulta_recs = {}
+  for i = 1, uan do
+    local rel = uat[i] - t0
+    if rel < 0 then rel = 0 end
+    local cost = uac[i] or 0
+    if cost > 65535 then cost = 65535 end
+    ulta_recs[i] = { t = rel, bar = uab[i] or 1, id = uai[i], cost = cost }
+  end
+
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
   local temporal = sv and sv.temporal or {}
@@ -212,6 +254,9 @@ function M.capture(cooperative)
       steps     = vsf.pack(steps, DESC.steps, nil, ye),
       shares    = vsf.pack(share_recs, DESC.shares, nil, ye),
       abilities = vsf.pack(ability_recs, DESC.abilities, nil, ye),
+      ult       = vsf.pack(ult_recs, DESC.ult, nil, ye),
+      ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
+      ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
     },
   }
   return session

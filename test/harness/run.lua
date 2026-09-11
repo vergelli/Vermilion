@@ -34,6 +34,8 @@ local CASES = {
   "debuff_tracker",
   "debuffs_view",
   "shield_pairing",
+  "shield_layer",
+  "ultimate_band",
 }
 
 local passed, failed = 0, 0
