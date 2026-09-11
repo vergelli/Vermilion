@@ -5,6 +5,7 @@ Vermilion.Kills = {}
 local M = Vermilion.Kills
 
 local CAP = 200
+local DEDUPE_MS = 250
 
 local recording = false
 local n = 0
@@ -30,6 +31,7 @@ end
 function M.on_kill(t, uid, name, aid)
   Vermilion.Diagnostics.bump("kills.seen")
   if not recording or n >= CAP then return end
+  if n > 0 and kill_uid[n] == (uid or 0) and (t - kill_t[n]) <= DEDUPE_MS then return end
   n = n + 1
   kill_t[n]    = t
   kill_uid[n]  = uid or 0

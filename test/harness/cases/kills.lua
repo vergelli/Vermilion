@@ -17,13 +17,16 @@ return function(H)
   G.on_record_click()
   for i = 1, 8 do
     H.damage_out({ hit = 1000, ability_id = 31, target_name = "Sorc^Mx", target_unit_id = 900 })
-    H.damage_out({ hit = 400, ability_id = 31, target_name = "Skeleton", target_unit_id = 910 })
-    if i == 5 then H.kill({ target_name = "Sorc^Mx", target_unit_id = 900, ability_id = 31 }) end
-    if i == 7 then H.kill({ target_name = "Skeleton", target_unit_id = 910, ability_id = 31 }) end
+    H.damage_out({ hit = 400, ability_id = 31, target_name = "Skeleton^n", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 910 })
+    if i == 5 then
+      H.kill({ target_name = "Sorc^Mx", target_unit_id = 900, ability_id = 31, result = ACTION_RESULT_KILLING_BLOW })
+      H.kill({ target_name = "Sorc^Mx", target_unit_id = 900, ability_id = 31, result = ACTION_RESULT_DIED_XP })
+    end
+    if i == 7 then H.kill({ target_name = "Skeleton^n", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 910, ability_id = 31 }) end
     H.advance(1000)
   end
   G.on_stop_click()
-  ok(K.count() == 2, "two killing blows are kept, got " .. K.count())
+  ok(K.count() == 2, "both result codes count and the same death is never counted twice, got " .. K.count())
 
   local function skulls()
     local n, xs = 0, {}

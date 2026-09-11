@@ -125,17 +125,17 @@ return function(H)
   H.advance(31000)
   G.on_record_click()
   for i = 1, 6 do
-    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton", target_unit_id = 910 })
-    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton", target_unit_id = 911 })
-    H.damage_out({ hit = 100, ability_id = 31, target_name = "Skeleton", target_unit_id = 912 })
+    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton^n", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 910 })
+    H.damage_out({ hit = 800, ability_id = 31, target_name = "Skeleton^n", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 911 })
+    H.damage_out({ hit = 100, ability_id = 31, target_name = "Skeleton^n", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 912 })
     if i > 3 then H.damage_out({ hit = 3000, ability_id = 31, target_name = "Warden^Fx", target_unit_id = 920 }) end
     H.advance(1000)
   end
   G.on_stop_click()
   local frows, fn = TV.rows()
   ok(fn == 2, "three skeletons fold into one lane while the player keeps its own, got " .. tostring(fn))
-  local skel = (frows[1].raw == "Skeleton") and frows[1] or frows[2]
-  ok(skel and skel.n == 3 and not skel.is_player, "the folded lane counts its three units")
+  local skel = (frows[1].raw == "Skeleton^n") and frows[1] or frows[2]
+  ok(skel and skel.n == 3 and not skel.is_player and skel.name == "Skeleton", "the folded lane counts its three units and drops the NPC suffix")
   local folded_label = false
   for _, c in ipairs(H.controls) do
     if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "Skeleton  ×3" then folded_label = true end
