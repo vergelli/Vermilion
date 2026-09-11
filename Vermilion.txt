@@ -60,6 +60,7 @@ ui/settings.xml
 ui/settings.lua
 ui/contrib.lua
 ui/debuffs.lua
+ui/targets.lua
 ui/graph.xml
 ui/graph.lua
 ui/assign.xml

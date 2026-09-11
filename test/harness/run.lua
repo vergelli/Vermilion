@@ -36,7 +36,7 @@ local CASES = {
   "shield_pairing",
   "shield_layer",
   "ultimate_band",
-  "outcome_card",
+  "targets_view",
 }
 
 local passed, failed = 0, 0

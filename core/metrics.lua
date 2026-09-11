@@ -398,6 +398,57 @@ function M.shield_abilities_into(out, now_ms)
   return n
 end
 
+local tg_amt, tg_abs, tg_name, tg_type = {}, {}, {}, {}
+
+function M.targets_into(out, now_ms)
+  for k in pairs(tg_amt)  do tg_amt[k]  = nil end
+  for k in pairs(tg_abs)  do tg_abs[k]  = nil end
+  for k in pairs(tg_name) do tg_name[k] = nil end
+  for k in pairs(tg_type) do tg_type[k] = nil end
+  local ws    = W_MS / 1000
+  local wss   = W_SHIELD_MS / 1000
+  local total = 0
+  damage_out_buf:trim(now_ms)
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e   = damage_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local id = e.target_unit_id or 0
+      local r  = amt / ws
+      tg_amt[id] = (tg_amt[id] or 0) + r
+      tg_name[id] = e.target_name
+      tg_type[id] = e.target_type
+      total = total + r
+    end
+  end
+  shield_out_buf:trim(now_ms)
+  for i = shield_out_buf.head, shield_out_buf.tail do
+    local e   = shield_out_buf.entries[i]
+    local amt = e.amount or 0
+    if amt > 0 then
+      local id = e.target_unit_id or 0
+      local r  = amt / wss
+      tg_amt[id] = (tg_amt[id] or 0) + r
+      tg_abs[id] = (tg_abs[id] or 0) + r
+      if tg_name[id] == nil then tg_name[id] = e.target_name; tg_type[id] = e.target_type end
+      total = total + r
+    end
+  end
+  local n = 0
+  if total > 0 then
+    for id, amt in pairs(tg_amt) do
+      n = n + 1
+      local slot = out[n]
+      if not slot then slot = {}; out[n] = slot end
+      slot.id = id; slot.name = tg_name[id] or ""; slot.ttype = tg_type[id] or 0
+      slot.share = amt / total; slot.abs = (tg_abs[id] or 0) / total
+    end
+    sort_shares_desc(out, n)
+  end
+  out.count = n
+  return n
+end
+
 function M.reset()
   log:info("reset: damage=", damage_out_buf:size(), "shield=", shield_out_buf:size(),
            "pool_in_use=", event_pool:in_use())

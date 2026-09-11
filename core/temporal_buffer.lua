@@ -30,6 +30,7 @@ function M.init(capacity)
       dtype_groups   = { count = 0 },
       dtype_abilities = { count = 0 },
       shield_abilities = { count = 0 },
+      targets = { count = 0 },
     }
   end
   log:info("init: capacity=", capacity)
@@ -59,8 +60,19 @@ local function copy_abilities(dst, src)
   dst.count = n
 end
 
+local function copy_targets(dst, src)
+  local n = (src and (src.count or #src)) or 0
+  for i = 1, n do
+    local s = src[i]
+    local d = dst[i]
+    if d == nil then d = {}; dst[i] = d end
+    d.id = s.id; d.name = s.name; d.ttype = s.ttype; d.share = s.share; d.abs = s.abs or 0
+  end
+  dst.count = n
+end
+
 function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
-                src_groups, eos_abilities, dtype_groups, dtype_abilities, shield_abilities)
+                src_groups, eos_abilities, dtype_groups, dtype_abilities, shield_abilities, targets)
   local slot   = state.data[state.write]
   slot.t       = timestamp
   slot.eDPS    = eDPS
@@ -73,6 +85,7 @@ function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
   copy_groups(slot.dtype_groups,     dtype_groups)
   copy_abilities(slot.dtype_abilities, dtype_abilities)
   copy_abilities(slot.shield_abilities, shield_abilities)
+  copy_targets(slot.targets, targets)
 
   state.write = (state.write % state.capacity) + 1
   if state.count < state.capacity then
@@ -124,7 +137,7 @@ function M.load_session(samples)
     local s = samples[i]
     M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
            s.eg or EMPTY_SHARES, s.ea or EMPTY_SHARES,
-           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES, s.sa or EMPTY_SHARES)
+           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES, s.sa or EMPTY_SHARES, s.tg or EMPTY_SHARES)
   end
   state.recording = false
   log:info("session loaded: samples=", #samples)
