@@ -17,6 +17,9 @@ local Sound         = Vermilion.Sound
 local ROW_H   = 30
 local ROW_GAP = 2
 local MAX_ROWS = 10
+local SPARK_N = 24
+local SPARK_W = 6
+local SPARK_H = 7
 
 local C_PIP_HOT   = { r = 0.95, g = 0.78, b = 0.30 }
 local C_PIP_COLD  = { r = 0.88, g = 0.30, b = 0.26 }
@@ -156,6 +159,16 @@ local function make_row(i)
   stats:SetDimensions(176, ROW_H)
   stats:SetAnchor(LEFT, row, LEFT, 144, 0)
 
+  local spark = {}
+  for b = 1, SPARK_N do
+    local cell = WM:CreateControl(nm .. "Spark" .. b, row, CT_TEXTURE)
+    solidify(cell)
+    cell:SetDimensions(SPARK_W - 1, SPARK_H)
+    cell:SetAnchor(TOPLEFT, row, TOPLEFT, 144 + (b - 1) * SPARK_W, ROW_H - SPARK_H - 3)
+    cell:SetHidden(true)
+    spark[b] = cell
+  end
+
   local when = WM:CreateControl(nm .. "When", row, CT_LABEL)
   when:SetFont("ZoFontGameSmall")
   when:SetHorizontalAlignment(TEXT_ALIGN_RIGHT)
@@ -171,7 +184,7 @@ local function make_row(i)
   star:SetHidden(true)
 
   return { root = row, bg = bg, sel = sel, hov = hov, pip = pip, vet = vet, kind = kind,
-           name = name, stats = stats, when = when, star = star }
+           name = name, stats = stats, when = when, star = star, spark = spark }
 end
 
 local HAND_GLYPH  = "|t12:12:EsoUI/Art/Buttons/edit_save_up.dds|t "
@@ -255,6 +268,23 @@ function M.refresh()
       (pc == C_PIP_HOT) and "f2c74c" or "d95a4e",
       math_floor((sum.crit_pct or 0) * 100 + 0.5)))
     row.stats:SetColor(1, 1, 1, 1)
+    local sp = h.spark
+    local has_spark = type(sp) == "table" and #sp == SPARK_N
+    row.stats:SetDimensions(176, has_spark and (ROW_H - SPARK_H - 4) or ROW_H)
+    row.stats:ClearAnchors()
+    row.stats:SetAnchor(TOPLEFT, row.root, TOPLEFT, 144, 0)
+    local Heat = Vermilion.Heat
+    for b = 1, SPARK_N do
+      local cell = row.spark[b]
+      if has_spark and (sp[b] or 0) > 0 then
+        local lv = Heat.level((sp[b] or 0) / 255)
+        local c = Heat.lut(lv)
+        cell:SetColor(c[1], c[2], c[3], Heat.alpha(lv))
+        cell:SetHidden(false)
+      else
+        cell:SetHidden(true)
+      end
+    end
     local kind_icon = Vermilion.ContentKind.icon(h.kind)
     if kind_icon then row.kind:SetTexture(kind_icon) end
     row.kind:SetHidden(kind_icon == nil)

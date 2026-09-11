@@ -41,7 +41,9 @@ Six views share one window. Click a tab, or use the Next and Previous view keybi
 
 **TYPE** stacks the same damage by damage type: fire, shock, poison, bleed, physical, magic and the rest. **CRIT** separates the critical part of your damage.
 
-**PRESSURE** shows your damage pressure per enemy over time: one lane per target, ordered by the damage they took, each cell hotter where you hit harder. A bar chart on the right, row by row, is the accumulated pressure per enemy, with an orchid tail for the part a shield absorbed. It answers whether you focused or spread your damage, when you switched targets, and against whom your damage went into wards. Hover a cell for the numbers at that moment and the shields involved.
+**PRESSURE** shows your damage pressure per enemy over time: one lane per target, ordered by the damage they took, each cell hotter where you hit harder. A bar chart on the right, row by row, is the accumulated pressure per enemy, with an orchid tail for the part a shield absorbed. It answers whether you focused or spread your damage, when you switched targets, and against whom your damage went into wards. Hover a cell for the numbers at that moment and the shields involved. Enemies that share a name fold into one lane with a count, so a pull of mobs stays readable; enemy players always keep their own lane.
+
+A skull marks every killing blow you land: at the top of the plot in SKILL, TYPE and CRIT, and on the victim's lane in PRESSURE. Hover it for the victim and the ability.
 
 In SKILL and TYPE, a faint orchid layer hangs from the top of the plot: its depth is the damage a shield absorbed at that moment, on the same scale as the bars. The bars below are your own damage, absorbed part included. Above every plot view, the ultimate band shows the charge of each bar over time, bright when ready, with a tick at every cast.
 
@@ -51,11 +53,11 @@ In SKILL and TYPE, a faint orchid layer hangs from the top of the plot: its dept
 
 ## The report
 
-After Stop, the chip in the top corner sums up the recording: average, peak, crit rate, active time and shield share. Hover it for the full report, click it to copy the text into chat.
+After Stop, the chip in the top corner sums up the recording: average, peak, crit rate, active time and shield share. Hover it for the full report, which adds the enemy you focused most, the time spent on your main target, how many times the pressure moved, the shield that absorbed the most, your killing blows and, when the band has data, how long the ultimate sat ready and how many casts. Click the chip to copy the text into chat.
 
 ## Session library
 
-Every recording can be kept. With Autosave on it happens on Stop; otherwise press the save icon. Open the library from the graph window to reopen a fight, name it, lock it so it never rotates out, or delete it. Double-click a row to open it. Each row shows the kind of content it was recorded in, with a veteran badge where it applies.
+Every recording can be kept. With Autosave on it happens on Stop; otherwise press the save icon. Open the library from the graph window to reopen a fight, name it, lock it so it never rotates out, or delete it. Double-click a row to open it. Each row shows the kind of content it was recorded in, with a veteran badge where it applies, and a small heat strip of the fight's output so you recognise it at a glance.
 
 ## Settings
 

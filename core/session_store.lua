@@ -44,6 +44,12 @@ local DESC = {
     { name = "sh",  width = 2, scale = 1000 },
     { name = "ab",  width = 2, scale = 1000 },
   },
+  kills = {
+    { name = "t",   width = 4 },
+    { name = "id",  width = 4 },
+    { name = "key", width = 2 },
+    { name = "aid", width = 4 },
+  },
   ult = {
     { name = "t", width = 4 },
     { name = "v", width = 2 },
@@ -204,6 +210,15 @@ function M.capture(cooperative)
     end
   end
 
+  local K = Vermilion.Kills
+  local kill_recs = {}
+  for i = 1, K.count() do
+    local kt, kuid, kname, kaid = K.get(i)
+    local rel = kt - t0
+    if rel < 0 then rel = 0 end
+    kill_recs[i] = { t = rel, id = kuid, key = key_of(kname or ""), aid = kaid }
+  end
+
   local U = Vermilion.Ultimate
   local ust, usv, usn = U.steps()
   local ult_recs = {}
@@ -232,6 +247,25 @@ function M.capture(cooperative)
     ulta_recs[i] = { t = rel, bar = uab[i] or 1, id = uai[i], cost = cost }
   end
 
+  local SPARK_N = 24
+  local spark_sum, spark_cnt = {}, {}
+  for b = 1, SPARK_N do spark_sum[b] = 0; spark_cnt[b] = 0 end
+  for i = 1, n_series do
+    local s = TB.at(i)
+    local b = math_floor((i - 1) * SPARK_N / n_series) + 1
+    spark_sum[b] = spark_sum[b] + s.eDPS + s.ShDPS
+    spark_cnt[b] = spark_cnt[b] + 1
+  end
+  local spark_peak = 0
+  for b = 1, SPARK_N do
+    if spark_cnt[b] > 0 then spark_sum[b] = spark_sum[b] / spark_cnt[b] end
+    if spark_sum[b] > spark_peak then spark_peak = spark_sum[b] end
+  end
+  local spark = {}
+  for b = 1, SPARK_N do
+    spark[b] = (spark_peak > 0) and math_floor(255 * math.sqrt(spark_sum[b] / spark_peak) + 0.5) or 0
+  end
+
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
   local temporal = sv and sv.temporal or {}
@@ -249,6 +283,7 @@ function M.capture(cooperative)
       locked = false,
       difficulty = start_diff or 0,
       kind = start_kind,
+      spark = spark,
       sum = {
         avg = math_floor(sum_eos / n_series + 0.5),
         peak = math_floor(peak_eos + 0.5),
@@ -276,6 +311,7 @@ function M.capture(cooperative)
       shares    = vsf.pack(share_recs, DESC.shares, nil, ye),
       abilities = vsf.pack(ability_recs, DESC.abilities, nil, ye),
       targets   = vsf.pack(target_recs, DESC.targets, nil, ye),
+      kills     = vsf.pack(kill_recs, DESC.kills, nil, ye),
       ult       = vsf.pack(ult_recs, DESC.ult, nil, ye),
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),

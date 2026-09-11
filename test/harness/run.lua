@@ -8,6 +8,7 @@ HARNESS.fire(EVENT_ADD_ON_LOADED, "Vermilion")
 
 local CASES = {
   "boot",
+  "evidence_flag",
   "record_flow",
   "views",
   "zero_alloc",
@@ -37,7 +38,8 @@ local CASES = {
   "shield_layer",
   "ultimate_band",
   "targets_view",
-  "evidence_flag",
+  "kills",
+  "library_spark",
 }
 
 local passed, failed = 0, 0
