@@ -1975,6 +1975,15 @@ function M.evidence_snapshot()
     end
     parts[#parts + 1] = string_format("sample=%d/%d t=%d eDPS=%.0f ShDPS=%.0f", n, TB.capacity(), s.t or 0, s.eDPS or 0, s.ShDPS or 0)
   end
+  if current_view == VIEW_BY_DEBUFFS then
+    local DT = Vermilion.DebuffTracker
+    local cnt = DT.count()
+    if cnt > 24 then cnt = 24 end
+    for i = 1, cnt do
+      local rec = DT.get(i)
+      parts[#parts + 1] = string_format("debuff%d:%s:%s:%s:%dms", i, tostring(rec.id), tostring(rec.name), tostring(rec.group), rec.uptime_ms or 0)
+    end
+  end
   return table.concat(parts, " | ")
 end
 
