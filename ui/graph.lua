@@ -1347,14 +1347,56 @@ function light.minimal(hidden)
   controls.status:SetHidden(hidden)
 end
 
+local CORNER_LEN, CORNER_W = 16, 2
+local CORNER_SPEC = {
+  { "TL", TOPLEFT,     1,  1 },
+  { "TR", TOPRIGHT,   -1,  1 },
+  { "BL", BOTTOMLEFT,  1, -1 },
+  { "BR", BOTTOMRIGHT, -1, -1 },
+}
+
+function light.corners(hidden)
+  local list = light.corner_ctls
+  if not list then
+    if hidden then return end
+    list = {}
+    local WM = WINDOW_MANAGER
+    local win = controls.window
+    for i = 1, #CORNER_SPEC do
+      local spec = CORNER_SPEC[i]
+      local point, sx, sy = spec[2], spec[3], spec[4]
+      local h = WM:CreateControl("VermilionGraphWindowCorner" .. spec[1] .. "H", win, CT_TEXTURE)
+      h:SetTexture(FILL_TEXTURE)
+      h:SetTextureCoords(0, 1, 0, 0.05)
+      h:SetDimensions(CORNER_LEN, CORNER_W)
+      h:SetAnchor(point, win, point, 0, 0)
+      h:SetColor(1.00, 0.45, 0.40, 0.95)
+      h:SetDrawLevel(9)
+      local v = WM:CreateControl("VermilionGraphWindowCorner" .. spec[1] .. "V", win, CT_TEXTURE)
+      v:SetTexture(FILL_TEXTURE)
+      v:SetTextureCoords(0, 1, 0, 0.05)
+      v:SetDimensions(CORNER_W, CORNER_LEN)
+      v:SetAnchor(point, win, point, 0, 0)
+      v:SetColor(1.00, 0.45, 0.40, 0.95)
+      v:SetDrawLevel(9)
+      list[#list + 1] = h
+      list[#list + 1] = v
+    end
+    light.corner_ctls = list
+  end
+  for i = 1, #list do list[i]:SetHidden(hidden) end
+end
+
 function light.apply_hover(hover)
   light.hover = hover
   if hover then
     controls.window:SetAlpha(1)
     light.minimal(false)
+    light.corners(false)
   else
     controls.window:SetAlpha(light.alpha_pct() / 100)
     light.minimal(true)
+    light.corners(true)
   end
 end
 
@@ -1382,6 +1424,7 @@ function light.exit()
   controls.window:SetAlpha(1)
   light.chrome(false)
   light.minimal(false)
+  light.corners(true)
 end
 
 local function hit_begin(n) hit.n = n end
