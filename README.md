@@ -87,6 +87,8 @@ The gear icon opens the settings. Every value is saved per server.
 
 **Sounds.** Vermilion's own clicks, chimes and window sounds.
 
+**Kill markers.** Show or hide the killing-blow skulls on the plots. The report counts them either way.
+
 **Light Mode while recording** and its **Opacity.** While recording, the chrome folds away and only the plot stays on screen, dimmed to the chosen opacity; it comes back on hover.
 
 **Reset to Defaults.** Puts every setting back.
