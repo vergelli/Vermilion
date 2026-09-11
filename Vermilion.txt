@@ -55,6 +55,7 @@ core/session_store.lua
 core/debuff_tracker.lua
 core/ultimate.lua
 core/kills.lua
+core/heat.lua
 core/auto_record.lua
 core/visibility.lua
 ui/settings.xml
