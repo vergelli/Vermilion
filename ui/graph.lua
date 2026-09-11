@@ -1268,6 +1268,7 @@ local function hover_poll()
 
   local K = Vermilion.Kills
   if K and K.count() > 0 and VIS.kills_span and VIS.kills_span > 0
+     and (not Vermilion.Settings.kill_markers or Vermilion.Settings.kill_markers())
      and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_TARGETS then
     local rel_x = mx - canvas:GetLeft()
     local rel_y = my - canvas:GetTop()
@@ -1629,6 +1630,7 @@ local function draw_kills_at(t0, span, x_left, bw, y)
   pool:ReleaseAllObjects()
   local K = Vermilion.Kills
   if not K or span <= 0 then return end
+  if Vermilion.Settings and Vermilion.Settings.kill_markers and not Vermilion.Settings.kill_markers() then return end
   local n = K.count()
   if n == 0 then return end
   local canvas = controls.canvas
@@ -2247,6 +2249,8 @@ function M.card_state()
     tostring(f.anim:IsPlaying()), tostring(controls.summary ~= nil and api.MouseIsOver(controls.summary.hit)))
 end
 
+function M.rerender() render_current_view() end
+
 function M.on_title_double_click()
   local _, my = GetUIMousePosition()
   if my - controls.window:GetTop() > 30 then return end
@@ -2846,7 +2850,10 @@ function M.init()
     seg = controls.pool_t_seg, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
     ult_band = draw_ult_band_at, ult_inset = ult_inset,
-    kills = function() return Vermilion.Kills end,
+    kills = function()
+      if Vermilion.Settings and Vermilion.Settings.kill_markers and not Vermilion.Settings.kill_markers() then return nil end
+      return Vermilion.Kills
+    end,
     kill_pool = function() return controls.pool_kill end,
     kill_icon = VIS.kill_icon,
     hide_grid = hide_grid, draw_grid = draw_grid,

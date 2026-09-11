@@ -79,6 +79,26 @@ return function(H)
   ok(kills_row == "2", "the report counts the killing blows, got " .. tostring(kills_row))
   sum_hit._onOnMouseExit(sum_hit)
 
+  local S = Vermilion.Settings
+  ok(S.kill_markers() == true, "kill markers are on by default")
+  ok(VermilionSettingsPanelKillsBtn._text == "Kill markers: On", "the settings button says so, got " .. tostring(VermilionSettingsPanelKillsBtn._text))
+  S.on_kills_click()
+  ok(S.kill_markers() == false and VermilionSettingsPanelKillsBtn._text == "Kill markers: Off", "one click turns the markers off")
+  ok(skulls() == 0, "with markers off SKILL draws no skull")
+  while view_label._text ~= "PRESSURE" do G.next_view() end
+  ok(skulls() == 0, "with markers off PRESSURE draws no skull either")
+  sum_hit._onOnMouseEnter(sum_hit)
+  local still = nil
+  for i = 1, 13 do
+    local rn = rawget(_G, "VermilionHoverCardRowName" .. i)
+    if rn and rn._hidden == false and rn._text == "Killing blows" then still = rawget(_G, "VermilionHoverCardRowVal" .. i)._text end
+  end
+  ok(still == "2", "the report keeps counting kills with markers off, got " .. tostring(still))
+  sum_hit._onOnMouseExit(sum_hit)
+  S.on_kills_click()
+  ok(S.kill_markers() == true and skulls() == 2, "turning the markers back on brings the skulls back")
+  while view_label._text ~= "SKILL" do G.next_view() end
+
   local sess = Vermilion.SessionStore.capture()
   ok(sess.streams.kills ~= nil, "the session persists the kills")
   G.on_flush_click()
@@ -89,6 +109,8 @@ return function(H)
   ok(kuid == 900 and kname == "Sorc^Mx", "the kill keeps its victim")
   local k2 = skulls()
   ok(k2 == 2, "the loaded session draws its skulls, got " .. k2)
+  S.on_reset_click()
+  ok(S.kill_markers() == true, "reset to defaults keeps the markers on")
 
   G.on_flush_click()
   H.ability_names = nil
