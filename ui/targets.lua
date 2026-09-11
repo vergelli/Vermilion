@@ -411,6 +411,32 @@ function M.render()
   end
 
   if c.ult_band then c.ult_band(t0, span, lane_x, lane_w, totals.t_hi) end
+  if c.kill_pool then
+    local pool = c.kill_pool()
+    pool:ReleaseAllObjects()
+    local K = c.kills and c.kills()
+    local nk = K and K.count() or 0
+    for i = 1, nk do
+      local kt, kuid, kname = K.get(i)
+      local row_i = nil
+      for r = 1, rows do
+        local rec = order[r + off]
+        if (rec.is_player and rec.id == kuid) or (not rec.is_player and rec.raw == kname) then row_i = r break end
+      end
+      if row_i and kt >= t0 and kt <= t_hi then
+        local sz = (row_h < 16) and row_h or 16
+        local x = lane_x + math_floor((kt - t0) / span * lane_w + 0.5)
+        local y = top + (row_i - 1) * (row_h + ROW_GAP) + math_floor((row_h - sz) / 2)
+        local icon = pool:AcquireObject()
+        icon:ClearAnchors()
+        icon:SetTexture(c.kill_icon)
+        icon:SetDimensions(sz, sz)
+        icon:SetColor(1, 0.92, 0.88, 0.95)
+        icon:SetAnchor(TOPLEFT, canvas, TOPLEFT, x - math_floor(sz / 2), y)
+        icon:SetHidden(false)
+      end
+    end
+  end
 
   if n > rows then
     local more = c.lbl:AcquireObject()

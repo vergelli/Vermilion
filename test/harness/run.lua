@@ -37,6 +37,7 @@ local CASES = {
   "shield_layer",
   "ultimate_band",
   "targets_view",
+  "kills",
 }
 
 local passed, failed = 0, 0

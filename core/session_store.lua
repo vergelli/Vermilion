@@ -44,6 +44,12 @@ local DESC = {
     { name = "sh",  width = 2, scale = 1000 },
     { name = "ab",  width = 2, scale = 1000 },
   },
+  kills = {
+    { name = "t",   width = 4 },
+    { name = "id",  width = 4 },
+    { name = "key", width = 2 },
+    { name = "aid", width = 4 },
+  },
   ult = {
     { name = "t", width = 4 },
     { name = "v", width = 2 },
@@ -204,6 +210,15 @@ function M.capture(cooperative)
     end
   end
 
+  local K = Vermilion.Kills
+  local kill_recs = {}
+  for i = 1, K.count() do
+    local kt, kuid, kname, kaid = K.get(i)
+    local rel = kt - t0
+    if rel < 0 then rel = 0 end
+    kill_recs[i] = { t = rel, id = kuid, key = key_of(kname or ""), aid = kaid }
+  end
+
   local U = Vermilion.Ultimate
   local ust, usv, usn = U.steps()
   local ult_recs = {}
@@ -276,6 +291,7 @@ function M.capture(cooperative)
       shares    = vsf.pack(share_recs, DESC.shares, nil, ye),
       abilities = vsf.pack(ability_recs, DESC.abilities, nil, ye),
       targets   = vsf.pack(target_recs, DESC.targets, nil, ye),
+      kills     = vsf.pack(kill_recs, DESC.kills, nil, ye),
       ult       = vsf.pack(ult_recs, DESC.ult, nil, ye),
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),

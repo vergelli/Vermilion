@@ -68,6 +68,9 @@ local VIS = {
   tgt_name = {},
   sample_shields = { count = 0 },
   sample_targets = { count = 0 },
+  kill_icon = "EsoUI/Art/DeathRecap/deathRecap_killingBlow_icon.dds",
+  kill_size = 14,
+  kills_y = 0,
 }
 local function ult_inset()
   local U = Vermilion.Ultimate
@@ -407,6 +410,7 @@ local function release_all_pools()
     controls.pool_hang:ReleaseAllObjects()
     controls.pool_ult:ReleaseAllObjects()
     controls.pool_ult_icon:ReleaseAllObjects()
+    controls.pool_kill:ReleaseAllObjects()
   end
   if controls.pool_c_seg then
     controls.pool_c_seg:ReleaseAllObjects()
@@ -1136,6 +1140,9 @@ local function show_report_card()
   add_row(GetString(VERMILION_REPORT_SHIELDED),
     (total > 0) and string_format("%s  ·  %d%%", fmt_val(sm.total_shield), math_floor(sm.total_shield / total * 100 + 0.5)) or "-",
     C_SHDPS)
+  if Vermilion.Kills and Vermilion.Kills.count() > 0 then
+    add_row(GetString(VERMILION_REPORT_KILLS), tostring(Vermilion.Kills.count()), C_CRIT)
+  end
   add_row(GetString(VERMILION_REPORT_HITS),
     (sm.hits > 0) and string_format(GetString(VERMILION_REPORT_HITS_AVG), sm.hits, fmt_val(sm.total_damage / sm.hits)) or "0",
     C_CARD_STAT)
@@ -1259,6 +1266,25 @@ local function hover_poll()
     end
   end
 
+  local K = Vermilion.Kills
+  if K and K.count() > 0 and VIS.kills_span and VIS.kills_span > 0
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_TARGETS then
+    local rel_x = mx - canvas:GetLeft()
+    local rel_y = my - canvas:GetTop()
+    if rel_y >= VIS.kills_y and rel_y <= VIS.kills_y + VIS.kill_size then
+      for i = 1, K.count() do
+        local kt, _, kname, kaid = K.get(i)
+        local x = VIS.kills_xl + (kt - VIS.kills_t0) / VIS.kills_span * VIS.kills_bw
+        if math.abs(rel_x - x) <= VIS.kill_size / 2 + 1 then
+          if hover_key ~= nil then hover_key = nil; render_current_view() end
+          show_moment_card(C_CRIT, (tostring(kname):gsub("%^%a+$", "")),
+            string_format(GetString(VERMILION_KILL_CARD), Vermilion.SkillColors.ability_name(kaid)),
+            (hit.t0 and (kt - hit.t0)) or 0, mx, my, VIS.kill_icon)
+          return
+        end
+      end
+    end
+  end
   if current_view == VIEW_BY_CONTRIB then
     Vermilion.ContribView.hover(mx, my)
     return
@@ -1598,6 +1624,40 @@ local function draw_ult_band_at(t0, span, x_left, bw, t_last)
   end
 end
 
+local function draw_kills_at(t0, span, x_left, bw, y)
+  local pool = controls.pool_kill
+  pool:ReleaseAllObjects()
+  local K = Vermilion.Kills
+  if not K or span <= 0 then return end
+  local n = K.count()
+  if n == 0 then return end
+  local canvas = controls.canvas
+  local sz = VIS.kill_size
+  VIS.kills_y = y
+  VIS.kills_t0, VIS.kills_span, VIS.kills_xl, VIS.kills_bw = t0, span, x_left, bw
+  for i = 1, n do
+    local kt = K.get(i)
+    if kt >= t0 and kt <= t0 + span then
+      local x = x_left + math_floor((kt - t0) / span * bw + 0.5)
+      local icon = pool:AcquireObject()
+      icon:ClearAnchors()
+      icon:SetTexture(VIS.kill_icon)
+      icon:SetDimensions(sz, sz)
+      icon:SetColor(1, 0.92, 0.88, 0.95)
+      icon:SetAnchor(TOPLEFT, canvas, TOPLEFT, x - math_floor(sz / 2), y)
+      icon:SetHidden(false)
+    end
+  end
+end
+
+local function draw_kills(span_ms, n)
+  if n == 0 then controls.pool_kill:ReleaseAllObjects() return end
+  local t_last = Vermilion.TemporalBuffer.at(n).t
+  local span = axis_span(span_ms, n)
+  local x_left = VIS.ult.ICON + 4
+  draw_kills_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, CHIP.H + ult_inset() + 2)
+end
+
 local function draw_ult_band(span_ms, n)
   if n == 0 then
     controls.pool_ult:ReleaseAllObjects()
@@ -1702,6 +1762,7 @@ local function render_by_skill()
   end
   draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture)
   draw_ult_band(span_ms, n)
+  draw_kills(span_ms, n)
 end
 
 local function render_by_type()
@@ -1796,6 +1857,7 @@ local function render_by_type()
   end
   draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture)
   draw_ult_band(span_ms, n)
+  draw_kills(span_ms, n)
 end
 
 local function render_by_crit()
@@ -1873,6 +1935,7 @@ local function render_by_crit()
     end
   end
   draw_ult_band(span_ms, n)
+  draw_kills(span_ms, n)
 end
 
 function render_current_view()
@@ -2079,6 +2142,7 @@ function M.on_record_click()
   recording_start_ms = GetGameTimeMilliseconds()
   Vermilion.DebuffTracker.start_session(recording_start_ms)
   Vermilion.Ultimate.start_session(recording_start_ms)
+  Vermilion.Kills.start_session()
   local sv       = Vermilion.SavedVars
   local interval = (sv and sv.temporal and sv.temporal.sample_rate_ms)
                    or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT
@@ -2103,6 +2167,7 @@ function M.on_stop_click()
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
   Vermilion.DebuffTracker.finalize(GetGameTimeMilliseconds())
   Vermilion.Ultimate.finalize(GetGameTimeMilliseconds())
+  Vermilion.Kills.finalize()
   Vermilion.SessionStore.on_session_stop()
   summary_text = build_summary_text()
   if not Vermilion.SessionStore.autosave_pending() then
@@ -2127,6 +2192,7 @@ function M.on_flush_click()
   Vermilion.TemporalBuffer.clear()
   Vermilion.DebuffTracker.reset()
   Vermilion.Ultimate.reset()
+  Vermilion.Kills.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
   controls.saved_start, controls.saved_count = nil, nil
@@ -2398,6 +2464,14 @@ function M.load_session(sess)
   else
     Vermilion.Ultimate.reset()
   end
+  if sess.streams.kills and sess.desc.kills then
+    local kr = vsf.unpack(sess.streams.kills, sess.desc.kills) or {}
+    local gk = sess.gkeys or {}
+    for i = 1, #kr do kr[i].name = gk[(kr[i].key or 0) + 1] or "" end
+    Vermilion.Kills.load_session(kr, 0)
+  else
+    Vermilion.Kills.reset()
+  end
   hover_key = nil
   summary_text = build_summary_text()
   controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
@@ -2509,6 +2583,12 @@ function M.init()
     function(c)
       if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
       c:SetDrawLevel(8)
+    end,
+    function(c) c:SetHidden(true) end)
+  controls.pool_kill         = Pool.new("VermilionKillIcon", controls.canvas, CT_TEXTURE,
+    function(c)
+      if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
+      c:SetDrawLevel(9)
     end,
     function(c) c:SetHidden(true) end)
   controls.pool_c_seg = Pool.new("VermilionContribSeg", controls.canvas, CT_TEXTURE,
@@ -2766,6 +2846,9 @@ function M.init()
     seg = controls.pool_t_seg, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
     ult_band = draw_ult_band_at, ult_inset = ult_inset,
+    kills = function() return Vermilion.Kills end,
+    kill_pool = function() return controls.pool_kill end,
+    kill_icon = VIS.kill_icon,
     hide_grid = hide_grid, draw_grid = draw_grid,
     now = GetGameTimeMilliseconds,
     show_card = show_rows_card,
