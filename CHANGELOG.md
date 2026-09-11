@@ -12,6 +12,7 @@ All notable changes to Vermilion are documented here. This project follows
 ### Added
 - CONTRIB rows show the share of each ability that was absorbed by shields as an orchid tail on the bar, with the amount on hover.
 - SKILL and TYPE hang a faint orchid layer from the top of the plot: its depth at every column is the damage a shield absorbed at that moment, on the same scale as the bars. Hover it for the absorbed rate and share.
+- OUTCOME is where the enemy's shields live now: hovering a column lists which shields absorbed the damage at that moment, by name, with the amount and share. The damage report names the shield that absorbed the most over the recording.
 - Ultimate band above every plot view, as in Verdant: a row per bar showing the charge over time, bright when ready, a tick at every cast, the ultimate's icon at the left. Hover for the charge at that moment. The damage report adds the time the ultimate sat ready and the casts. Saved sessions keep it.
 
 ## [1.0.1] - 2026-09-10

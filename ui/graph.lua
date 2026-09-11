@@ -932,6 +932,9 @@ end
 
 local SUM = { count = 0 }
 local DOM = {}
+local SHD = {}
+local OUT_ROWS = {}
+for i = 1, CARD_MAX_ROWS do OUT_ROWS[i] = { "", "" } end
 
 local function session_summary()
   local TB = Vermilion.TemporalBuffer
@@ -940,6 +943,7 @@ local function session_summary()
   local sum_eos, peak, peak_t, first_t = 0, 0, 0, 0
   local sum_crit, sum_noncrit, active = 0, 0, 0
   for k in pairs(DOM) do DOM[k] = nil end
+  for k in pairs(SHD) do SHD[k] = nil end
   local dom_total, prev_t = 0, nil
   for i = 1, n do
     local s = TB.at(i)
@@ -955,6 +959,13 @@ local function session_summary()
         local v = (e.share or 0) * dv
         DOM[key] = (DOM[key] or 0) + v
         dom_total = dom_total + v
+      end
+      local sa = s.shield_abilities
+      local sv = s.ShDPS * (s.t - prev_t) / 1000
+      for a = 1, (sa and sa.count or 0) do
+        local e = sa[a]
+        local id = e.id or 0
+        SHD[id] = (SHD[id] or 0) + (e.share or 0) * sv
       end
     end
     prev_t = s.t
@@ -976,6 +987,10 @@ local function session_summary()
     end
     SUM.dom_type = best
     SUM.dom_pct = best_v / dom_total
+  end
+  SUM.top_shield, SUM.top_shield_v = nil, 0
+  for id, v in pairs(SHD) do
+    if id > 0 and v > SUM.top_shield_v then SUM.top_shield, SUM.top_shield_v = id, v end
   end
   SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits = Vermilion.Metrics.totals()
   local ls = controls.loaded_sum
@@ -1115,6 +1130,11 @@ local function show_report_card()
       string_format("%s  ·  %d%%", DamageTypeColors.name(sm.dom_type) or "?", math_floor(sm.dom_pct * 100 + 0.5)), dc or C_CARD_STAT)
   end
 
+  if sm.top_shield then
+    add_row(GetString(VERMILION_REPORT_TOP_SHIELD),
+      string_format("%s  ·  %s", Vermilion.SkillColors.ability_name(sm.top_shield), fmt_val(sm.top_shield_v)), C_SHDPS)
+  end
+
   card.root:SetHeight(CARD_ROWS_Y0 + n_rows * CARD_ROW_H + 6)
   position_card(chip.bg:GetLeft() - 16, chip.bg:GetBottom() - 14)
   card_fader.report = true
@@ -1240,10 +1260,28 @@ local function hover_poll()
   if band then
     show_card(band, col, mx, my, elapsed)
   elseif current_view == VIEW_BY_OUTCOME then
-    show_moment_card(C_EDPS, "Outgoing",
-      string_format("|c%s%s DPS|r  ·  |c%s%s Shld|r",
-        hexc(C_EDPS), fmt_readout(col.edps or 0), hexc(C_SHDPS), fmt_readout(col.shdps or 0)),
-      elapsed, mx, my)
+    local sa = col.shield_abilities
+    local n_sa = sa and sa.count or 0
+    local shd = col.shdps or 0
+    if n_sa > 0 and shd > 0 then
+      local SC = Vermilion.SkillColors
+      local k = 0
+      for a = 1, n_sa do
+        if k >= CARD_MAX_ROWS then break end
+        local ab = sa[a]
+        k = k + 1
+        OUT_ROWS[k][1] = SC.ability_name(ab.id)
+        OUT_ROWS[k][2] = string_format("%s  ·  %d%%", fmt_readout((ab.share or 0) * shd), math_floor((ab.share or 0) * 100 + 0.5))
+      end
+      show_rows_card(C_SHDPS, GetString(VERMILION_REPORT_SHIELDED),
+        string_format("|c%s%s DPS|r  ·  |c%s%s Shld|r", hexc(C_EDPS), fmt_readout(col.edps or 0), hexc(C_SHDPS), fmt_readout(shd)),
+        "t  " .. fmt_secs(elapsed), OUT_ROWS, k, nil, mx, my)
+    else
+      show_moment_card(C_EDPS, "Outgoing",
+        string_format("|c%s%s DPS|r  ·  |c%s%s Shld|r",
+          hexc(C_EDPS), fmt_readout(col.edps or 0), hexc(C_SHDPS), fmt_readout(shd)),
+        elapsed, mx, my)
+    end
   elseif current_view == VIEW_BY_CRIT then
     local tot = (col.crit or 0) + (col.noncrit or 0)
     local cp  = (tot > 0) and math_floor((col.crit or 0) / tot * 100 + 0.5) or 0
