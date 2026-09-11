@@ -38,6 +38,7 @@ local GROUP_COLORS = {
   fighters_guild = { r = 0.78, g = 0.34, b = 0.30, a = 0.95 },  -- brick red
   soul_magic     = { r = 0.60, g = 0.50, b = 0.72, a = 0.95 },  -- lavender
   other       = { r = 0.55, g = 0.55, b = 0.55, a = 0.80 },  -- unknown (grey)
+  shield      = { r = 0.85, g = 0.40, b = 0.75, a = 0.95 },
 }
 
 local GROUP_LABELS = {
@@ -67,6 +68,7 @@ local GROUP_LABELS = {
   item           = "Item Set / Enchant",
   status         = "Status Effect",
   other          = "Unknown (grey)",
+  shield         = "Shields cracked",
 }
 
 local GROUP_ORDER = {
@@ -251,13 +253,13 @@ end
 
 function M.group_names()
   local out = {}
-  for k in pairs(GROUP_COLORS) do out[#out + 1] = k end
+  for k in pairs(GROUP_COLORS) do if k ~= "shield" then out[#out + 1] = k end end
   table.sort(out)
   return out
 end
 
 function M.is_group(group)
-  return GROUP_COLORS[group] ~= nil
+  return group ~= "shield" and GROUP_COLORS[group] ~= nil
 end
 
 

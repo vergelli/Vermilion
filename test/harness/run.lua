@@ -33,6 +33,7 @@ local CASES = {
   "scroll_views",
   "debuff_tracker",
   "debuffs_view",
+  "shield_pairing",
 }
 
 local passed, failed = 0, 0
