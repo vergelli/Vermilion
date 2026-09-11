@@ -11,8 +11,10 @@ local table_sort    = table.sort
 local MAX_ROW_H = 30
 local MIN_ROW   = 10
 local ROW_GAP   = 3
-local GUTTER_W  = 168
-local VAL_W     = 48
+local GUTTER_W  = 150
+local RIGHT_W   = 118
+local VAL_W     = 46
+local BAR_PAD   = 8
 local C_NAME    = { r = 0.94, g = 0.88, b = 0.86, a = 1.0 }
 local C_VAL     = { r = 0.87, g = 0.85, b = 0.83, a = 1.0 }
 local C_MORE    = { r = 0.70, g = 0.64, b = 0.62, a = 0.90 }
@@ -171,7 +173,7 @@ function M.render()
 
   local canvas = c.canvas
   local cw, ch = canvas:GetWidth(), canvas:GetHeight()
-  if cw <= GUTTER_W + 40 or ch <= 4 then return end
+  if cw <= GUTTER_W + RIGHT_W + 40 or ch <= 4 then return end
   local TB = Vermilion.TemporalBuffer
   local recording = TB.is_recording()
   local t0   = totals.t0
@@ -201,7 +203,10 @@ function M.render()
   local off = scroll
 
   local lane_x = GUTTER_W
-  local lane_w = cw - GUTTER_W
+  local lane_w = cw - GUTTER_W - RIGHT_W
+  local bar_x  = lane_x + lane_w + BAR_PAD
+  local bar_max = RIGHT_W - BAR_PAD * 2 - VAL_W
+  local top_total = order[1].total
   local capture = not recording
   hit.n = capture and rows or 0
   hit.lane_x, hit.lane_w, hit.t0, hit.span = lane_x, lane_w, t0, span
@@ -238,39 +243,45 @@ function M.render()
     else
       lbl:SetColor(C_NAME.r, C_NAME.g, C_NAME.b, C_NAME.a)
     end
-    local name_w = GUTTER_W - VAL_W - 14
-    local bar_room = row_h >= 18 and order[1].total > 0
-    lbl:SetDimensions(name_w, bar_room and (row_h - 6) or row_h)
+    lbl:SetDimensions(GUTTER_W - 12, row_h)
     lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, y)
     lbl:SetHidden(false)
 
-    if bar_room then
-      local by = y + row_h - 5
+    if top_total > 0 then
+      local bh = math_max(4, math_floor(row_h * 0.5))
+      local by = y + math_floor((row_h - bh) / 2)
       local track = c.seg:AcquireObject()
       track:ClearAnchors()
-      track:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, by)
-      track:SetWidth(name_w)
-      track:SetHeight(3)
+      track:SetAnchor(TOPLEFT, canvas, TOPLEFT, bar_x, by)
+      track:SetWidth(bar_max)
+      track:SetHeight(bh)
       track:SetDrawLevel(3)
-      track:SetColor(1, 1, 1, dim and 0.03 or 0.07)
+      track:SetColor(1, 1, 1, dim and 0.03 or 0.06)
       track:SetHidden(false)
-      local bw = math_max(1, math_floor(name_w * rec.total / order[1].total + 0.5))
+      local bw = math_max(1, math_floor(bar_max * rec.total / top_total + 0.5))
+      local rim = c.rim:AcquireObject()
+      rim:ClearAnchors()
+      rim:SetAnchor(TOPLEFT, canvas, TOPLEFT, bar_x - 1, by - 1)
+      rim:SetWidth(bw + 2)
+      rim:SetHeight(bh + 2)
+      rim:SetColor(0, 0, 0, dim and 0.20 or 0.50)
+      rim:SetHidden(false)
       local fill = c.seg:AcquireObject()
       fill:ClearAnchors()
-      fill:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6, by)
+      fill:SetAnchor(TOPLEFT, canvas, TOPLEFT, bar_x, by)
       fill:SetWidth(bw)
-      fill:SetHeight(3)
+      fill:SetHeight(bh)
       fill:SetDrawLevel(4)
-      fill:SetColor(C_HEAT.r, C_HEAT.g, C_HEAT.b, dim and 0.25 or 0.85)
+      fill:SetColor(C_HEAT.r, C_HEAT.g, C_HEAT.b, dim and 0.25 or 0.90)
       fill:SetHidden(false)
       if rec.abs > 0 and rec.total > 0 then
         local aw = math_floor(bw * rec.abs / rec.total + 0.5)
         if aw >= 1 and aw < bw then
           local tail = c.seg:AcquireObject()
           tail:ClearAnchors()
-          tail:SetAnchor(TOPLEFT, canvas, TOPLEFT, 6 + bw - aw, by)
+          tail:SetAnchor(TOPLEFT, canvas, TOPLEFT, bar_x + bw - aw, by)
           tail:SetWidth(aw)
-          tail:SetHeight(3)
+          tail:SetHeight(bh)
           tail:SetDrawLevel(5)
           tail:SetColor(C_ORCHID.r, C_ORCHID.g, C_ORCHID.b, dim and 0.25 or 0.92)
           tail:SetHidden(false)
@@ -294,7 +305,7 @@ function M.render()
       val:SetColor(C_VAL.r, C_VAL.g, C_VAL.b, C_VAL.a)
     end
     val:SetDimensions(VAL_W, row_h)
-    val:SetAnchor(TOPLEFT, canvas, TOPLEFT, GUTTER_W - VAL_W - 6, y)
+    val:SetAnchor(TOPLEFT, canvas, TOPLEFT, cw - VAL_W - BAR_PAD, y)
     val:SetHidden(false)
 
     local run_x0, run_x1, run_lv = nil, nil, -1

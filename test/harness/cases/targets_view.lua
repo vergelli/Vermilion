@@ -34,22 +34,31 @@ return function(H)
   local t = TV.totals()
   ok(math.abs((rows[1].total + rows[2].total) - t.damage) < 1e-6, "lane totals add up to the output total")
 
-  local cells, orchid_cells, tails, names = 0, 0, 0, {}
+  local canvas0 = VermilionGraphWindowViewportCanvas
+  local right_x = canvas0:GetWidth() - 118
+  local cells, orchid_cells, bars, tails, names = 0, 0, 0, 0, {}
+  local bar_w = {}
   for _, c in ipairs(H.controls) do
     local name = c._name or ""
-    if c._hidden == false and name:find("^VermilionTargetSeg") then
-      if c._h and c._h > 3 and (c._a or 0) > 0.5 then
+    if c._hidden == false and name:find("^VermilionTargetSeg") and c._h and c._h > 3 and (c._a or 0) > 0.5 then
+      local ox = c._anchor_list and c._anchor_list[1].ox or 0
+      local orchid = math.abs((c._r or 0) - 0.85) < 0.03 and math.abs((c._g or 0) - 0.40) < 0.03 and math.abs((c._b or 0) - 0.75) < 0.03
+      if ox >= right_x then
+        if orchid then tails = tails + 1
+        elseif math.abs((c._r or 0) - 0.98) < 0.03 and math.abs((c._g or 0) - 0.55) < 0.03 then bars = bars + 1; bar_w[#bar_w + 1] = c._w end
+      else
         cells = cells + 1
-        if math.abs((c._r or 0) - 0.85) < 0.03 and math.abs((c._g or 0) - 0.40) < 0.03 and math.abs((c._b or 0) - 0.75) < 0.03 then orchid_cells = orchid_cells + 1 end
-      elseif c._h == 3 and (c._b or 0) > 0.7 and (c._r or 0) > 0.8 and (c._g or 1) < 0.6 then
-        tails = tails + 1
+        if orchid then orchid_cells = orchid_cells + 1 end
       end
     end
     if c._hidden == false and name:find("^VermilionTargetLbl") and c._text then names[c._text] = true end
   end
   ok(cells >= 4, "the lanes carry heat cells, got " .. cells)
   ok(orchid_cells == 0, "cells encode pressure only, never the shield, got " .. orchid_cells)
-  ok(tails == 1, "the shielded enemy's gutter bar wears an orchid tail, got " .. tails)
+  ok(bars == 2, "the subplot on the right draws one accumulated bar per lane, got " .. bars)
+  table.sort(bar_w, function(a, b) return a > b end)
+  ok(bar_w[1] > bar_w[2], "the accumulated bars follow the totals")
+  ok(tails == 1, "the shielded enemy's accumulated bar wears an orchid tail, got " .. tails)
   ok(names["Sorc"] and names["Templar"], "each lane wears its enemy's name")
 
   local lut0, lut_hi = TV.lut(0), TV.lut(127)
