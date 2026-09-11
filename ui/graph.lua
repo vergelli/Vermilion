@@ -98,6 +98,7 @@ map_icon(zc.DAMAGE_TYPE_EARTH,    "earth.dds")
 map_icon(zc.DAMAGE_TYPE_DROWN,    "drown.dds")
 map_icon(zc.DAMAGE_TYPE_GENERIC,  "generic.dds")
 map_icon(zc.DAMAGE_TYPE_NONE,     "generic.dds")
+DTYPE_ICON[-1] = "EsoUI/Art/Inventory/inventory_tabIcon_shield_up.dds"
 
 local GetUIMousePosition = api.GetUIMousePosition
 local hover_key  = nil
@@ -465,11 +466,13 @@ local function decimate(cw)
       col.eos_groups = s.eos_groups; col.eos_abilities = s.eos_abilities
       col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
       col.dtype_groups = s.dtype_groups; col.dtype_abilities = s.dtype_abilities
+      col.shield_abilities = s.shield_abilities
       cur_c = c
     else
       if eos > col.eos_peak then
         col.eos_peak = eos; col.eDPS = s.eDPS; col.ShDPS = s.ShDPS
         col.eos_groups = s.eos_groups; col.eos_abilities = s.eos_abilities
+        col.shield_abilities = s.shield_abilities
       end
       if s.eDPS > col.edps_peak then
         col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
@@ -586,6 +589,7 @@ local function hover_label(band)
   local k = band.key
   if not k or k == "" then return "Skill" end
   if k == "other" then return "Other" end
+  if k == "shield" then return GetString(VERMILION_REPORT_SHIELDED) end
   return (tostring(k):gsub("_", " "))
 end
 
@@ -834,9 +838,14 @@ local function show_card(band, col, mx, my, elapsed_ms)
           row.val:SetHidden(false)
           break
         end
-        row.icon:SetTexture(SC.ability_icon(ab.id))
+        if (ab.id or 0) > 0 then
+          row.icon:SetTexture(SC.ability_icon(ab.id))
+          row.name:SetText(SC.ability_name(ab.id))
+        else
+          row.icon:SetTexture(DTYPE_ICON[-1])
+          row.name:SetText(GetString(VERMILION_REPORT_SHIELDED))
+        end
         row.icon:SetHidden(false)
-        row.name:SetText(SC.ability_name(ab.id))
         row.name:SetColor(C_CARD_STAT.r, C_CARD_STAT.g, C_CARD_STAT.b, 1.0)
         row.name:SetHidden(false)
         local av = (ab.share or 0) * total
@@ -1291,6 +1300,7 @@ local function hit_col(i, x, bw, s)
   col.x0 = x; col.x1 = x + bw; col.nb = 0; col.t = s.t
   col.edps = s.eDPS; col.shdps = s.ShDPS; col.crit = s.crit; col.noncrit = s.noncrit
   col.eos_abilities = s.eos_abilities; col.dtype_abilities = s.dtype_abilities
+  col.shield_abilities = s.shield_abilities
   return col
 end
 
@@ -1776,10 +1786,12 @@ local sample_eos_scratch       = { count = 0 }
 local sample_eos_abilities     = { count = 0 }
 local sample_dtype_groups      = { count = 0 }
 local sample_dtype_abilities   = { count = 0 }
+local sample_shield_abilities  = { count = 0 }
 
 local function on_sample_update()
   prof_enter("graph.sample_tick")
   local now   = GetGameTimeMilliseconds()
+  Vermilion.Pipeline.flush_pending(now)
   local edps  = Vermilion.Metrics.eDPS(now)
   local shdps = Vermilion.Metrics.ShDPS(now)
   local crit, noncrit = Vermilion.Metrics.crit_split(now)
@@ -1787,9 +1799,11 @@ local function on_sample_update()
   Vermilion.Metrics.eos_abilities_into(sample_eos_abilities, now)
   Vermilion.Metrics.dtype_groups_into(sample_dtype_groups, now)
   Vermilion.Metrics.dtype_abilities_into(sample_dtype_abilities, now)
+  Vermilion.Metrics.shield_abilities_into(sample_shield_abilities, now)
   Vermilion.TemporalBuffer.push(now, edps, shdps, crit, noncrit,
                                 sample_eos_scratch, sample_eos_abilities,
-                                sample_dtype_groups, sample_dtype_abilities)
+                                sample_dtype_groups, sample_dtype_abilities,
+                                sample_shield_abilities)
   Vermilion.DebuffTracker.expire_stale(now)
 
   update_header(edps + shdps)
@@ -1850,6 +1864,7 @@ function M.on_stop_click()
   light.exit()
   Vermilion.AutoRecord.notify_manual_stop()
   Vermilion.TemporalBuffer.stop_recording()
+  Vermilion.Pipeline.flush_pending(GetGameTimeMilliseconds(), true)
   Vermilion.Trace.on_stop(Vermilion.SavedVars)
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
   Vermilion.DebuffTracker.finalize(GetGameTimeMilliseconds())
@@ -2088,7 +2103,7 @@ local function attach_shares(series, sess, vsf)
     local r = abilities[i]
     local sample = series[r.si]
     if sample then
-      local field = (r.ch == 0) and "ea" or "da"
+      local field = (r.ch == 0) and "ea" or ((r.ch == 2) and "sa" or "da")
       local tbl = sample[field]
       if not tbl then tbl = { count = 0 }; sample[field] = tbl end
       local key = (r.key ~= nil) and gkeys[r.key + 1] or nil
@@ -2096,12 +2111,15 @@ local function attach_shares(series, sess, vsf)
       if r.ch == 0 then
         key = key or SC.group_of(r.id)
         c = SC.group_color(key)
+      elseif r.ch == 2 then
+        key = "shield"
+        c = SC.group_color(key)
       else
         key = key or 0
         c = DTC.lookup(key)
       end
       tbl.count = tbl.count + 1
-      tbl[tbl.count] = { id = r.id, share = r.sh, key = key, r = c.r, g = c.g, b = c.b, a = c.a }
+      tbl[tbl.count] = { id = r.id, share = r.sh, abs = r.ab or 0, key = key, r = c.r, g = c.g, b = c.b, a = c.a }
     end
   end
 end

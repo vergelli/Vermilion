@@ -35,6 +35,8 @@ function M.acquire_damage_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
   ev.source_unit_id = sourceUnitId  or 0
+  ev.attack_id      = 0
+  ev.attack_dtype   = 0
   return ev
 end
 
@@ -51,6 +53,8 @@ function M.acquire_shield_out(t, hit, targetUnitId, targetType, abilityId, resul
   ev.target_type    = targetType    or 0
   ev.ability_id     = abilityId     or 0
   ev.source_unit_id = sourceUnitId  or 0
+  ev.attack_id      = 0
+  ev.attack_dtype   = 0
   return ev
 end
 

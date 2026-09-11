@@ -34,12 +34,14 @@ local DESC = {
     { name = "id",  width = 4 },
     { name = "key", width = 1 },
     { name = "sh",  width = 2, scale = 1000 },
+    { name = "ab",  width = 2, scale = 1000 },
   },
 }
 
 M.DESC = DESC
-M.CH_SKILL = 0
-M.CH_DTYPE = 1
+M.CH_SKILL  = 0
+M.CH_DTYPE  = 1
+M.CH_SHIELD = 2
 
 local log
 local api
@@ -115,7 +117,7 @@ function M.capture(cooperative)
     for a = 1, n do
       local e = abilities[a]
       ability_recs[#ability_recs + 1] = {
-        si = si, ch = ch, id = e.id or 0, key = key_of(e.key == nil and "other" or e.key), sh = e.share or 0,
+        si = si, ch = ch, id = e.id or 0, key = key_of(e.key == nil and "other" or e.key), sh = e.share or 0, ab = e.abs or 0,
       }
     end
   end
@@ -138,6 +140,7 @@ function M.capture(cooperative)
     harvest(i, 1, s.dtype_groups)
     harvest_abilities(i, 0, s.eos_abilities)
     harvest_abilities(i, 1, s.dtype_abilities)
+    harvest_abilities(i, 2, s.shield_abilities)
     if ye and i % ye == 0 then coroutine_yield() end
   end
   local function series_get(r, name)

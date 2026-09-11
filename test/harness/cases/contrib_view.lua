@@ -29,7 +29,7 @@ return function(H)
   ok(rows[1].name == "Big Hit" and rows[1].ch == DAMAGE_TYPE_FIRE, "Big Hit must rank first as fire")
   ok(rows[1].n == 2, "the two Big Hit ability ids merge into one row, got " .. tostring(rows[1].n))
   ok(rows[2].name == "Small Hit" and rows[2].ch == DAMAGE_TYPE_POISON and rows[2].n == 1, "Small Hit must rank second as poison")
-  ok(rows[3].name == "Ward" and rows[3].ch == -1, "Ward must rank last as a shield")
+  ok(rows[3].name == "Shields cracked" and rows[3].ch == -1 and rows[3].id == nil, "an unpaired shield ranks last as the Shields cracked row, got " .. tostring(rows[3].name))
   ok(rows[1].v > rows[2].v and rows[2].v > rows[3].v, "rows must be sorted by value")
   local ratio = rows[1].v / rows[2].v
   ok(ratio > 3.0 and ratio < 4.0, "Big Hit must weigh about three and a half Small Hits, got " .. tostring(ratio))
@@ -42,7 +42,8 @@ return function(H)
     prev = s.t
   end
   ok(math.abs(t.damage - expect) < 1e-6, "the damage total is the integral of the sampled rate, got " .. tostring(t.damage) .. " vs " .. tostring(expect))
-  ok(math.abs(rows[1].v + rows[2].v - t.damage) < 1e-6, "the damage rows add up to the damage total")
+  local all = rows[1].v + rows[2].v + rows[3].v
+  ok(math.abs(all - (t.damage + t.shield)) < 0.01 * (t.damage + t.shield), "the rows add up to the EOS total within share rounding, got " .. tostring(all) .. " vs " .. tostring(t.damage + t.shield))
 
   local texts = {}
   for _, c in ipairs(H.controls) do
@@ -50,7 +51,7 @@ return function(H)
     if c._hidden == false and name:find("^VermilionContribLbl") and c._text then texts[c._text] = true end
   end
   ok(texts["CONTRIBUTION"] and texts["TYPE"] and texts["VALUE"], "column headers must render")
-  ok(texts["Big Hit"] and texts["Small Hit"] and texts["Ward"], "every ability name must render")
+  ok(texts["Big Hit"] and texts["Small Hit"] and texts["Shields cracked"], "every ability name must render")
   ok(texts["1"] and texts["2"] and texts["3"], "every row shows its rank")
   local big_rows = 0
   for _, c in ipairs(H.controls) do
@@ -145,7 +146,7 @@ return function(H)
   local lrows, ln = CV.rows()
   ok(ln == live_n and lrows[1].name == "Big Hit", "a library session must render the view from its saved shares")
   ok(math.abs(lrows[1].v - live_v) < 1, "the library row equals the live row, " .. tostring(lrows[1].v) .. " vs " .. tostring(live_v))
-  ok(lrows[ln].ch == -1 and lrows[ln].name == "Ward", "the shield row survives the round trip")
+  ok(lrows[ln].ch == -1 and lrows[ln].name == "Shields cracked", "the shield row survives the round trip")
   sv.library, sv.settings.session_autosave = before_lib, before_auto
   SS.init()
 

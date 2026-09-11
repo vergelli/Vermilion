@@ -3,6 +3,15 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Damage absorbed by an enemy's shield was credited to that shield's ability, so enemy wards showed up in SKILL and CONTRIB as if they were the player's skills. Each shield event is now paired with the attack that caused it and credited to that attack; a shield that finds no attack lands in a single "Shields cracked" bucket instead.
+- TYPE now includes damage absorbed by shields, typed by the attack, so every view sums to the same EOS as the header.
+
+### Added
+- CONTRIB rows show the share of each ability that was absorbed by shields as an orchid tail on the bar, with the amount on hover.
+
 ## [1.0.1] - 2026-09-10
 
 ### Added

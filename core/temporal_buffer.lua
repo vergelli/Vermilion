@@ -29,6 +29,7 @@ function M.init(capacity)
       eos_abilities  = { count = 0 },
       dtype_groups   = { count = 0 },
       dtype_abilities = { count = 0 },
+      shield_abilities = { count = 0 },
     }
   end
   log:info("init: capacity=", capacity)
@@ -52,14 +53,14 @@ local function copy_abilities(dst, src)
     local s = src[i]
     local d = dst[i]
     if d == nil then d = {}; dst[i] = d end
-    d.id = s.id; d.share = s.share; d.key = s.key
+    d.id = s.id; d.share = s.share; d.key = s.key; d.abs = s.abs or 0
     d.r = s.r; d.g = s.g; d.b = s.b; d.a = s.a
   end
   dst.count = n
 end
 
 function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
-                src_groups, eos_abilities, dtype_groups, dtype_abilities)
+                src_groups, eos_abilities, dtype_groups, dtype_abilities, shield_abilities)
   local slot   = state.data[state.write]
   slot.t       = timestamp
   slot.eDPS    = eDPS
@@ -71,6 +72,7 @@ function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
   copy_abilities(slot.eos_abilities, eos_abilities)
   copy_groups(slot.dtype_groups,     dtype_groups)
   copy_abilities(slot.dtype_abilities, dtype_abilities)
+  copy_abilities(slot.shield_abilities, shield_abilities)
 
   state.write = (state.write % state.capacity) + 1
   if state.count < state.capacity then
@@ -122,7 +124,7 @@ function M.load_session(samples)
     local s = samples[i]
     M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
            s.eg or EMPTY_SHARES, s.ea or EMPTY_SHARES,
-           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES)
+           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES, s.sa or EMPTY_SHARES)
   end
   state.recording = false
   log:info("session loaded: samples=", #samples)
