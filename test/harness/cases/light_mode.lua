@@ -27,11 +27,17 @@ return function(H)
   ok(VermilionGraphWindow._alpha == 1, "hover must go fully opaque")
   ok(VermilionGraphWindowStopBtn._hidden == false, "hover must reveal stop")
   ok(VermilionGraphWindowTabs._hidden == false, "hover must reveal the view tabs")
+  local corners = 0
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionGraphWindowCorner") then corners = corners + 1 end
+  end
+  ok(corners == 8, "hover shows the four resize corners as brackets, got " .. corners)
   ok(VermilionGraphWindowChromeTop._hidden == true, "chrome stays off even on hover")
 
   H.state.mouse_x, H.state.mouse_y = 1900, 1000
   H.advance(300)
   ok(math.abs((VermilionGraphWindow._alpha or 1) - 0.4) < 0.01, "leaving must dim again")
+  ok(VermilionGraphWindowCornerTLH._hidden == true and VermilionGraphWindowCornerBRV._hidden == true, "the corners go with the hover")
   ok(VermilionGraphWindowStopBtn._hidden == true, "leaving must tuck the minimal controls")
 
   Vermilion.Settings.on_lightalpha_track_click(VermilionSettingsPanelSliderTrackLightAlpha)
@@ -41,6 +47,7 @@ return function(H)
   ok(not G.is_light_active(), "stop must exit light mode")
   ok(VermilionGraphWindowChromeTop._hidden == false, "chrome must restore on stop")
   ok(VermilionGraphWindow._alpha == 1, "alpha must restore on stop")
+  ok(VermilionGraphWindowCornerTLH._hidden == true, "the corners never show outside light mode")
   ok(VermilionGraphWindowRecordBtn._hidden == false, "record button must restore")
   ok(not H.update_registered("VermilionLightPoll"), "the hover poll must unregister")
 

@@ -10,6 +10,7 @@ All notable changes to Vermilion are documented here. This project follows
 - TYPE now includes damage absorbed by shields, typed by the attack, so every view sums to the same EOS as the header.
 
 ### Added
+- Light mode draws four corner brackets on hover, so the resize corners of the dimmed window are easy to find.
 - CONTRIB rows show the share of each ability that was absorbed by shields as an orchid tail on the bar, with the amount on hover.
 - SKILL and TYPE hang a faint orchid layer from the top of the plot: its depth at every column is the damage a shield absorbed at that moment, on the same scale as the bars. Hover it for the absorbed rate and share.
 - OUTCOME is where the enemy's shields live now: hovering a column lists which shields absorbed the damage at that moment, by name, with the amount and share. The damage report names the shield that absorbed the most over the recording.
