@@ -8,7 +8,7 @@ return function(H)
   local view_label = VermilionGraphWindowViewLabel
   while view_label._text ~= "SKILL" do G.next_view() end
 
-  local names = { "SKILL", "TYPE", "TARGETS", "CRIT", "CONTRIB", "DEBUFFS" }
+  local names = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS" }
   for v = 1, 6 do
     local lbl = rawget(_G, "VermilionGraphTab" .. v .. "Label")
     local hit = rawget(_G, "VermilionGraphTab" .. v)
@@ -23,7 +23,7 @@ return function(H)
 
   H.sounds = {}
   VermilionGraphTab3._onOnMouseUp(VermilionGraphTab3, nil, true)
-  ok(view_label._text == "TARGETS", "clicking a tab switches the view, got " .. tostring(view_label._text))
+  ok(view_label._text == "PRESSURE", "clicking a tab switches the view, got " .. tostring(view_label._text))
   ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("page")), "switching a view turns a page")
   ok(VermilionGraphTab3Line._hidden == false and VermilionGraphTab1Line._hidden == true, "the line follows the active tab")
 

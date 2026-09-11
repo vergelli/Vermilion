@@ -7,8 +7,8 @@ return function(H)
   Vermilion.TemporalBuffer.clear()
   Vermilion.Visibility.set("graph", true)
   G.on_flush_click()
-  while view_label._text ~= "TARGETS" do G.next_view() end
-  ok(VermilionGraphTab3Label._text == "TARGETS", "the third tab reads TARGETS")
+  while view_label._text ~= "PRESSURE" do G.next_view() end
+  ok(VermilionGraphTab3Label._text == "PRESSURE", "the third tab reads PRESSURE")
   H.ability_names = { [31] = "Puncturing Sweep", [41] = "Hardened Ward" }
 
   G.on_record_click()
@@ -40,7 +40,7 @@ return function(H)
     if c._hidden == false and name:find("^VermilionTargetSeg") then
       if c._h and c._h > 3 and (c._a or 0) > 0.5 then
         cells = cells + 1
-        if (c._b or 0) > 0.7 * (c._r or 1) and (c._g or 1) < 0.6 then orchid_cells = orchid_cells + 1 end
+        if math.abs((c._r or 0) - 0.85) < 0.03 and math.abs((c._g or 0) - 0.40) < 0.03 and math.abs((c._b or 0) - 0.75) < 0.03 then orchid_cells = orchid_cells + 1 end
       elseif c._h == 3 and (c._b or 0) > 0.7 and (c._r or 0) > 0.8 and (c._g or 1) < 0.6 then
         tails = tails + 1
       end
@@ -53,7 +53,15 @@ return function(H)
   ok(names["Sorc"] and names["Templar"], "each lane wears its enemy's name")
 
   local lut0, lut_hi = TV.lut(0), TV.lut(127)
-  ok(lut0[1] >= 0.25 and lut0[1] < 0.4 and lut_hi[1] > 0.95 and lut_hi[2] > 0.8, "the heat ramp runs from a visible dark crimson to pale yellow")
+  ok(lut0[3] > 0.45 and lut0[1] < 0.15 and lut_hi[1] > 0.9 and lut_hi[2] > 0.9, "the pressure ramp runs from deep blue to yellow")
+  local faint, solid = 0, 0
+  for _, c in ipairs(H.controls) do
+    local name = c._name or ""
+    if c._hidden == false and name:find("^VermilionTargetSeg") and c._h and c._h > 3 then
+      if (c._a or 0) >= 0.99 then solid = solid + 1 elseif (c._a or 0) > 0.25 and (c._a or 0) < 0.99 then faint = faint + 1 end
+    end
+  end
+  ok(solid >= 1 and faint >= 1, "low pressure fades in while high pressure is solid, faint=" .. faint .. " solid=" .. solid)
 
   local canvas = VermilionGraphWindowViewportCanvas
   local hit = VermilionGraphHit
@@ -91,7 +99,7 @@ return function(H)
   local gone, gn = TV.rows()
   ok(gn == 0 or Vermilion.TemporalBuffer.count() == 0, "flushing empties the lanes")
   ok(G.load_session(sess), "the session reloads")
-  while view_label._text ~= "TARGETS" do G.next_view() end
+  while view_label._text ~= "PRESSURE" do G.next_view() end
   local lrows, ln = TV.rows()
   ok(ln == 2 and lrows[1].name == "Sorc" and lrows[1].abs > 0, "a library session rebuilds the lanes with names and absorbed totals")
   ok(math.abs(lrows[1].total - rows[1].total) < 1, "the library lane equals the live lane, " .. tostring(lrows[1].total) .. " vs " .. tostring(rows[1].total))

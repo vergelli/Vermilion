@@ -22,12 +22,13 @@ local C_HEAT    = { r = 0.98, g = 0.55, b = 0.20 }
 local DIM       = 0.30
 local LUT_N     = 128
 local RAMP = {
-  { 0.30, 0.07, 0.09 },
-  { 0.55, 0.10, 0.12 },
-  { 0.88, 0.24, 0.18 },
-  { 0.98, 0.55, 0.20 },
-  { 1.00, 0.90, 0.62 },
+  { 0.05, 0.03, 0.53 },
+  { 0.49, 0.01, 0.66 },
+  { 0.80, 0.23, 0.48 },
+  { 0.97, 0.53, 0.19 },
+  { 0.94, 0.98, 0.13 },
 }
+local FADE_IN = 0.22
 
 local LUT = {}
 for i = 0, LUT_N - 1 do
@@ -130,10 +131,13 @@ local function cell(c, canvas, x0, x1, y, row_h, level, dim)
   seg:SetHeight(row_h)
   seg:SetDrawLevel(4)
   local col = LUT[level]
+  local a = level / ((LUT_N - 1) * FADE_IN)
+  if a > 1 then a = 1 end
+  a = 0.30 + 0.70 * a
   if dim then
-    seg:SetColor(col[1] * DIM, col[2] * DIM, col[3] * DIM, 0.35)
+    seg:SetColor(col[1] * DIM, col[2] * DIM, col[3] * DIM, 0.35 * a)
   else
-    seg:SetColor(col[1], col[2], col[3], 1.0)
+    seg:SetColor(col[1], col[2], col[3], a)
   end
   seg:SetHidden(false)
 end
@@ -177,7 +181,7 @@ function M.render()
   Vermilion.Diagnostics.bump("graph.view_targets.renders")
   c.draw_grid(c.grid, canvas, 0, span)
 
-  local top = c.layout.H or 0
+  local top = (c.layout.H or 0) + (c.ult_inset and c.ult_inset() or 0)
   local ch_plot = math_max(4, ch - c.time_strip - top)
   local rows  = n
   local extra = 0
@@ -320,6 +324,8 @@ function M.render()
     end
     if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
   end
+
+  if c.ult_band then c.ult_band(t0, span, lane_x, lane_w, totals.t_hi) end
 
   if n > rows then
     local more = c.lbl:AcquireObject()

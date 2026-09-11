@@ -28,7 +28,7 @@ return function(H)
   local n = 0
   for _ in pairs(seen) do n = n + 1 end
   ok(n == 6, "six distinct views cycle, got " .. n)
-  ok(seen["SKILL"] and seen["TYPE"] and seen["TARGETS"] and seen["CRIT"] and seen["CONTRIB"] and seen["DEBUFFS"], "the views are SKILL, TYPE, TARGETS, CRIT, CONTRIB and DEBUFFS")
+  ok(seen["SKILL"] and seen["TYPE"] and seen["PRESSURE"] and seen["CRIT"] and seen["CONTRIB"] and seen["DEBUFFS"], "the views are SKILL, TYPE, TARGETS, CRIT, CONTRIB and DEBUFFS")
 
   G.prev_view()
   local back = label._text

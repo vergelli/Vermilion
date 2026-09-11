@@ -95,6 +95,24 @@ return function(H)
   end
   ok(top_most >= 28 + chip_h - 1, "bars stay below the chip and the ultimate area, top at " .. tostring(top_most) .. " chip " .. chip_h)
 
+  while view_label._text ~= "PRESSURE" do G.next_view() end
+  local prows, plane_top = {}, nil
+  for _, c in ipairs(H.controls) do
+    local name = c._name or ""
+    if c._hidden == false and name:find("^VermilionGraphUlt") and c._h == 5 and c._r then
+      prows[c._anchor_list and c._anchor_list[1].oy] = true
+    end
+    if c._hidden == false and name:find("^VermilionTargetSeg") and c._h and c._h > 3 then
+      local oy = c._anchor_list and c._anchor_list[1].oy or 0
+      if not plane_top or oy < plane_top then plane_top = oy end
+    end
+  end
+  local n_prows = 0
+  for _ in pairs(prows) do n_prows = n_prows + 1 end
+  ok(n_prows == 2, "PRESSURE draws the ultimate band too, got " .. n_prows)
+  ok(plane_top and plane_top >= 28 + chip_h, "the lanes sit below the ultimate area, top at " .. tostring(plane_top))
+  while view_label._text ~= "SKILL" do G.next_view() end
+
   H.ability_names = H.ability_names or {}
   H.ability_names[41001] = "Aggressive Horn"
   H.ability_names[41002] = "Dawnbreaker"
