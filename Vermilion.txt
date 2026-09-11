@@ -53,6 +53,7 @@ core/temporal_buffer.lua
 core/content_kind.lua
 core/session_store.lua
 core/debuff_tracker.lua
+core/ultimate.lua
 core/auto_record.lua
 core/visibility.lua
 ui/settings.xml

@@ -111,10 +111,10 @@ return function(H)
   local ids = {}
   for _, r in ipairs(abilities) do
     ids[r.id] = true
-    ok(r.ch == SS.CH_SKILL or r.ch == SS.CH_DTYPE, "ability rows carry a channel")
+    ok(r.ch == SS.CH_SKILL or r.ch == SS.CH_DTYPE or r.ch == SS.CH_SHIELD, "ability rows carry a channel")
   end
   ok(ids[31] and ids[32] and ids[33], "every ability that hit is in the stream")
-  ok(ids[41], "the shield ability rides the skill channel")
+  ok(ids[41], "the enemy shield rides the shield channel")
 
   for _, st in pairs(s.streams) do
     for i, c in ipairs(st.data) do

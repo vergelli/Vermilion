@@ -33,6 +33,10 @@ local CASES = {
   "scroll_views",
   "debuff_tracker",
   "debuffs_view",
+  "shield_pairing",
+  "shield_layer",
+  "ultimate_band",
+  "outcome_card",
   "evidence_flag",
 }
 

@@ -12,7 +12,10 @@ return function(H)
   for i = 1, 6 do
     H.damage_out({ hit = 1000, ability_id = 31 })
     H.damage_out({ hit = 500, ability_id = 32, result = ACTION_RESULT_CRITICAL_DAMAGE })
-    if i == 3 then H.shield_out({ hit = 900 }) end
+    if i == 3 then
+      H.shield_out({ hit = 900, target_unit_id = 900 })
+      H.damage_out({ hit = 0, ability_id = 31, target_unit_id = 900 })
+    end
     H.advance(1000)
   end
   G.on_stop_click()

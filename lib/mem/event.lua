@@ -17,5 +17,7 @@ function Event.factory()
     target_type    = 0,
     ability_id     = 0,
     source_unit_id = 0,
+    attack_id      = 0,
+    attack_dtype   = 0,
   }
 end
