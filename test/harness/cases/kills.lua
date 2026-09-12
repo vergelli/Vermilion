@@ -64,7 +64,7 @@ return function(H)
   local _, sx = skulls()
   local chip_h = (VermilionGraphSummaryBg._hidden == false) and (VermilionGraphSummaryBg._h + 8) or 0
   H.state.mouse_x = canvas:GetLeft() + sx[1] + 7
-  H.state.mouse_y = canvas:GetTop() + chip_h + 2 + 7
+  H.state.mouse_y = canvas:GetTop() + chip_h + 12 + 2 + 7
   hit._onOnMouseEnter(hit)
   H.advance(200)
   ok(VermilionHoverCardName._text == "Sorc" or VermilionHoverCardName._text == "Skeleton", "hovering a skull names the victim, got " .. tostring(VermilionHoverCardName._text))

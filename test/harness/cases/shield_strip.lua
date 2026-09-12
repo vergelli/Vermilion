@@ -29,7 +29,7 @@ return function(H)
     return list
   end
   local function shield_icon()
-    for _, c in ipairs(shown("^VermilionGraphUltIcon")) do
+    for _, c in ipairs(shown("^VermilionShieldIcon")) do
       if c._tex == SHIELD_ICON then return c end
     end
     return nil
@@ -39,12 +39,14 @@ return function(H)
   local cells = shown("^VermilionShieldHeat")
   ok(#cells >= 1, "the shield strip shows heat cells in SKILL, got " .. #cells)
   local chip_h = (VermilionGraphSummaryBg._hidden == false) and (VermilionGraphSummaryBg._h + 8) or 0
+  local hot = 0
   for _, c in ipairs(cells) do
     local a = c._anchor_list and c._anchor_list[1]
     ok(a and a.oy == chip_h + 3, "a strip cell sits right under the chip at the strip pad, got " .. tostring(a and a.oy))
     ok(c._h == 6, "a strip cell is one row tall, got " .. tostring(c._h))
-    ok((c._a or 0) >= 0.3, "a strip cell carries heat alpha")
+    if (c._a or 0) >= 0.3 then hot = hot + 1 end
   end
+  ok(hot >= 1, "the strip carries heat cells over its track")
   local icon = shield_icon()
   ok(icon ~= nil, "the strip wears the shield icon at its left")
   ok(icon and (icon._anchor_list[1].ox == 0), "the shield icon sits at the left edge like the ultimate icon")
@@ -52,6 +54,7 @@ return function(H)
   local canvas = VermilionGraphWindowViewportCanvas
   local hit = VermilionGraphHit
   local c1 = cells[1]
+  for _, c in ipairs(cells) do if (c._a or 0) >= 0.3 then c1 = c break end end
   H.state.mouse_x = canvas:GetLeft() + c1._anchor_list[1].ox + 1
   H.state.mouse_y = canvas:GetTop() + chip_h + 5
   hit._onOnMouseEnter(hit)
@@ -83,13 +86,43 @@ return function(H)
     ok(c._h and c._h >= 2 and c._h < 12, "a sub-lane cell is thin, got " .. tostring(c._h))
     ok(math.abs((c._r or 0) - 0.85) > 0.02 or math.abs((c._b or 0) - 0.75) > 0.02, "the sub-lane uses its own ramp, not orchid")
   end
+  while view_label._text ~= "TYPE" do G.next_view() end
+  ok(#shown("^VermilionTargetSub") == 0, "leaving PRESSURE clears the absorption sub-lanes")
+  ok(#shown("^VermilionTargetSeg") == 0, "leaving PRESSURE clears the lanes")
   while view_label._text ~= "CONTRIB" do G.next_view() end
   ok(#shown("^VermilionShieldHeat") == 0, "CONTRIB is a list, no strip there")
+  ok(#shown("^VermilionTargetSub") == 0, "no sub-lane survives into CONTRIB")
 
   while view_label._text ~= "SKILL" do G.next_view() end
   G.on_flush_click()
   ok(#shown("^VermilionShieldHeat") == 0, "flushing clears the strip")
   ok(shield_icon() == nil, "flushing clears the shield icon")
+  Vermilion.Metrics.reset()
+  H.advance(6000)
+
+  G.on_record_click()
+  for _ = 1, 3 do
+    H.damage_out({ hit = 1000, ability_id = 31, target_unit_id = 900, damage_type = DAMAGE_TYPE_MAGIC })
+    H.advance(1000)
+  end
+  G.on_stop_click()
+  local track = shown("^VermilionShieldHeat")
+  ok(#track >= 1, "without any absorption the strip still draws its empty track, like the ultimate band")
+  for _, c in ipairs(track) do ok((c._a or 1) <= 0.2, "an empty strip carries no heat") end
+  local dim_icon = shield_icon()
+  ok(dim_icon ~= nil and (dim_icon._a or 1) < 0.6, "the shield icon sits dimmed on an empty strip")
+  VermilionHoverCardName._text = ""
+  H.state.mouse_x = canvas:GetLeft() + track[1]._anchor_list[1].ox + 20
+  H.state.mouse_y = canvas:GetTop() + chip_h + 5
+  hit._onOnMouseEnter(hit)
+  H.advance(200)
+  ok(VermilionHoverCardName._text ~= "Shields cracked", "an empty strip opens no shield card")
+  hit._onOnMouseExit(hit)
+  H.state.mouse_x, H.state.mouse_y = 400, 300
+  while view_label._text ~= "PRESSURE" do G.next_view() end
+  ok(#shown("^VermilionTargetSub") == 0, "no absorption means no sub-lane")
+  while view_label._text ~= "SKILL" do G.next_view() end
+  G.on_flush_click()
   H.ability_names = nil
   Vermilion.Visibility.set("graph", false)
   Vermilion.Metrics.reset()
