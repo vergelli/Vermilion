@@ -21,16 +21,19 @@ return function(H)
   G.on_stop_click()
 
   local function hang_fills()
-    local fills, edges = {}, 0
+    local fills, edges, seams = {}, 0, 0
     for _, c in ipairs(H.controls) do
       local name = c._name or ""
       if c._hidden == false and name:find("^VermilionHangFill") then
-        if c._h == 1 then edges = edges + 1 else fills[#fills + 1] = c end
+        if c._w == 1 then seams = seams + 1
+        elseif c._h == 1 then edges = edges + 1
+        else fills[#fills + 1] = c end
       end
     end
-    return fills, edges
+    return fills, edges, seams
   end
-  local fills, edges = hang_fills()
+  local fills, edges, seams = hang_fills()
+  ok(seams >= 1, "the peak columns wear a seam between the drip and the bar, got " .. seams)
   ok(#fills >= 1, "the absorbed damage hangs from the top of the viewport in SKILL, got " .. #fills)
   ok(edges == #fills, "every hanging column wears its dotted lower edge")
   local canvas = VermilionGraphWindowViewportCanvas
@@ -38,8 +41,16 @@ return function(H)
   for _, f in ipairs(fills) do
     local a = f._anchor_list and f._anchor_list[1]
     ok(a and a.point == TOPLEFT and a.oy == chip_h, "a hanging column starts right under the chip, got " .. tostring(a and a.oy))
-    ok(math.abs((f._r or 0) - 0.85) < 1e-6 and math.abs((f._b or 0) - 0.75) < 1e-6 and (f._a or 1) < 0.3, "the hanging fill is faint orchid")
+    ok(math.abs((f._r or 0) - 0.85) < 1e-6 and math.abs((f._b or 0) - 0.75) < 1e-6 and (f._a or 1) > 0.3 and (f._a or 1) < 0.6, "the hanging fill is orchid at gradient strength")
+    ok(f._tex == "Vermilion/assets/drip.dds", "the hanging fill wears the drip gradient, got " .. tostring(f._tex))
   end
+  local seam_ok = false
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionHangFill") and c._w == 1 then
+      seam_ok = (c._h or 0) >= 2 and (c._r or 0) > 0.95
+    end
+  end
+  ok(seam_ok, "a seam is a one-pixel warm white stitch at least two pixels tall")
 
   local ward_bars = 0
   for _, c in ipairs(H.controls) do

@@ -3,6 +3,11 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- The shield layer hangs as a drip: an orchid gradient dense at the top and fading to the tip, with the tip edge glowing by the absorbed rate, so a big shield stands out and a small one only hints. The scale reserves room above the peak for the deepest drip, so a drip never covers the bar under it. Where your output sits at its peak while a shield is absorbing, a one-pixel seam stitches the drip to the bar.
+
 ## [1.1.1] - 2026-09-12
 
 ### Fixed
