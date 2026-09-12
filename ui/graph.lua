@@ -806,6 +806,28 @@ local function size_card(w)
   end
 end
 
+local function fit_card_rows(card, n, base_w)
+  local w = base_w
+  for i = 1, n do
+    local row = card.rows[i]
+    local vw = row.val:GetTextWidth() + 6
+    if vw < 40 then vw = 40 end
+    local need = 30 + row.name:GetTextWidth() + 12 + vw + 8
+    if need > w then w = need end
+  end
+  if w > 360 then w = 360 end
+  size_card(w)
+  for i = 1, n do
+    local row = card.rows[i]
+    local vw = row.val:GetTextWidth() + 6
+    if vw < 40 then vw = 40 end
+    local max_v = w - 30 - 8 - 40
+    if vw > max_v then vw = max_v end
+    row.val:SetWidth(vw)
+    row.name:SetWidth(w - 30 - 8 - vw - 6)
+  end
+end
+
 local function card_layout(card, iconMode)
   if card.iconMode == iconMode then return end
   card.iconMode = iconMode
@@ -897,6 +919,7 @@ local function show_card(band, col, mx, my, elapsed_ms)
       end
     end
   end
+  fit_card_rows(card, shown, CARD_W)
   card.root:SetHeight((shown > 0) and (CARD_ROWS_Y0 + shown * CARD_ROW_H + 4) or CARD_H)
 
   position_card(mx, my)
@@ -942,12 +965,13 @@ local function show_rows_card(color, name_text, stat_text, time_text, rows, n_ro
     row.val:SetText(rows[i][2])
     row.val:SetHidden(false)
   end
+  fit_card_rows(card, n, CARD_W)
   local h = CARD_ROWS_Y0 + n * CARD_ROW_H + 4
   if desc_text and desc_text ~= "" then
     local desc = card.desc
     desc:ClearAnchors()
     desc:SetAnchor(TOPLEFT, card.root, TOPLEFT, 12, h + 2)
-    desc:SetWidth(CARD_W - 20)
+    desc:SetWidth(card.width - 20)
     desc:SetHeight(400)
     desc:SetText(desc_text)
     desc:SetHidden(false)
@@ -1188,6 +1212,7 @@ local function show_report_card()
       string_format("%s  ·  %s", Vermilion.SkillColors.ability_name(sm.top_shield), fmt_val(sm.top_shield_v)), C_SHDPS)
   end
 
+  fit_card_rows(card, n_rows, 250)
   card.root:SetHeight(CARD_ROWS_Y0 + n_rows * CARD_ROW_H + 6)
   position_card(chip.bg:GetLeft() - 16, chip.bg:GetBottom() - 14)
   card_fader.report = true

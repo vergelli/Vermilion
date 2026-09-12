@@ -9,7 +9,7 @@ return function(H)
   G.on_flush_click()
   while view_label._text ~= "PRESSURE" do G.next_view() end
   ok(VermilionGraphTab3Label._text == "PRESSURE", "the third tab reads PRESSURE")
-  H.ability_names = { [31] = "Puncturing Sweep", [41] = "Hardened Ward" }
+  H.ability_names = { [31] = "Puncturing Sweep", [41] = "Ward of the Bright Moon Undying" }
 
   G.on_record_click()
   for i = 1, 8 do
@@ -81,6 +81,13 @@ return function(H)
   H.advance(200)
   ok(VermilionHoverCardName._text == "Sorc", "hovering the first lane names the enemy, got " .. tostring(VermilionHoverCardName._text))
   ok((VermilionHoverCardStat._text or ""):find("DPS", 1, true) ~= nil, "the card reads the rate at that moment, got " .. tostring(VermilionHoverCardStat._text))
+  local long_row = nil
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionHoverCardRowVal") and c._text == "Ward of the Bright Moon Undying" then long_row = c end
+  end
+  ok(long_row ~= nil, "the card lists the shield by name")
+  ok((long_row._w or 0) >= long_row:GetTextWidth() + 6, "a long shield name gets a value column wide enough for it, got " .. tostring(long_row._w))
+  ok((VermilionHoverCard._w or 0) >= 30 + 12 + (long_row._w or 0) + 8, "the card widens so the row fits, got " .. tostring(VermilionHoverCard._w))
   local labels = {}
   for i = 1, 11 do
     local rn = rawget(_G, "VermilionHoverCardRowName" .. i)
