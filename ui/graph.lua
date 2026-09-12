@@ -410,6 +410,7 @@ local function release_all_pools()
   controls.pool_line_eos:ReleaseAllObjects()
   if controls.pool_shield then
     controls.pool_shield:ReleaseAllObjects()
+    controls.pool_shield_icon:ReleaseAllObjects()
     controls.pool_ult:ReleaseAllObjects()
     controls.pool_ult_icon:ReleaseAllObjects()
     controls.pool_kill:ReleaseAllObjects()
@@ -430,6 +431,7 @@ local function release_all_pools()
     controls.pool_t_seg:ReleaseAllObjects()
     controls.pool_t_rim:ReleaseAllObjects()
     controls.pool_t_lbl:ReleaseAllObjects()
+    controls.pool_t_sub:ReleaseAllObjects()
   end
 end
 
@@ -1270,7 +1272,8 @@ local function hover_poll()
     end
   end
 
-  if VIS.shield.on and VIS.shield.span > 0
+  if VIS.shield.on and VIS.shield.span > 0 and VIS.shield.bw > 0 and VIS.shield.max > 0
+     and Vermilion.TemporalBuffer.count() > 0
      and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS then
     local S = VIS.shield
     local rel_x = mx - canvas:GetLeft()
@@ -1284,7 +1287,7 @@ local function hover_poll()
         if TB.at(mid).t <= t then lo = mid else hi = mid - 1 end
       end
       local s = TB.at(lo)
-      if s then
+      if s and (s.ShDPS or 0) > 0 then
         local sh = s.ShDPS or 0
         local eos = (s.eDPS or 0) + sh
         if hover_key ~= nil then hover_key = nil; render_current_view() end
@@ -1518,14 +1521,31 @@ end
 local function draw_shield_band_at(t0, span, x_left, bw)
   local pool = controls.pool_shield
   pool:ReleaseAllObjects()
+  controls.pool_shield_icon:ReleaseAllObjects()
   local S = VIS.shield
-  if not S.on or span <= 0 or S.max <= 0 then return end
+  if not S.on or span <= 0 or bw <= 0 then return end
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()
   if n == 0 then return end
   local Heat = Vermilion.Heat
   local y = CHIP.H + ult_inset() + S.PAD
   S.t0, S.span, S.xl, S.bw = t0, span, x_left, bw
+  local track = pool:AcquireObject()
+  track:ClearAnchors()
+  track:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x_left, y)
+  track:SetWidth(bw)
+  track:SetHeight(S.ROW_H)
+  track:SetDrawLevel(3)
+  track:SetColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, 0.10)
+  track:SetHidden(false)
+  local icon = controls.pool_shield_icon:AcquireObject()
+  icon:ClearAnchors()
+  icon:SetTexture(DTYPE_ICON[-1])
+  icon:SetDimensions(VIS.ult.ICON, VIS.ult.ICON)
+  icon:SetColor(C_SHDPS.r, C_SHDPS.g, C_SHDPS.b, (S.max > 0) and 0.95 or 0.40)
+  icon:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, 0, y - math_floor((VIS.ult.ICON - S.ROW_H) / 2))
+  icon:SetHidden(false)
+  if S.max <= 0 then return end
   local run_x0, run_x1, run_lv = nil, nil, -1
   for k = 1, n do
     local s = TB.at(k)
@@ -1543,13 +1563,6 @@ local function draw_shield_band_at(t0, span, x_left, bw)
     end
   end
   if run_x0 then shield_cell(run_x0, run_x1, y, run_lv) end
-  local icon = controls.pool_ult_icon:AcquireObject()
-  icon:ClearAnchors()
-  icon:SetTexture(DTYPE_ICON[-1])
-  icon:SetDimensions(VIS.ult.ICON, VIS.ult.ICON)
-  icon:SetColor(C_SHDPS.r, C_SHDPS.g, C_SHDPS.b, 0.95)
-  icon:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, 0, y - math_floor((VIS.ult.ICON - S.ROW_H) / 2))
-  icon:SetHidden(false)
 end
 
 local function ult_seg(x0, x1, y, lv, avail, min_x, max_x)
@@ -1706,6 +1719,7 @@ local function draw_ult_band(span_ms, n)
     controls.pool_ult:ReleaseAllObjects()
     controls.pool_ult_icon:ReleaseAllObjects()
     controls.pool_shield:ReleaseAllObjects()
+    controls.pool_shield_icon:ReleaseAllObjects()
     return
   end
   local t_last = Vermilion.TemporalBuffer.at(n).t
@@ -1736,7 +1750,7 @@ local function render_by_skill()
   if cw <= 4 or ch <= 4 then return end
   local max_eos, span_ms, max_sh = window_extent(n)
   if max_eos <= 0 then hide_grid(controls.grid) return end
-  VIS.shield.on, VIS.shield.max = max_sh > 0, max_sh
+  VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
@@ -1830,7 +1844,7 @@ local function render_by_type()
   if cw <= 4 or ch <= 4 then return end
   local max_edps, span_ms, max_sh = window_extent(n)
   if max_edps <= 0 then hide_grid(controls.grid) return end
-  VIS.shield.on, VIS.shield.max = max_sh > 0, max_sh
+  VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
@@ -1924,7 +1938,7 @@ local function render_by_crit()
   if cw <= 4 or ch <= 4 then return end
   local max_edps, span_ms, max_sh = edps_extent(n)
   if max_edps <= 0 then hide_grid(controls.grid) return end
-  VIS.shield.on, VIS.shield.max = max_sh > 0, max_sh
+  VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
@@ -1994,7 +2008,7 @@ function render_current_view()
   if current_view == VIEW_BY_TARGETS then
     release_all_pools()
     local _, _, max_sh = window_extent(Vermilion.TemporalBuffer.count())
-    VIS.shield.on, VIS.shield.max = max_sh > 0, max_sh
+    VIS.shield.on, VIS.shield.max = Vermilion.TemporalBuffer.count() > 0, max_sh
     Vermilion.TargetsView.render()
     return
   end
@@ -2624,6 +2638,9 @@ function M.init()
   controls.pool_line_edps    = make_line_pool("VermilionLineEdps")
   controls.pool_line_eos     = make_line_pool("VermilionLineEos")
   controls.pool_shield       = make_fill_pool("VermilionShieldHeat")
+  controls.pool_shield_icon  = Pool.new("VermilionShieldIcon", controls.canvas, CT_TEXTURE,
+    function(c) c:SetDrawLevel(5) end,
+    function(c) c:SetHidden(true) end)
   controls.pool_ult          = make_fill_pool("VermilionGraphUlt")
   controls.pool_ult_icon     = Pool.new("VermilionGraphUltIcon", controls.canvas, CT_TEXTURE,
     function(c)
