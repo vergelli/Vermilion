@@ -6,6 +6,7 @@ All notable changes to Vermilion are documented here. This project follows
 ## [Unreleased]
 
 ### Added
+- Hover cards size their rows to the text: a long shield or ability name no longer gets cut off next to its value, and the card widens when a row needs it.
 - Two arrows next to the library icon step through the saved sessions without opening the library: left for the older one, right for the newer, and the status line shows the session's position in the library. Two keybinds do the same. Nothing happens while a recording runs.
 
 ### Changed
