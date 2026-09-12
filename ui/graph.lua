@@ -1407,6 +1407,8 @@ function light.chrome(hidden)
   controls.btn_record:SetHidden(hidden)
   controls.btn_flush:SetHidden(hidden)
   controls.btn_lib:SetHidden(hidden)
+  controls.btn_prev_sess:SetHidden(hidden)
+  controls.btn_next_sess:SetHidden(hidden)
   controls.btn_save:SetHidden(hidden)
   controls.dps_icon:SetHidden(hidden)
   controls.readout:SetHidden(hidden)
@@ -2188,6 +2190,7 @@ function M.on_record_click()
   Vermilion.SessionStore.finish_autosave()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
   Vermilion.Metrics.session_mark()
@@ -2253,6 +2256,7 @@ function M.on_flush_click()
   Vermilion.Kills.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
   hide_grid(controls.grid)
@@ -2343,6 +2347,36 @@ function M.step_view(dir)
   if not controls.window or controls.window:IsHidden() then return false end
   if dir and dir < 0 then M.prev_view() else M.next_view() end
   return true
+end
+
+function M.step_session(dir)
+  if not controls.window or controls.window:IsHidden() then return false end
+  local SS = Vermilion.SessionStore
+  local n = SS.count()
+  if n == 0 or Vermilion.TemporalBuffer.is_recording() then
+    Sound.play("deny")
+    return false
+  end
+  local idx = controls.loaded_idx
+  if idx and (idx < 1 or idx > n or SS.get(idx) == nil) then idx = nil end
+  local target
+  if not idx then target = n
+  elseif dir and dir < 0 then target = idx - 1
+  else target = idx + 1 end
+  if target < 1 or target > n then
+    Sound.play("deny")
+    return false
+  end
+  local sess = SS.get(target)
+  if sess and M.load_session(sess) then
+    Sound.play("page")
+    return true
+  end
+  return false
+end
+
+function M.loaded_session_index()
+  return controls.loaded_idx
 end
 
 function M.set_light_enabled(on)
@@ -2534,7 +2568,14 @@ function M.load_session(sess)
   end
   hover_key = nil
   summary_text = build_summary_text()
-  controls.status:SetText(string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?"))
+  local SS = Vermilion.SessionStore
+  controls.loaded_idx = nil
+  for i = 1, SS.count() do
+    if SS.get(i) == sess then controls.loaded_idx = i break end
+  end
+  local status = string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?")
+  if controls.loaded_idx then status = string_format("%s  ·  %d/%d", status, controls.loaded_idx, SS.count()) end
+  controls.status:SetText(status)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
@@ -2590,6 +2631,8 @@ function M.init()
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
   controls.btn_lib       = VermilionGraphWindowLibBtn
+  controls.btn_prev_sess = VermilionGraphWindowPrevSessBtn
+  controls.btn_next_sess = VermilionGraphWindowNextSessBtn
   controls.btn_save      = VermilionGraphWindowSaveBtn
   controls.status        = VermilionGraphWindowStatusLabel
   controls.btn_prev_view = VermilionGraphWindowPrevViewBtn
@@ -2721,6 +2764,8 @@ function M.init()
   zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
   zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)
+  zui.tooltip(controls.btn_prev_sess, VERMILION_TIP_PREV_SESSION)
+  zui.tooltip(controls.btn_next_sess, VERMILION_TIP_NEXT_SESSION)
   zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
   zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
   zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
