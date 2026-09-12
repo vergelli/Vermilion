@@ -3,7 +3,7 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-09-12
 
 ### Fixed
 - Damage you deal to yourself (Infinite Archive verses like Frigid Waters, set drawbacks) no longer counts as outgoing damage, so it stops showing as a grey contribution and as a lane with your own name in PRESSURE.
