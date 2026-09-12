@@ -56,11 +56,10 @@ local VIS = {
   hang_fill = { r = 0.85, g = 0.40, b = 0.75, a = 0.42 },
   hang_edge = { r = 0.85, g = 0.40, b = 0.75, a = 0.85 },
   hang_tex  = "Vermilion/assets/drip.dds",
-  seam      = { r = 1.00, g = 0.97, b = 0.92, a = 0.85 },
   headroom  = 1.03,
   hang_line = { r = 0.92, g = 0.55, b = 0.85, a = 0.90 },
   hang_h    = {},
-  peak_frac = 0.985,
+  hang_g    = {},
   corner_len = 16,
   corner_w   = 2,
   corners = {
@@ -1491,24 +1490,22 @@ local function hit_col(i, x, bw, s)
   return col
 end
 
-local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, hs, peak, xs)
+local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, xs)
   local top = CHIP.H + ult_inset()
   local canvas = controls.canvas
   local pool = controls.pool_hang
   local Heat = Vermilion.Heat
-  local bar_base = canvas:GetHeight() - TIME_STRIP_H
-  local peak_min = (peak or 0) * VIS.peak_frac
-  local hh = VIS.hang_h
+  local hh, hg = VIS.hang_h, VIS.hang_g
   for i = 1, m do
     local s = dec_cols[i]
     local sh = s.ShDPS or 0
     local h = (sh > 0 and max_scale > 0) and math_floor(ch_plot * (sh / max_scale) + 0.5) or 0
     hh[i] = h
+    hg[i] = (h > 0) and Heat.alpha(Heat.level(sh / max_scale)) or 0
     if capture and hit.cols[i] then hit.cols[i].hang = h end
     if h > 0 then
       local left, right = dec_rect(s.c, num_cols, cw)
       local bw = bwu or (right - left)
-      local glow = Heat.alpha(Heat.level(sh / max_scale))
       local f = pool:AcquireObject()
       f:ClearAnchors()
       f:SetAnchor(TOPLEFT, canvas, TOPLEFT, left, top)
@@ -1519,40 +1516,29 @@ local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, hs, 
       f:SetColor(VIS.hang_fill.r, VIS.hang_fill.g, VIS.hang_fill.b, VIS.hang_fill.a)
       f:SetDrawLevel(3)
       f:SetHidden(false)
-      local e = pool:AcquireObject()
-      e:ClearAnchors()
-      e:SetAnchor(TOPLEFT, canvas, TOPLEFT, left, top + h - 1)
-      e:SetWidth(bw)
-      e:SetHeight(1)
-      e:SetTexture(FILL_TEXTURE)
-      e:SetTextureCoords(0, 1, FILL_T, FILL_B)
-      e:SetColor(VIS.hang_edge.r, VIS.hang_edge.g, VIS.hang_edge.b, VIS.hang_edge.a * glow)
-      e:SetDrawLevel(4)
-      e:SetHidden(false)
-      local bar_h = hs and hs[i] or 0
-      local gap = (bar_base - bar_h) - (top + h)
-      if peak_min > 0 and bar_h > 0 and gap >= 2 and ((s.eDPS or 0) + sh) >= peak_min then
-        local st = pool:AcquireObject()
-        st:ClearAnchors()
-        st:SetAnchor(TOPLEFT, canvas, TOPLEFT, left + math_floor(bw / 2), top + h)
-        st:SetWidth(1)
-        st:SetHeight(gap)
-        st:SetTexture(FILL_TEXTURE)
-        st:SetTextureCoords(0, 1, FILL_T, FILL_B)
-        st:SetColor(VIS.seam.r, VIS.seam.g, VIS.seam.b, VIS.seam.a)
-        st:SetDrawLevel(5)
-        st:SetHidden(false)
+      if not xs then
+        local e = pool:AcquireObject()
+        e:ClearAnchors()
+        e:SetAnchor(TOPLEFT, canvas, TOPLEFT, left, top + h - 1)
+        e:SetWidth(bw)
+        e:SetHeight(1)
+        e:SetTexture(FILL_TEXTURE)
+        e:SetTextureCoords(0, 1, FILL_T, FILL_B)
+        e:SetColor(VIS.hang_edge.r, VIS.hang_edge.g, VIS.hang_edge.b, VIS.hang_edge.a * hg[i])
+        e:SetDrawLevel(4)
+        e:SetHidden(false)
       end
     end
   end
   if xs then
     for i = 2, m do
       if hh[i - 1] > 0 and hh[i] > 0 then
+        local glow = (hg[i - 1] > hg[i]) and hg[i - 1] or hg[i]
         local le = controls.pool_eos_line:AcquireObject()
         le:ClearAnchors()
         le:SetAnchor(TOPLEFT,  canvas, TOPLEFT, xs[i - 1], top + hh[i - 1])
         le:SetAnchor(TOPRIGHT, canvas, TOPLEFT, xs[i],     top + hh[i])
-        le:SetColor(VIS.hang_line.r, VIS.hang_line.g, VIS.hang_line.b, VIS.hang_line.a)
+        le:SetColor(VIS.hang_line.r, VIS.hang_line.g, VIS.hang_line.b, VIS.hang_line.a * glow)
         le:SetThickness(LINE_THICKNESS)
         le:SetHidden(false)
       end
@@ -1740,7 +1726,6 @@ local function render_by_skill()
 
   local max_eos, span_ms, max_sh = window_extent(n)
   if max_eos <= 0 then hide_grid(controls.grid) return end
-  local peak = max_eos
   max_eos = (max_eos + max_sh) * VIS.headroom
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
@@ -1808,7 +1793,7 @@ local function render_by_skill()
       le:SetHidden(false)
     end
   end
-  draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture, eos_hs, peak, (col_w >= 3) and xs or nil)
+  draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture, (col_w >= 3) and xs or nil)
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
@@ -1837,7 +1822,6 @@ local function render_by_type()
 
   local max_edps, span_ms, max_sh = window_extent(n)
   if max_edps <= 0 then hide_grid(controls.grid) return end
-  local peak = max_edps
   max_edps = (max_edps + max_sh) * VIS.headroom
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + ult_inset())
@@ -1905,7 +1889,7 @@ local function render_by_type()
       le:SetHidden(false)
     end
   end
-  draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture, edps_hs, peak, (col_w >= 3) and xs or nil)
+  draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture, (col_w >= 3) and xs or nil)
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
