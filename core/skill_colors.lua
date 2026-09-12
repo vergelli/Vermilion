@@ -89,10 +89,31 @@ local BASIC_ABILITY_IDS = {
   [15435] = true,  -- Light Attack (One Handed)
   [16037] = true,  -- Light Attack (Two Handed)
   [17162] = true,  -- Heavy Attack (Two Handed)
+  [15279] = true,
+  [15383] = true,
+  [15385] = true,
+  [16321] = true,
+  [16165] = true,
+  [16277] = true,
+  [16420] = true,
+  [17169] = true,
+  [17170] = true,
+  [18622] = true,
+  [16499] = true,
 }
+
+local BASIC_NAME_PROBES = { { 15435, 16037 }, { 17162, 15279 } }
+local BASIC_NAME_FALLBACK = { "Light Attack", "Heavy Attack" }
+local basic_prefixes
 
 local ICON_PATTERNS = {
   { "death_recap_melee_basic",   "basic"          },
+  { "death_recap_melee_heavy",   "basic"          },
+  { "death_recap_ranged_basic",  "basic"          },
+  { "death_recap_ranged_heavy",  "basic"          },
+  { "death_recap_melee_axe_",    "basic"          },
+  { "death_recap_melee_dagger_", "basic"          },
+  { "death_recap_melee_mace_",   "basic"          },
   { "ability_2handed_",          "twohanded"      },
   { "ability_dualwield_",        "dualwield"      },
   { "ability_bow_",              "bow"            },
@@ -193,6 +214,34 @@ local function classify_by_icon(abilityId)
   return nil
 end
 
+local function learn_basic_prefixes()
+  local out = {}
+  for _, pair in ipairs(BASIC_NAME_PROBES) do
+    local a = GetAbilityName(pair[1]) or ""
+    local b = GetAbilityName(pair[2]) or ""
+    local p = a:match("^(.-)%s*%(")
+    if p and #p >= 2 and b:sub(1, #p) == p then out[#out + 1] = p end
+  end
+  for _, p in ipairs(BASIC_NAME_FALLBACK) do out[#out + 1] = p end
+  basic_prefixes = out
+  return out
+end
+
+local function classify_by_name(abilityId)
+  local name = GetAbilityName(abilityId)
+  if not name or name == "" then return nil end
+  local prefixes = basic_prefixes or learn_basic_prefixes()
+  for i = 1, #prefixes do
+    local p = prefixes[i]
+    if name:sub(1, #p) == p then return "basic" end
+  end
+  return nil
+end
+
+function M.relearn_basic_names()
+  basic_prefixes = nil
+end
+
 local function classify_by_skill_tree_api(abilityId)
   local skillType, lineIndex = GetSpecificSkillAbilityKeysByAbilityId(abilityId)
   if not skillType or skillType <= 0 then return nil end
@@ -210,12 +259,10 @@ local function lookup_group(abilityId, quiet)
   g = USER_OVERRIDES[abilityId]
   if g then ability_cache[abilityId] = g return g end
 
-  if BASIC_ABILITY_IDS[abilityId] then
-    ability_cache[abilityId] = "basic"
-    return "basic"
-  end
-
   g = ABILITY_OVERRIDES[abilityId]
+  if g then ability_cache[abilityId] = g return g end
+
+  g = classify_by_name(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
   g = classify_by_icon(abilityId)
@@ -223,6 +270,11 @@ local function lookup_group(abilityId, quiet)
 
   g = classify_by_skill_tree_api(abilityId)
   if g then ability_cache[abilityId] = g return g end
+
+  if BASIC_ABILITY_IDS[abilityId] then
+    ability_cache[abilityId] = "basic"
+    return "basic"
+  end
 
   if quiet then return "other" end
   local name = GetAbilityName(abilityId) or "?"

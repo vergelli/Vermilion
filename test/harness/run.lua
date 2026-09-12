@@ -39,6 +39,8 @@ local CASES = {
   "targets_view",
   "kills",
   "self_damage",
+  "assign_flyout",
+  "basic_attacks",
 }
 
 local passed, failed = 0, 0
