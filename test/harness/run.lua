@@ -8,6 +8,7 @@ HARNESS.fire(EVENT_ADD_ON_LOADED, "Vermilion")
 
 local CASES = {
   "boot",
+  "bindings_lint",
   "record_flow",
   "views",
   "zero_alloc",
