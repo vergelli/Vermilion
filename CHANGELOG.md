@@ -3,6 +3,15 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-12
+
+### Added
+- Hover cards size their rows to the text: a long shield or ability name no longer gets cut off next to its value, and the card widens when a row needs it.
+- Two arrows next to the library icon step through the saved sessions without opening the library: left for the older one, right for the newer, and the status line shows the session's position in the library. Two keybinds do the same. Nothing happens while a recording runs.
+
+### Changed
+- The orchid layer that hung from the top of SKILL and TYPE is gone: it took height from the bars, and the absorbed damage is already stacked inside them. In its place a shield strip sits under the ultimate band on every plot view, a heat strip on the PRESSURE ramp showing how hard enemy shields were absorbing at every moment, with the shield icon at the left, always present and empty when nothing was absorbed, like the ultimate band; hover it for the rate and share. PRESSURE lanes gain a thin sub-lane at their foot on a second colour ramp, showing the absorption on that enemy over time.
+
 ## [1.1.1] - 2026-09-12
 
 ### Fixed

@@ -6,6 +6,8 @@ ZO_CreateStringId("SI_BINDING_NAME_VERMILION_RECORD", "Start / Stop Recording")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_SAVE",   "Save Recording to Library")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_NEXT_VIEW", "Next Graph View")
 ZO_CreateStringId("SI_BINDING_NAME_VERMILION_PREV_VIEW", "Previous Graph View")
+ZO_CreateStringId("SI_BINDING_NAME_VERMILION_PREV_SESSION", "Previous Session (older)")
+ZO_CreateStringId("SI_BINDING_NAME_VERMILION_NEXT_SESSION", "Next Session (newer)")
 
 -- Debug / status strings. I have a copybox for these, but they should be localized anyway.
 ZO_CreateStringId("VERMILION_PROBE_ON",       "Probe ON. Logging events to chat (rate-limited).")
@@ -90,6 +92,8 @@ ZO_CreateStringId("VERMILION_SAVE_ALREADY",        "This recording is already in
 
 ZO_CreateStringId("VERMILION_HELP_LIB",     "  /vermilion lib     open the session library")
 ZO_CreateStringId("VERMILION_TIP_LIB",        "Session library: your saved recordings")
+ZO_CreateStringId("VERMILION_TIP_PREV_SESSION", "Open the previous session (older)")
+ZO_CreateStringId("VERMILION_TIP_NEXT_SESSION", "Open the next session (newer)")
 ZO_CreateStringId("VERMILION_TIP_LIB_OPEN",   "Load the selected session into the graph")
 ZO_CreateStringId("VERMILION_TIP_LIB_LOCK",   "A locked session never rotates out of the library")
 ZO_CreateStringId("VERMILION_TIP_LIB_DELETE", "Delete the selected session. Click twice.")

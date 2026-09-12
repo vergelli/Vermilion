@@ -27,6 +27,36 @@ for i = 0, M.N - 1 do
   LUT[i] = { a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f }
 end
 
+local VIRIDIS = {
+  { 0.267, 0.005, 0.329 },
+  { 0.283, 0.141, 0.458 },
+  { 0.254, 0.265, 0.530 },
+  { 0.207, 0.372, 0.553 },
+  { 0.164, 0.471, 0.558 },
+  { 0.128, 0.567, 0.551 },
+  { 0.135, 0.659, 0.518 },
+  { 0.267, 0.749, 0.441 },
+  { 0.478, 0.821, 0.318 },
+  { 0.741, 0.873, 0.150 },
+  { 0.993, 0.906, 0.144 },
+}
+
+local LUT2 = {}
+for i = 0, M.N - 1 do
+  local t = i / (M.N - 1) * (#VIRIDIS - 1)
+  local k = math_floor(t)
+  if k >= #VIRIDIS - 1 then k = #VIRIDIS - 2 end
+  local f = t - k
+  local a, b = VIRIDIS[k + 1], VIRIDIS[k + 2]
+  LUT2[i] = { a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, a[3] + (b[3] - a[3]) * f }
+end
+
+function M.lut2(i)
+  if i < 0 then i = 0 end
+  if i > M.N - 1 then i = M.N - 1 end
+  return LUT2[i]
+end
+
 function M.lut(i)
   if i < 0 then i = 0 end
   if i > M.N - 1 then i = M.N - 1 end
