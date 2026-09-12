@@ -3,6 +3,11 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [1.1.1] - 2026-09-12
+
+### Fixed
+- The shield layer and ShDPS averaged absorbed damage over a 30-second window while the bars use 5 seconds, so a cracked shield showed as a long, low band that outlived the hit by half a minute, and EOS added two different time scales. Both now share the 5-second window: the layer has the height and width of the event, and the header sums like with like.
+
 ## [1.1.0] - 2026-09-12
 
 ### Fixed
