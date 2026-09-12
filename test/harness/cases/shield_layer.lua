@@ -51,6 +51,11 @@ return function(H)
     end
   end
   ok(seam_ok, "a seam is a one-pixel warm white stitch at least two pixels tall")
+  local tip_lines = 0
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionEosLine") and c._r and math.abs(c._r - 0.92) < 1e-6 and math.abs(c._b - 0.85) < 1e-6 then tip_lines = tip_lines + 1 end
+  end
+  ok(tip_lines >= 1, "a line runs along the tips of the drips like the one over the bars, got " .. tip_lines)
 
   local ward_bars = 0
   for _, c in ipairs(H.controls) do

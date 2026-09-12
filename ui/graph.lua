@@ -58,6 +58,8 @@ local VIS = {
   hang_tex  = "Vermilion/assets/drip.dds",
   seam      = { r = 1.00, g = 0.97, b = 0.92, a = 0.85 },
   headroom  = 1.03,
+  hang_line = { r = 0.92, g = 0.55, b = 0.85, a = 0.90 },
+  hang_h    = {},
   peak_frac = 0.985,
   corner_len = 16,
   corner_w   = 2,
@@ -1489,17 +1491,19 @@ local function hit_col(i, x, bw, s)
   return col
 end
 
-local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, hs, peak)
+local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, hs, peak, xs)
   local top = CHIP.H + ult_inset()
   local canvas = controls.canvas
   local pool = controls.pool_hang
   local Heat = Vermilion.Heat
   local bar_base = canvas:GetHeight() - TIME_STRIP_H
   local peak_min = (peak or 0) * VIS.peak_frac
+  local hh = VIS.hang_h
   for i = 1, m do
     local s = dec_cols[i]
     local sh = s.ShDPS or 0
     local h = (sh > 0 and max_scale > 0) and math_floor(ch_plot * (sh / max_scale) + 0.5) or 0
+    hh[i] = h
     if capture and hit.cols[i] then hit.cols[i].hang = h end
     if h > 0 then
       local left, right = dec_rect(s.c, num_cols, cw)
@@ -1538,6 +1542,19 @@ local function draw_hang(m, num_cols, cw, ch_plot, max_scale, bwu, capture, hs, 
         st:SetColor(VIS.seam.r, VIS.seam.g, VIS.seam.b, VIS.seam.a)
         st:SetDrawLevel(5)
         st:SetHidden(false)
+      end
+    end
+  end
+  if xs then
+    for i = 2, m do
+      if hh[i - 1] > 0 and hh[i] > 0 then
+        local le = controls.pool_eos_line:AcquireObject()
+        le:ClearAnchors()
+        le:SetAnchor(TOPLEFT,  canvas, TOPLEFT, xs[i - 1], top + hh[i - 1])
+        le:SetAnchor(TOPRIGHT, canvas, TOPLEFT, xs[i],     top + hh[i])
+        le:SetColor(VIS.hang_line.r, VIS.hang_line.g, VIS.hang_line.b, VIS.hang_line.a)
+        le:SetThickness(LINE_THICKNESS)
+        le:SetHidden(false)
       end
     end
   end
@@ -1791,7 +1808,7 @@ local function render_by_skill()
       le:SetHidden(false)
     end
   end
-  draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture, eos_hs, peak)
+  draw_hang(m, num_cols, cw, ch_plot, max_eos, bwu, capture, eos_hs, peak, (col_w >= 3) and xs or nil)
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
@@ -1888,7 +1905,7 @@ local function render_by_type()
       le:SetHidden(false)
     end
   end
-  draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture, edps_hs, peak)
+  draw_hang(m, num_cols, cw, ch_plot, max_edps, bwu, capture, edps_hs, peak, (col_w >= 3) and xs or nil)
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
