@@ -9,6 +9,8 @@ All notable changes to Vermilion are documented here. This project follows
 - Damage you deal to yourself (Infinite Archive verses like Frigid Waters, set drawbacks) no longer counts as outgoing damage, so it stops showing as a grey contribution and as a lane with your own name in PRESSURE.
 - Damage absorbed by an enemy's shield was credited to that shield's ability, so enemy wards showed up in SKILL and CONTRIB as if they were the player's skills. Each shield event is now paired with the attack that caused it and credited to that attack; a shield that finds no attack lands in a single "Shields cracked" bucket instead.
 - TYPE now includes damage absorbed by shields, typed by the attack, so every view sums to the same EOS as the header.
+- The category flyout in Unknown Contributions opened with no backdrop, so its rows drew over whatever sat behind the window; it now has an opaque fill with the crimson edge.
+- Light and heavy attacks of most weapons (Inferno and Dual Wield first, bow and others by the same rule) landed in Unknown Contributions. Basic attacks are now recognised by name, with the names learned from the game client so the rule holds in every language, then by the weapon death-recap icons, with the fixed id list as the last resort.
 
 ### Added
 - Light mode draws four corner brackets on hover, so the resize corners of the dimmed window are easy to find.
