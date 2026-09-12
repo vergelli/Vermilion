@@ -3,7 +3,7 @@ local Vermilion = Vermilion
 
 Vermilion.Constants = {
   ADDON_NAME    = "Vermilion",
-  VERSION       = "1.2.0",
+  VERSION       = "1.2.1",
   SLASH_COMMAND = "/vermilion",
 
   DEV           = false,
