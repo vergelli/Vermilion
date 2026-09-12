@@ -3,7 +3,7 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.1] - 2026-09-12
 
 ### Fixed
 - The two session-navigation keybinds (Previous / Next Session) never actually worked: the PR that added them wired the header arrows and the display names but never registered the keybind actions in bindings.xml. The arrows themselves were never affected.
