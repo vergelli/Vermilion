@@ -3,7 +3,7 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.2.0] - 2026-09-12
 
 ### Added
 - Hover cards size their rows to the text: a long shield or ability name no longer gets cut off next to its value, and the card widens when a row needs it.
