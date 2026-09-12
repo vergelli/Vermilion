@@ -226,12 +226,14 @@ function M.show()
   clear_pending()
   controls.window:SetHidden(false)
   M.refresh()
+  Vermilion.Sound.play("open")
 end
 
 function M.hide()
   controls.flyout:SetHidden(true)
   controls.confirm:SetHidden(true)
   clear_pending()
+  if not controls.window:IsHidden() then Vermilion.Sound.play("close") end
   controls.window:SetHidden(true)
   row_pool:ReleaseAllObjects()
 end
@@ -246,11 +248,13 @@ function M.on_assign_click()
   if pending_count() == 0 then
     M.hide()
   else
+    Vermilion.Sound.play("click")
     show_confirm()
   end
 end
 
 function M.on_confirm_no()
+  Vermilion.Sound.play("discard")
   controls.confirm:SetHidden(true)
   controls.window:SetHidden(false)
   M.refresh()
@@ -266,6 +270,7 @@ function M.on_confirm_yes()
     end
     log:info("committed", id, "->", key)
   end
+  Vermilion.Sound.play("confirm")
   controls.confirm:SetHidden(true)
   M.hide()
 end
@@ -297,6 +302,16 @@ function M.init()
   VermilionAssignPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   VermilionAssignConfirmBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionAssignConfirmBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
+  VermilionAssignPanelFlyoutFill:SetTexture("EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds")
+  VermilionAssignPanelFlyoutFill:SetTextureCoords(0, 1, 0, 0.05)
+  VermilionAssignPanelFlyoutFill:SetColor(0.070, 0.050, 0.050, 0.985)
+  VermilionAssignPanelFlyoutFill:SetDrawLayer(DL_OVERLAY)
+  VermilionAssignPanelFlyoutFill:SetDrawLevel(101)
+  VermilionAssignPanelFlyoutBg:SetCenterColor(0.085, 0.060, 0.058, 0.98)
+  VermilionAssignPanelFlyoutBg:SetEdgeColor(1.00, 0.45, 0.40, 0.85)
+  VermilionAssignPanelFlyoutBg:SetDrawLayer(DL_OVERLAY)
+  VermilionAssignPanelFlyoutBg:SetDrawLevel(102)
+  controls.flyout:SetDrawLevel(100)
 
   controls.title:SetText(GetString(VERMILION_ASSIGN_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)

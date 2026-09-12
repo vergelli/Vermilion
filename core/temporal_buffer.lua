@@ -29,6 +29,8 @@ function M.init(capacity)
       eos_abilities  = { count = 0 },
       dtype_groups   = { count = 0 },
       dtype_abilities = { count = 0 },
+      shield_abilities = { count = 0 },
+      targets = { count = 0 },
     }
   end
   log:info("init: capacity=", capacity)
@@ -52,14 +54,25 @@ local function copy_abilities(dst, src)
     local s = src[i]
     local d = dst[i]
     if d == nil then d = {}; dst[i] = d end
-    d.id = s.id; d.share = s.share; d.key = s.key
+    d.id = s.id; d.share = s.share; d.key = s.key; d.abs = s.abs or 0
     d.r = s.r; d.g = s.g; d.b = s.b; d.a = s.a
   end
   dst.count = n
 end
 
+local function copy_targets(dst, src)
+  local n = (src and (src.count or #src)) or 0
+  for i = 1, n do
+    local s = src[i]
+    local d = dst[i]
+    if d == nil then d = {}; dst[i] = d end
+    d.id = s.id; d.name = s.name; d.ttype = s.ttype; d.share = s.share; d.abs = s.abs or 0
+  end
+  dst.count = n
+end
+
 function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
-                src_groups, eos_abilities, dtype_groups, dtype_abilities)
+                src_groups, eos_abilities, dtype_groups, dtype_abilities, shield_abilities, targets)
   local slot   = state.data[state.write]
   slot.t       = timestamp
   slot.eDPS    = eDPS
@@ -71,6 +84,8 @@ function M.push(timestamp, eDPS, ShDPS, crit, noncrit,
   copy_abilities(slot.eos_abilities, eos_abilities)
   copy_groups(slot.dtype_groups,     dtype_groups)
   copy_abilities(slot.dtype_abilities, dtype_abilities)
+  copy_abilities(slot.shield_abilities, shield_abilities)
+  copy_targets(slot.targets, targets)
 
   state.write = (state.write % state.capacity) + 1
   if state.count < state.capacity then
@@ -90,18 +105,42 @@ function M.iterate(fn)
   end
 end
 
+function M.at(i)
+  local n = state.count
+  if i < 1 or i > n then return nil end
+  local cap = state.capacity
+  local oldest = (n >= cap) and state.write or 1
+  return state.data[((oldest - 1 + i - 1) % cap) + 1]
+end
+
 function M.count()        return state.count     end
 function M.capacity()     return state.capacity  end
 function M.is_recording() return state.recording end
 
 function M.start_recording()
   state.recording = true
+  if Vermilion.Logo and Vermilion.Logo.set_recording then Vermilion.Logo.set_recording(true) end
   log:info("start_recording")
 end
 
 function M.stop_recording()
   state.recording = false
+  if Vermilion.Logo and Vermilion.Logo.set_recording then Vermilion.Logo.set_recording(false) end
   log:info("stop_recording: count=", state.count, "/", state.capacity)
+end
+
+local EMPTY_SHARES = { count = 0 }
+
+function M.load_session(samples)
+  M.clear()
+  for i = 1, #samples do
+    local s = samples[i]
+    M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
+           s.eg or EMPTY_SHARES, s.ea or EMPTY_SHARES,
+           s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES, s.sa or EMPTY_SHARES, s.tg or EMPTY_SHARES)
+  end
+  state.recording = false
+  log:info("session loaded: samples=", #samples)
 end
 
 function M.clear()

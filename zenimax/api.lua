@@ -19,6 +19,7 @@ M.GetWorldName            = GetWorldName
 M.GetString = GetString
 
 M.IsUnitGrouped           = IsUnitGrouped
+M.IsUnitInCombat          = IsUnitInCombat
 M.GetGroupSize            = GetGroupSize
 M.GetUnitName             = GetUnitName
 M.GetUnitDisplayName      = GetUnitDisplayName
@@ -33,9 +34,35 @@ M.GetZoneNameByIndex      = GetZoneNameByIndex
 
 M.GetSlotName                            = GetSlotName
 M.GetSlotBoundId                         = GetSlotBoundId
+M.GetSlotAbilityCost                     = GetSlotAbilityCost
+M.GetActiveHotbarCategory                = GetActiveHotbarCategory
+M.GetUnitPower                           = GetUnitPower
 M.GetAbilityName                         = GetAbilityName
 M.GetAbilityIcon                         = GetAbilityIcon
 M.GetSpecificSkillAbilityKeysByAbilityId = GetSpecificSkillAbilityKeysByAbilityId
 M.GetSkillLineId                         = GetSkillLineId
+M.GetAbilityDescription                  = GetAbilityDescription
+M.IsAbilityPassive                       = IsAbilityPassive
 
+M.GetUnitZone      = GetUnitZone
+M.GetTimeStamp     = GetTimeStamp
+M.GetDateStringFromTimestamp = GetDateStringFromTimestamp
+M.AreUnitsEqual    = AreUnitsEqual
+M.DoesUnitExist    = DoesUnitExist
+M.ReloadUI         = ReloadUI
 M.GetUIMousePosition = GetUIMousePosition
+M.GetUIGlobalScale   = GetUIGlobalScale
+M.MouseIsOver        = MouseIsOver
+
+M.GetCurrentZoneDungeonDifficulty = GetCurrentZoneDungeonDifficulty
+M.GetMapContentType         = GetMapContentType
+M.IsActiveWorldBattleground = IsActiveWorldBattleground
+M.GetCurrentBattlegroundId  = GetCurrentBattlegroundId
+M.GetBattlegroundTeamSize   = GetBattlegroundTeamSize
+M.IsPlayerInRaid            = IsPlayerInRaid
+M.IsPlayerInEndlessDungeon  = IsPlayerInEndlessDungeon
+M.IsInCyrodiil              = IsInCyrodiil
+M.IsInImperialCity          = IsInImperialCity
+M.GetCurrentZoneHouseId     = GetCurrentZoneHouseId
+M.GetZoneId                 = GetZoneId
+M.GetUnitZoneIndex          = GetUnitZoneIndex

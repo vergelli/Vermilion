@@ -38,6 +38,7 @@ local GROUP_COLORS = {
   fighters_guild = { r = 0.78, g = 0.34, b = 0.30, a = 0.95 },  -- brick red
   soul_magic     = { r = 0.60, g = 0.50, b = 0.72, a = 0.95 },  -- lavender
   other       = { r = 0.55, g = 0.55, b = 0.55, a = 0.80 },  -- unknown (grey)
+  shield      = { r = 0.85, g = 0.40, b = 0.75, a = 0.95 },
 }
 
 local GROUP_LABELS = {
@@ -67,6 +68,7 @@ local GROUP_LABELS = {
   item           = "Item Set / Enchant",
   status         = "Status Effect",
   other          = "Unknown (grey)",
+  shield         = "Shields cracked",
 }
 
 local GROUP_ORDER = {
@@ -87,10 +89,31 @@ local BASIC_ABILITY_IDS = {
   [15435] = true,  -- Light Attack (One Handed)
   [16037] = true,  -- Light Attack (Two Handed)
   [17162] = true,  -- Heavy Attack (Two Handed)
+  [15279] = true,
+  [15383] = true,
+  [15385] = true,
+  [16321] = true,
+  [16165] = true,
+  [16277] = true,
+  [16420] = true,
+  [17169] = true,
+  [17170] = true,
+  [18622] = true,
+  [16499] = true,
 }
+
+local BASIC_NAME_PROBES = { { 15435, 16037 }, { 17162, 15279 } }
+local BASIC_NAME_FALLBACK = { "Light Attack", "Heavy Attack" }
+local basic_prefixes
 
 local ICON_PATTERNS = {
   { "death_recap_melee_basic",   "basic"          },
+  { "death_recap_melee_heavy",   "basic"          },
+  { "death_recap_ranged_basic",  "basic"          },
+  { "death_recap_ranged_heavy",  "basic"          },
+  { "death_recap_melee_axe_",    "basic"          },
+  { "death_recap_melee_dagger_", "basic"          },
+  { "death_recap_melee_mace_",   "basic"          },
   { "ability_2handed_",          "twohanded"      },
   { "ability_dualwield_",        "dualwield"      },
   { "ability_bow_",              "bow"            },
@@ -191,6 +214,34 @@ local function classify_by_icon(abilityId)
   return nil
 end
 
+local function learn_basic_prefixes()
+  local out = {}
+  for _, pair in ipairs(BASIC_NAME_PROBES) do
+    local a = GetAbilityName(pair[1]) or ""
+    local b = GetAbilityName(pair[2]) or ""
+    local p = a:match("^(.-)%s*%(")
+    if p and #p >= 2 and b:sub(1, #p) == p then out[#out + 1] = p end
+  end
+  for _, p in ipairs(BASIC_NAME_FALLBACK) do out[#out + 1] = p end
+  basic_prefixes = out
+  return out
+end
+
+local function classify_by_name(abilityId)
+  local name = GetAbilityName(abilityId)
+  if not name or name == "" then return nil end
+  local prefixes = basic_prefixes or learn_basic_prefixes()
+  for i = 1, #prefixes do
+    local p = prefixes[i]
+    if name:sub(1, #p) == p then return "basic" end
+  end
+  return nil
+end
+
+function M.relearn_basic_names()
+  basic_prefixes = nil
+end
+
 local function classify_by_skill_tree_api(abilityId)
   local skillType, lineIndex = GetSpecificSkillAbilityKeysByAbilityId(abilityId)
   if not skillType or skillType <= 0 then return nil end
@@ -199,7 +250,7 @@ local function classify_by_skill_tree_api(abilityId)
   return SKILL_LINE_TO_GROUP[skillLineId]
 end
 
-local function lookup_group(abilityId)
+local function lookup_group(abilityId, quiet)
   if not abilityId or abilityId <= 0 then return "other" end
 
   local g = ability_cache[abilityId]
@@ -208,12 +259,10 @@ local function lookup_group(abilityId)
   g = USER_OVERRIDES[abilityId]
   if g then ability_cache[abilityId] = g return g end
 
-  if BASIC_ABILITY_IDS[abilityId] then
-    ability_cache[abilityId] = "basic"
-    return "basic"
-  end
-
   g = ABILITY_OVERRIDES[abilityId]
+  if g then ability_cache[abilityId] = g return g end
+
+  g = classify_by_name(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
   g = classify_by_icon(abilityId)
@@ -222,6 +271,12 @@ local function lookup_group(abilityId)
   g = classify_by_skill_tree_api(abilityId)
   if g then ability_cache[abilityId] = g return g end
 
+  if BASIC_ABILITY_IDS[abilityId] then
+    ability_cache[abilityId] = "basic"
+    return "basic"
+  end
+
+  if quiet then return "other" end
   local name = GetAbilityName(abilityId) or "?"
   local icon = GetAbilityIcon(abilityId) or "?"
   unknown_log[abilityId] = name .. "  | icon=" .. icon
@@ -232,6 +287,10 @@ end
 -- ── public classification surface (consumed by core/metrics) ───────────────
 function M.group_of(abilityId)
   return lookup_group(abilityId)
+end
+
+function M.group_of_quiet(abilityId)
+  return lookup_group(abilityId, true)
 end
 
 local FALLBACK = GROUP_COLORS.other
@@ -246,13 +305,13 @@ end
 
 function M.group_names()
   local out = {}
-  for k in pairs(GROUP_COLORS) do out[#out + 1] = k end
+  for k in pairs(GROUP_COLORS) do if k ~= "shield" then out[#out + 1] = k end end
   table.sort(out)
   return out
 end
 
 function M.is_group(group)
-  return GROUP_COLORS[group] ~= nil
+  return group ~= "shield" and GROUP_COLORS[group] ~= nil
 end
 
 
@@ -339,6 +398,63 @@ function M.unknown_lines()
   table.sort(lines)
   table.insert(lines, 1, "add to ABILITY_OVERRIDES / BASIC_ABILITY_IDS:")
   return lines
+end
+
+local BUFF_FAMILY_COLORS = {
+  offense  = { r = 0.98, g = 0.60, b = 0.45, a = 0.95 },
+  defense  = { r = 0.45, g = 0.62, b = 0.90, a = 0.95 },
+  sustain  = { r = 0.72, g = 0.94, b = 0.84, a = 0.95 },
+  mobility = { r = 0.75, g = 0.65, b = 0.95, a = 0.95 },
+  status   = { r = 0.96, g = 0.62, b = 0.28, a = 0.95 },
+  control  = { r = 0.80, g = 0.82, b = 0.55, a = 0.95 },
+}
+
+local EFFECT_FAMILY_NAMES = {
+  burning = "status", poisoned = "status", chilled = "status", concussed = "status",
+  overcharged = "status", diseased = "status", hemorrhaging = "status", sundered = "status",
+  chill = "status", concussion = "status", poison = "status",
+  taunt = "control", taunted = "control", stunned = "control", stun = "control",
+  immobilized = "control", immobilize = "control", snared = "control", snare = "control",
+  feared = "control", fear = "control", silenced = "control", silence = "control",
+  ["off balance"] = "control", ["off-balance"] = "control", knockback = "control", knockdown = "control",
+}
+
+local BUFF_FAMILY_WORDS = {
+  sorcery = "offense", brutality = "offense", prophecy = "offense", savagery = "offense",
+  berserk = "offense", force = "offense", slayer = "offense", courage = "offense",
+  empower = "offense", mending = "offense",
+  breach = "offense", vulnerability = "offense", fracture = "offense",
+  brittle = "offense", mangle = "offense",
+  resolve = "defense", ward = "defense", protection = "defense", aegis = "defense",
+  evasion = "defense", toughness = "defense", vitality = "defense",
+  maim = "defense", defile = "defense", cowardice = "defense", uncertainty = "defense", enervation = "defense",
+  intellect = "sustain", endurance = "sustain", fortitude = "sustain", heroism = "sustain",
+  lifesteal = "sustain", magickasteal = "sustain", timidity = "sustain",
+  expedition = "mobility", gallop = "mobility",
+  hindrance = "mobility",
+}
+
+local family_cache = {}
+
+function M.buff_family(name)
+  if type(name) ~= "string" or name == "" then return nil end
+  local hit = family_cache[name]
+  if hit ~= nil then return hit or nil end
+  local fam = false
+  local lower = name:lower()
+  local tier, word = lower:match("^(m[ai][jn]or)%s+(%a+)")
+  if tier and word then
+    fam = BUFF_FAMILY_WORDS[word] or false
+  else
+    fam = EFFECT_FAMILY_NAMES[lower] or false
+  end
+  family_cache[name] = fam
+  return fam or nil
+end
+
+function M.buff_family_color(name)
+  local fam = M.buff_family(name)
+  return fam and BUFF_FAMILY_COLORS[fam] or nil
 end
 
 function M.ability_icon(id) return GetAbilityIcon(id) or "" end
