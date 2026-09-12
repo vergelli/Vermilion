@@ -154,13 +154,16 @@ local function aggregate()
   for k = n + 1, #dom do dom[k] = nil end
   if order.n > 1 then table_sort(order, by_total_desc) end
   totals.cell_max = 0
+  totals.abs_max = 0
   for i = 1, n do
     local s = TB.at(i)
     local eos = (s.eDPS or 0) + (s.ShDPS or 0)
     for r = 1, order.n do
-      local sh = lane_share(s.targets, order[r])
+      local sh, ab = lane_share(s.targets, order[r])
       local v = sh * eos
       if v > totals.cell_max then totals.cell_max = v end
+      local w = ab * eos
+      if w > totals.abs_max then totals.abs_max = w end
     end
   end
   local top = order[1]
@@ -184,14 +187,14 @@ function M.focus()
   return focus.on_top, focus.switches, order.n, focus.samples
 end
 
-local function cell(c, canvas, x0, x1, y, row_h, level, dim)
-  local seg = c.seg:AcquireObject()
+local function cell(c, canvas, x0, x1, y, row_h, level, dim, sub)
+  local seg = (sub and c.sub or c.seg):AcquireObject()
   seg:ClearAnchors()
   seg:SetAnchor(TOPLEFT, canvas, TOPLEFT, x0, y)
   seg:SetWidth(math_max(1, x1 - x0))
   seg:SetHeight(row_h)
   seg:SetDrawLevel(4)
-  local col = Heat.lut(level)
+  local col = sub and Heat.lut2(level) or Heat.lut(level)
   local a = Heat.alpha(level)
   if dim then
     seg:SetColor(col[1] * DIM, col[2] * DIM, col[3] * DIM, 0.35 * a)
@@ -208,12 +211,20 @@ local function pressure_at(TB, k, rec)
   return sh * ((s.eDPS or 0) + (s.ShDPS or 0))
 end
 
+local function absorb_at(TB, k, rec)
+  local s = TB.at(k)
+  if not s then return 0 end
+  local _, ab = lane_share(s.targets, rec)
+  return ab * ((s.eDPS or 0) + (s.ShDPS or 0))
+end
+
 function M.attach(t) ctx = t end
 
 function M.render()
   local c = ctx
   if not c then return end
   c.seg:ReleaseAllObjects()
+  c.sub:ReleaseAllObjects()
   c.rim:ReleaseAllObjects()
   c.lbl:ReleaseAllObjects()
   c.hit_reset()
@@ -269,6 +280,9 @@ function M.render()
   local hk = hover_id
   local ns = TB.count()
   local cell_max = totals.cell_max
+  local abs_max = totals.abs_max or 0
+  local sub_h = (abs_max > 0) and math_max(2, math_floor(row_h * 0.22)) or 0
+  local main_h = row_h - ((sub_h > 0) and (sub_h + 1) or 0)
 
   for i = 1, rows do
     local rec = order[i + off]
@@ -383,13 +397,41 @@ function M.render()
       if level > 0 and run_x0 and level == run_lv and x0 <= run_x1 then
         run_x1 = x1
       else
-        if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
+        if run_x0 then cell(c, canvas, run_x0, run_x1, y, main_h, run_lv, dim) end
         if level > 0 then run_x0, run_x1, run_lv = x0, x1, level
         else run_x0 = nil end
       end
       v_prev, v_here, v_next = v_here, v_next, pressure_at(TB, k + 2, rec)
     end
-    if run_x0 then cell(c, canvas, run_x0, run_x1, y, row_h, run_lv, dim) end
+    if run_x0 then cell(c, canvas, run_x0, run_x1, y, main_h, run_lv, dim) end
+    if sub_h > 0 then
+      local ys = y + row_h - sub_h
+      local rx0, rx1, rlv = nil, nil, -1
+      local a_prev, a_here, a_next = 0, absorb_at(TB, 1, rec), absorb_at(TB, 2, rec)
+      for k = 1, ns do
+        local s = TB.at(k)
+        local level = 0
+        if a_here > 0 or a_prev > 0 or a_next > 0 then
+          local v = 0.25 * a_prev + 0.5 * a_here + 0.25 * a_next
+          if a_here <= 0 then v = v * 0.5 end
+          level = math_floor(math_sqrt(v / abs_max) * (LUT_N - 1) + 0.5)
+          if level < 1 then level = 1 end
+          if level > LUT_N - 1 then level = LUT_N - 1 end
+        end
+        local x0 = lane_x + math_floor((s.t - t0) / span * lane_w + 0.5)
+        local nxt = TB.at(k + 1)
+        local x1 = nxt and (lane_x + math_floor((nxt.t - t0) / span * lane_w + 0.5)) or (lane_x + lane_w)
+        if x1 <= x0 then x1 = x0 + 1 end
+        if level > 0 and rx0 and level == rlv and x0 <= rx1 then
+          rx1 = x1
+        else
+          if rx0 then cell(c, canvas, rx0, rx1, ys, sub_h, rlv, dim, true) end
+          if level > 0 then rx0, rx1, rlv = x0, x1, level else rx0 = nil end
+        end
+        a_prev, a_here, a_next = a_here, a_next, absorb_at(TB, k + 2, rec)
+      end
+      if rx0 then cell(c, canvas, rx0, rx1, ys, sub_h, rlv, dim, true) end
+    end
   end
 
   if c.ult_band then c.ult_band(t0, span, lane_x, lane_w, totals.t_hi) end

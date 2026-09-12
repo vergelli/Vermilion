@@ -76,7 +76,7 @@ return function(H)
   local hit = VermilionGraphHit
   local chip_h = (VermilionGraphSummaryBg._hidden == false) and (VermilionGraphSummaryBg._h + 8) or 0
   H.state.mouse_x = canvas:GetLeft() + 168 + math.floor((canvas:GetWidth() - 168) * 0.45)
-  H.state.mouse_y = canvas:GetTop() + chip_h + 6
+  H.state.mouse_y = canvas:GetTop() + chip_h + 12 + 6
   hit._onOnMouseEnter(hit)
   H.advance(200)
   ok(VermilionHoverCardName._text == "Sorc", "hovering the first lane names the enemy, got " .. tostring(VermilionHoverCardName._text))

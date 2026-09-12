@@ -34,7 +34,7 @@ local CASES = {
   "debuff_tracker",
   "debuffs_view",
   "shield_pairing",
-  "shield_layer",
+  "shield_strip",
   "ultimate_band",
   "targets_view",
   "kills",
