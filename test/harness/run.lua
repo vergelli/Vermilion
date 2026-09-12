@@ -20,6 +20,7 @@ local CASES = {
   "auto_stop",
   "manual_save",
   "library_flow",
+  "session_nav",
   "button_manners",
   "settings_panel",
   "user_profiles",
