@@ -33,9 +33,9 @@ return function(H)
     return fills, edges, seams
   end
   local fills, edges, seams = hang_fills()
-  ok(seams >= 1, "the peak columns wear a seam between the drip and the bar, got " .. seams)
+  ok(seams == 0, "no seam stitches the drips to the bars, got " .. seams)
   ok(#fills >= 1, "the absorbed damage hangs from the top of the viewport in SKILL, got " .. #fills)
-  ok(edges == #fills, "every hanging column wears its dotted lower edge")
+  ok(edges == 0, "the contour line replaces the per-column tip edges, got " .. edges)
   local canvas = VermilionGraphWindowViewportCanvas
   local chip_h = (VermilionGraphSummaryBg._hidden == false) and (VermilionGraphSummaryBg._h + 8) or 0
   for _, f in ipairs(fills) do
@@ -44,13 +44,6 @@ return function(H)
     ok(math.abs((f._r or 0) - 0.85) < 1e-6 and math.abs((f._b or 0) - 0.75) < 1e-6 and (f._a or 1) > 0.3 and (f._a or 1) < 0.6, "the hanging fill is orchid at gradient strength")
     ok(f._tex == "Vermilion/assets/drip.dds", "the hanging fill wears the drip gradient, got " .. tostring(f._tex))
   end
-  local seam_ok = false
-  for _, c in ipairs(H.controls) do
-    if c._hidden == false and (c._name or ""):find("^VermilionHangFill") and c._w == 1 then
-      seam_ok = (c._h or 0) >= 2 and (c._r or 0) > 0.95
-    end
-  end
-  ok(seam_ok, "a seam is a one-pixel warm white stitch at least two pixels tall")
   local tip_lines = 0
   for _, c in ipairs(H.controls) do
     if c._hidden == false and (c._name or ""):find("^VermilionEosLine") and c._r and math.abs(c._r - 0.92) < 1e-6 and math.abs(c._b - 0.85) < 1e-6 then tip_lines = tip_lines + 1 end
