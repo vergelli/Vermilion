@@ -15,6 +15,7 @@ M.on_stop     = NOOP
 M.set_auto    = NOOP
 M.auto_enabled = function() return false end
 M.status_line = function() return "trace disabled (DEBUG=false)" end
+M.mark        = function() return "trace disabled (DEBUG=false)" end
 
 if not Vermilion.Constants.DEBUG then return end
 
@@ -101,9 +102,20 @@ end
 
 function M.start()
   active = true
+  rec("EP", api.GetTimeStamp() or 0)
   rec_group()
   rec_bosses()
   d("[trace] capturing (" .. n .. "/" .. CAP .. " events)")
+end
+
+function M.mark(label)
+  label = label or ""
+  local ts = api.GetTimeStamp() or 0
+  local gm = GetGameTimeMilliseconds()
+  rec("MK", label, ts)
+  return "mark " .. (label ~= "" and ("'" .. label .. "' ") or "")
+    .. "epoch=" .. ts .. " game_ms=" .. gm
+    .. (active and "" or " (trace idle, not recorded)")
 end
 
 function M.stop()

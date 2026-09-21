@@ -337,6 +337,13 @@ local function dock_window()
   end
 end
 
+function M.refresh_dev_button()
+  local b = VermilionSettingsPanelDevBtn
+  controls.dev_btn = b
+  b:SetText("DEV")
+  b:SetHidden(not Vermilion.Constants.DEBUG)
+end
+
 function M.toggle()
   local win    = controls.window
   local hidden = win:IsHidden()
@@ -345,6 +352,7 @@ function M.toggle()
     Scene.show_top_level(win)
     refresh_all_sliders()
     M.refresh_unknown_count()
+    M.refresh_dev_button()
     Sound.play("open")
   else
     Scene.hide_top_level(win)
@@ -800,6 +808,7 @@ function M.init()
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION)
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
+  M.refresh_dev_button()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
   controls.profile_label:SetText(GetString(VERMILION_SETTINGS_PROFILE))
   controls.profile_label:SetColor(0.75, 0.75, 0.75, 1)

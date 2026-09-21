@@ -147,6 +147,21 @@ local function on_slash(input)
       Vermilion.Diagnostics.reset()
       d("[Vm] " .. GetString(VERMILION_BUFFER_CLEARED))
       return
+    elseif cmd == "dev" then
+      Vermilion.DevTools.toggle() ; return
+    elseif cmd == "elog" then
+      local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
+      local EL = Vermilion.EncounterLog
+      if sub == "on" then EL.set_enabled(true)
+      elseif sub == "off" then EL.set_enabled(false)
+      elseif sub ~= "status" then EL.toggle() end
+      d("[Vm] " .. EL.status_line())
+      Vermilion.DevTools.refresh()
+      return
+    elseif cmd == "mark" then
+      local label = string_match(input, "^%s*%S+%s+(.-)%s*$") or ""
+      d("[Vm] " .. Vermilion.Trace.mark(label))
+      return
     end
   end
 
@@ -193,12 +208,14 @@ local function on_addon_loaded()
   Vermilion.Trace.init()
   Vermilion.Logo.init()
   Vermilion.Settings.init()
+  Vermilion.DevTools.init()
   Vermilion.Graph.init()
   Vermilion.AutoRecord.init()
   Vermilion.Assign.init()
   Vermilion.Library.init()
   Vermilion.Visibility.init()
 
+  Vermilion.slash = on_slash
   SLASH_COMMANDS[C.SLASH_COMMAND] = on_slash
 
   Log:info("loaded v" .. C.VERSION, "DEBUG=" .. tostring(C.DEBUG))

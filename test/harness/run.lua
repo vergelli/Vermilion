@@ -43,6 +43,7 @@ local CASES = {
   "self_damage",
   "assign_flyout",
   "basic_attacks",
+  "devtools",
 }
 
 local passed, failed = 0, 0

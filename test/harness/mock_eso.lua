@@ -55,7 +55,7 @@ ACTION_RESULT_CRITICAL_DAMAGE   = 2
 ACTION_RESULT_DOT_TICK_CRITICAL = 1073741826
 ACTION_RESULT_BLOCKED_DAMAGE    = 2151
 ACTION_RESULT_FALL_DAMAGE       = 2420
-ACTION_RESULT_DAMAGE_SHIELDED   = 2460
+ACTION_RESULT_DAMAGE_SHIELDED   = 2460
 ACTION_RESULT_DIED_XP           = 2262
 ACTION_RESULT_KILLING_BLOW      = 2265
 
@@ -611,6 +611,9 @@ end
 function GetTimeStamp()
   return 1755900000
 end
+function SetEncounterLogEnabled(on) H.state.elog = on and true or false end
+function IsEncounterLogEnabled() return H.state.elog == true end
+function GetEncounterLogVersion() return 15 end
 function GetLatency()
   return H.state.latency or 66
 end
