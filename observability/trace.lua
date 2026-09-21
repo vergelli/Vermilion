@@ -51,6 +51,7 @@ local CONST_NAMES = {
 local lines  = {}
 local n      = 0
 local active = false
+local capped = false
 
 local function fld(v)
   local tv = type(v)
@@ -64,7 +65,8 @@ local function rec(tag, ...)
   if not active then return end
   if n >= CAP then
     active = false
-    d("[trace] capacity reached (" .. CAP .. "), capture stopped")
+    capped = true
+    d("[trace] capacity reached (" .. CAP .. "), capture stopped; what was captured is kept and saved on stop")
     return
   end
   local parts = { tag, tostring(GetGameTimeMilliseconds()) }
@@ -100,8 +102,13 @@ local function rec_bosses()
   rec("BO", table.concat(names, "|"))
 end
 
+function M.set_cap(cap)
+  CAP = cap
+end
+
 function M.start()
   active = true
+  capped = false
   rec("EP", api.GetTimeStamp() or 0)
   rec_group()
   rec_bosses()
@@ -137,6 +144,7 @@ local function reset()
   lines  = {}
   n      = 0
   active = false
+  capped = false
 end
 
 function M.save(sv)
@@ -197,13 +205,15 @@ function M.on_record(sv)
 end
 
 function M.on_stop(sv)
-  if not (active and M.auto_enabled(sv)) then return end
+  if not M.auto_enabled(sv) then return end
+  if not (active or capped) then return end
   M.stop()
   if n > 0 then M.save(sv) end
 end
 
 function M.status_line()
-  return "trace " .. (active and "ACTIVE" or "idle") .. "  events=" .. n .. "/" .. CAP
+  return "trace " .. (active and "ACTIVE" or "idle") .. (capped and " (capped)" or "")
+    .. "  events=" .. n .. "/" .. CAP
 end
 
 function M.init()

@@ -10,6 +10,9 @@ All notable changes to Vermilion are documented here. This project follows
 - The game's own encounter log can be switched from the addon: `/vermilion elog [on|off|status]` and the matching panel row, which shows whether the engine is writing `Documents\Elder Scrolls Online\live\Logs\Encounter.log` right now.
 - Traces stamp the wall-clock epoch when they start (`EP` line) and `/vermilion mark [label]` writes a labelled `MK` line, so a trace can be aligned event by event with the encounter log recorded during the same fight.
 
+### Fixed
+- Debug traces that hit their 40 000-event capacity were thrown away when the recording stopped. The capture still stops at the cap, but what was captured is kept and saved, and the status line says it was capped.
+
 ## [1.2.1] - 2026-09-12
 
 ### Fixed
