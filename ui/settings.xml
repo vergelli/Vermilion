@@ -52,6 +52,13 @@
           <OnClicked>Vermilion.Settings.toggle()</OnClicked>
         </Button>
 
+        <Button name="$(parent)DevBtn" font="ZoFontGameSmall" hidden="true"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPRIGHT" offsetX="-96" offsetY="8"/>
+          <Dimensions x="44" y="20"/>
+          <OnClicked>Vermilion.DevTools.toggle()</OnClicked>
+        </Button>
+
         <Label name="$(parent)SecProfile" font="ZoFontGameSmall"
                horizontalAlignment="LEFT" verticalAlignment="CENTER">
           <Anchor point="TOPLEFT" offsetX="14" offsetY="46"/>

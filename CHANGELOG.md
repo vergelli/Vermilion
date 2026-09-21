@@ -3,6 +3,13 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- Developer panel (debug builds only): every diagnostic command becomes a clickable row, grouped by purpose, with the command it runs shown beside it. `/vermilion dev` opens it, as does the DEV button next to the version in Settings.
+- The game's own encounter log can be switched from the addon: `/vermilion elog [on|off|status]` and the matching panel row, which shows whether the engine is writing `Documents\Elder Scrolls Online\live\Logs\Encounter.log` right now.
+- Traces stamp the wall-clock epoch when they start (`EP` line) and `/vermilion mark [label]` writes a labelled `MK` line, so a trace can be aligned event by event with the encounter log recorded during the same fight.
+
 ## [1.2.1] - 2026-09-12
 
 ### Fixed
