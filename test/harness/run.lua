@@ -44,6 +44,7 @@ local CASES = {
   "assign_flyout",
   "basic_attacks",
   "devtools",
+  "trace_cap",
 }
 
 local passed, failed = 0, 0
