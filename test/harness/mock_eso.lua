@@ -28,8 +28,11 @@ POWERTYPE_STAMINA                = 6
 COMBAT_MECHANIC_FLAGS_ULTIMATE   = 10
 ACTION_BAR_ULTIMATE_SLOT_INDEX   = 7
 ACTION_BAR_FIRST_NORMAL_SLOT_INDEX = 2
-COMBAT_MECHANIC_FLAGS_MAGICKA    = 0
-COMBAT_MECHANIC_FLAGS_STAMINA    = 6
+COMBAT_MECHANIC_FLAGS_MAGICKA    = 1
+COMBAT_MECHANIC_FLAGS_STAMINA    = 4
+STAT_MAGICKA_REGEN_COMBAT        = 25
+STAT_STAMINA_REGEN_COMBAT        = 30
+STAT_BONUS_OPTION_APPLY_BONUS    = 1
 REGISTER_FILTER_POWER_TYPE       = 107
 NUMBER_ABBREVIATION_PRECISION_TENTHS = 1
 
@@ -64,6 +67,7 @@ ACTION_RESULT_FALL_DAMAGE       = 2420
 ACTION_RESULT_DAMAGE_SHIELDED   = 2460
 ACTION_RESULT_DIED_XP           = 2262
 ACTION_RESULT_KILLING_BLOW      = 2265
+ACTION_RESULT_POWER_ENERGIZE    = 2240
 
 EFFECT_RESULT_GAINED       = 1
 EFFECT_RESULT_FADED        = 2
@@ -559,6 +563,19 @@ function GetSlotAbilityCost(slot, mechanic, cat)
   if per_bar and cat ~= nil and per_bar[cat] then return per_bar[cat] end
   return H.state.ult_cost or 250
 end
+function GetAbilityBaseCostInfo(id)
+  local e = H.ability_costs and H.ability_costs[id]
+  if not e then return nil, nil, nil end
+  return e.base or 0, e.flags or 0, e.per_tick == true
+end
+function GetAbilityCost(id, flag)
+  local e = H.ability_costs and H.ability_costs[id]
+  if not (e and e.cost) then return 0 end
+  return e.cost[flag] or 0
+end
+function GetPlayerStat(stat)
+  return (H.state.stats and H.state.stats[stat]) or 0
+end
 DUNGEON_DIFFICULTY_NONE = 0 DUNGEON_DIFFICULTY_NORMAL = 1 DUNGEON_DIFFICULTY_VETERAN = 2
 function GetUIGlobalScale() return H.state.ui_scale or 1 end
 function GetCurrentZoneDungeonDifficulty() return H.state.difficulty or 0 end
@@ -883,6 +900,16 @@ end
 
 function H.skill_used(slot)
   return H.fire(EVENT_ACTION_SLOT_ABILITY_USED, slot)
+end
+
+function H.energize(opts)
+  opts = opts or {}
+  return H.fire(EVENT_COMBAT_EVENT,
+    ACTION_RESULT_POWER_ENERGIZE, false, opts.name or "MockRestore", 0, 0,
+    opts.source_name or "Me", opts.source_type or COMBAT_UNIT_TYPE_PLAYER,
+    "Me", opts.target_type or COMBAT_UNIT_TYPE_PLAYER,
+    opts.amount or 1000, opts.pool or COMBAT_MECHANIC_FLAGS_MAGICKA, 0, false,
+    500, 500, opts.ability_id or 701, 0)
 end
 
 function H.combat_state(in_combat)
