@@ -27,11 +27,14 @@ local STARVE    = 0.15
 local STARVE_MS = 2000
 local TICK_H    = 3
 local WINDOW_MS = 10000
+local GRAD_LO   = 0.22
 local C_DIM     = { r = 0.62, g = 0.58, b = 0.56 }
 local C_TEXT    = { r = 0.94, g = 0.88, b = 0.86 }
 local C_OUT     = { r = 0.86, g = 0.50, b = 0.44 }
 local C_MID     = { r = 1.00, g = 1.00, b = 1.00 }
-local C_REGEN   = { r = 0.76, g = 0.72, b = 0.70 }
+local C_WARN    = { r = 0.95, g = 0.80, b = 0.30 }
+local C_GOLD    = { r = 0.80, g = 0.68, b = 0.40 }
+local ICON_POOL = { "EsoUI/Art/Champion/champion_points_magicka_icon.dds", "EsoUI/Art/Champion/champion_points_stamina_icon.dds" }
 
 local PCT_TEXT = {}
 for i = 0, 100 do PCT_TEXT[i] = i .. "%" end
@@ -76,6 +79,9 @@ local function strings()
     more      = GetString(VERMILION_RESH_MORE),
     flows     = GetString(VERMILION_RES_CARD_FLOWS),
     sigma     = GetString(VERMILION_RES_CARD_SIGMA),
+    lane_lv   = GetString(VERMILION_RESH_LANE_LEVEL),
+    lane_in   = GetString(VERMILION_RESH_LANE_IN),
+    lane_out  = GetString(VERMILION_RESH_LANE_OUT),
   }
   return str
 end
@@ -178,6 +184,20 @@ local function box(c, canvas, x0, x1, y, h, col, a, lvl)
   seg:SetDrawLevel(lvl)
   seg:SetColor(col.r, col.g, col.b, a)
   seg:SetHidden(false)
+  return seg
+end
+
+local function fade(seg, col, toward_top)
+  if not (seg.SetVertexColors and VERTEX_POINTS_TOPLEFT and VERTEX_POINTS_BOTTOMLEFT) then return end
+  local pts = toward_top and (VERTEX_POINTS_TOPLEFT + VERTEX_POINTS_TOPRIGHT) or (VERTEX_POINTS_BOTTOMLEFT + VERTEX_POINTS_BOTTOMRIGHT)
+  seg:SetVertexColors(pts, col.r, col.g, col.b, GRAD_LO)
+end
+
+local function frame(c, canvas, x0, y0, x1, y1)
+  box(c, canvas, x0, x1, y0, 1, C_GOLD, 0.38, 6)
+  box(c, canvas, x0, x1, y1 - 1, 1, C_GOLD, 0.38, 6)
+  box(c, canvas, x0, x0 + 1, y0, y1 - y0, C_GOLD, 0.38, 6)
+  box(c, canvas, x1 - 1, x1, y0, y1 - y0, C_GOLD, 0.38, 6)
 end
 
 local function label(c, canvas, text, x, y, w, h, align, col, a)
@@ -206,33 +226,40 @@ local function level_of(s, p) return (p == MAG) and (s.mag or 0) or (s.sta or 0)
 local function in_of(s, p)    return (p == MAG) and (s.mag_in or 0) or (s.sta_in or 0) end
 local function out_of(s, p)   return (p == MAG) and (s.mag_out or 0) or (s.sta_out or 0) end
 
-local function draw_levels(c, canvas, TB, n, p, y_base, H, up)
+local function draw_levels(c, canvas, TB, n, p, y_base, H, up, grad)
   local col = pool_col(c, p)
   local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
-  for k = 1, n do
+  for k = 1, n + 1 do
     local s = TB.at(k)
-    local level = level_of(s, p)
-    local h = math_floor(level * H + 0.5)
-    local low = level > 0 and level < LOW
-    local x0, x1 = x_of(s.t), x_next(TB, k)
-    if x1 <= x0 then x1 = x0 + 1 end
-    if h > 0 and run_x0 and h == run_h and low == run_low and x0 <= run_x1 then
+    local h, low, x0, x1 = 0, false, 0, 0
+    if s then
+      local level = level_of(s, p)
+      h = math_floor(level * H + 0.5)
+      low = level > 0 and level < LOW
+      x0, x1 = x_of(s.t), x_next(TB, k)
+      if x1 <= x0 then x1 = x0 + 1 end
+    end
+    if s and h > 0 and run_x0 and h == run_h and low == run_low and x0 <= run_x1 then
       run_x1 = x1
     else
-      if run_x0 then box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, 0.85, 3) end
-      if h > 0 then run_x0, run_x1, run_h, run_low = x0, x1, h, low else run_x0 = nil end
+      if run_x0 then
+        local rc = run_low and c.low or col
+        local seg = box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, rc, 0.85, 3)
+        if grad then fade(seg, rc, not up) end
+      end
+      if s and h > 0 then run_x0, run_x1, run_h, run_low = x0, x1, h, low else run_x0 = nil end
     end
   end
-  if run_x0 then box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, 0.85, 3) end
 end
 
 local function draw_threshold(c, canvas, y_zero, H, up)
-  local hb = math_floor(H * STARVE + 0.5)
-  if hb < 1 then return end
-  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - hb) or y_zero, hb, c.low, 0.07, 1)
-  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - hb) or (y_zero + hb), 1, c.low, 0.35, 2)
+  local h15 = math_floor(H * STARVE + 0.5)
   local h30 = math_floor(H * LOW + 0.5)
-  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h30) or (y_zero + h30), 1, C_MID, 0.14, 2)
+  if h15 < 1 then return end
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h15) or y_zero, h15, c.low, 0.07, 1)
+  if h30 > h15 then box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h30) or (y_zero + h15), h30 - h15, C_WARN, 0.05, 1) end
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h15) or (y_zero + h15), 1, c.low, 0.35, 2)
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h30) or (y_zero + h30), 1, C_WARN, 0.30, 2)
 end
 
 local function draw_starved(c, canvas, TB, n, p, y)
@@ -275,35 +302,48 @@ local function draw_flows(c, canvas, TB, n, p, y_mid, half)
   box(c, canvas, lane.x, lane.x + lane.w, y_mid, 1, C_MID, 0.18, 4)
 end
 
-local function draw_mirrored(c, canvas, TB, n)
+local function lane_tag(c, canvas, text, y)
+  label(c, canvas, text, lane.x + 4, y, 90, 12, TEXT_ALIGN_LEFT, C_DIM, 0.75)
+end
+
+local function draw_mirrored(c, canvas, TB, n, S)
   local half = math_floor(lane.h / 2) - TICK_H - 2
   if half < 4 then return end
   lane.mid = lane.y + math_floor(lane.h / 2)
+  frame(c, canvas, lane.x, lane.y, lane.x + lane.w, lane.mid)
+  frame(c, canvas, lane.x, lane.mid, lane.x + lane.w, lane.y + lane.h)
   draw_threshold(c, canvas, lane.mid - 1, half, true)
   draw_threshold(c, canvas, lane.mid + 1, half, false)
-  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true)
-  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false)
-  box(c, canvas, lane.x, lane.x + lane.w, lane.mid, 1, C_MID, 0.18, 4)
-  draw_starved(c, canvas, TB, n, MAG, lane.y)
-  draw_starved(c, canvas, TB, n, STA, lane.y + lane.h - TICK_H)
+  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true, true)
+  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false, true)
+  draw_starved(c, canvas, TB, n, MAG, lane.y + 1)
+  draw_starved(c, canvas, TB, n, STA, lane.y + lane.h - TICK_H - 1)
+  lane_tag(c, canvas, S.pick[PICK_MAG], lane.y + TICK_H + 2)
+  lane_tag(c, canvas, S.pick[PICK_STA], lane.y + lane.h - TICK_H - 14)
 end
 
-local function draw_single(c, canvas, TB, n, p)
-  local body = lane.h - TICK_H - 2 - SEC_GAP
-  if body < 16 then return end
+local function draw_single(c, canvas, TB, n, p, S)
+  local body = lane.h - SEC_GAP
+  if body < 24 then return end
   local h_lv = math_floor(body * 0.42)
-  local y_lv = lane.y + TICK_H + 2
+  local y_lv = lane.y
   local y_fl = y_lv + h_lv + SEC_GAP
   local h_fl = lane.y + lane.h - y_fl
   lane.mid = y_fl + math_floor(h_fl / 2)
-  draw_threshold(c, canvas, y_lv + h_lv, h_lv, true)
-  draw_levels(c, canvas, TB, n, p, y_lv + h_lv, h_lv, true)
-  draw_flows(c, canvas, TB, n, p, lane.mid, math_floor(h_fl / 2) - 2)
-  draw_starved(c, canvas, TB, n, p, lane.y)
+  frame(c, canvas, lane.x, y_lv, lane.x + lane.w, y_lv + h_lv)
+  frame(c, canvas, lane.x, y_fl, lane.x + lane.w, y_fl + h_fl)
+  local H = h_lv - TICK_H - 3
+  draw_threshold(c, canvas, y_lv + h_lv - 1, H, true)
+  draw_levels(c, canvas, TB, n, p, y_lv + h_lv - 1, H, true, false)
+  draw_starved(c, canvas, TB, n, p, y_lv + 1)
+  draw_flows(c, canvas, TB, n, p, lane.mid, math_floor(h_fl / 2) - 3)
+  lane_tag(c, canvas, S.lane_lv, y_lv + TICK_H + 2)
+  lane_tag(c, canvas, S.lane_in, y_fl + 2)
+  lane_tag(c, canvas, S.lane_out, y_fl + h_fl - 14)
 end
 
 local function draw_picker(c, canvas, top, S)
-  local x = LANE_X
+  local x = LANE_X + 4
   pick_hit.y0, pick_hit.y1 = top, top + PICK_H
   for i = 1, 3 do
     local on = (pick == i)
@@ -318,10 +358,11 @@ local function draw_picker(c, canvas, top, S)
     lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, top)
     if on then lbl:SetColor(col.r, col.g, col.b, 1) else lbl:SetColor(C_DIM.r, C_DIM.g, C_DIM.b, 0.8) end
     lbl:SetHidden(false)
-    if on then box(c, canvas, x + 4, x + w - 4, top + PICK_H - 2, 1, col, 0.9, 4) end
+    if on then box(c, canvas, x + 4, x + w - 4, top + PICK_H - 3, 1, col, 0.9, 4) end
     pick_hit[i].x0, pick_hit[i].x1 = x, x + w
     x = x + w + 6
   end
+  frame(c, canvas, LANE_X, top, x - 2, top + PICK_H)
 end
 
 local function draw_time(c, canvas)
@@ -337,13 +378,14 @@ local function dress(rec, S)
   if rec.id > 0 then
     local SC = Vermilion.SkillColors
     rec.name = SC.ability_name(rec.id)
-    rec.icon = SC.ability_icon(rec.id)
+    local icon = SC.ability_icon(rec.id) or ""
+    rec.icon = (icon ~= "" and not icon:lower():find("icon_missing", 1, true)) and icon or nil
     local col = SC.group_color(SC.group_of(rec.id))
     rec.r, rec.g, rec.b = col.r, col.g, col.b
   else
     rec.name = S.recovery
     rec.icon = nil
-    rec.r, rec.g, rec.b = C_REGEN.r, C_REGEN.g, C_REGEN.b
+    rec.r, rec.g, rec.b = C_DIM.r, C_DIM.g, C_DIM.b
   end
 end
 
@@ -352,14 +394,14 @@ local function draw_section(c, canvas, x, y, sec, rows, title, S)
   local n = o.n
   local off = scroll[sec]
   local rest = n - rows - off
-  label(c, canvas, title, x, y, RIGHT_W - 60, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
-  if rest > 0 then label(c, canvas, string_format(S.more, rest), x + RIGHT_W - 70, y, 70, HDR_H, TEXT_ALIGN_RIGHT, C_DIM, 0.8) end
-  box(c, canvas, x, y + HDR_H - 2, x + RIGHT_W, 1, C_MID, 0.08, 2)
+  label(c, canvas, title, x + 4, y, RIGHT_W - 64, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
+  if rest > 0 then label(c, canvas, string_format(S.more, rest), x + RIGHT_W - 74, y, 70, HDR_H, TEXT_ALIGN_RIGHT, C_DIM, 0.8) end
+  box(c, canvas, x, y + HDR_H - 1, x + RIGHT_W, 1, C_GOLD, 0.25, 2)
   local ry = y + HDR_H + 2
-  sec_rect[sec].y0, sec_rect[sec].y1 = y, ry + rows * (ROW_H + ROW_GAP)
   local top_total = (n > 0) and o[1].total or 0
-  local x_name = x + ICON + 6
-  local name_w = RIGHT_W - ICON - 6 - VAL_W - 4
+  local x_icon = x + 4
+  local x_name = x_icon + ICON + 6
+  local name_w = RIGHT_W - 4 - ICON - 6 - VAL_W - 6
   for i = 1, rows do
     local rec = o[i + off]
     dress(rec, S)
@@ -368,38 +410,46 @@ local function draw_section(c, canvas, x, y, sec, rows, title, S)
     row_hit.y0[k], row_hit.y1[k], row_hit.rec[k], row_hit.sec[k] = ry, ry + ROW_H, rec, sec
     local dim = (hover_row ~= nil and rec ~= hover_row)
     local a = dim and 0.45 or 1
-    if rec.icon then
-      local ic = c.icon:AcquireObject()
-      ic:ClearAnchors()
-      ic:SetTexture(rec.icon)
-      ic:SetDimensions(ICON, ICON)
-      ic:SetColor(1, 1, 1, a)
-      ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, ry + math_floor((ROW_H - ICON) / 2))
-      ic:SetHidden(false)
-    end
+    local p = (rec.mag >= rec.sta) and MAG or STA
+    local ic = c.icon:AcquireObject()
+    ic:ClearAnchors()
+    ic:SetTexture(rec.icon or ICON_POOL[p])
+    ic:SetDimensions(ICON, ICON)
+    ic:SetColor(1, 1, 1, a)
+    ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x_icon, ry + math_floor((ROW_H - ICON) / 2))
+    ic:SetHidden(false)
     label(c, canvas, rec.name, x_name, ry + 1, name_w, NAME_H, TEXT_ALIGN_LEFT, C_TEXT, a)
     local by = ry + NAME_H + 3
     box(c, canvas, x_name, x_name + name_w, by, BAR_H, C_MID, dim and 0.03 or 0.06, 2)
     if top_total > 0 then
-      local bw = math_floor(name_w * rec.total / top_total + 0.5)
-      if bw < 1 then bw = 1 end
-      box(c, canvas, x_name, x_name + bw, by, BAR_H, rec, dim and 0.3 or 0.92, 3)
+      if sec == SEC_SPENT then
+        local bw = math_floor(name_w * rec.total / top_total + 0.5)
+        if bw < 1 then bw = 1 end
+        box(c, canvas, x_name, x_name + bw, by, BAR_H, rec, dim and 0.3 or 0.92, 3)
+      else
+        local wm = math_floor(name_w * rec.mag / top_total + 0.5)
+        local ws = math_floor(name_w * rec.sta / top_total + 0.5)
+        if wm > 0 then box(c, canvas, x_name, x_name + wm, by, BAR_H, c.mag, dim and 0.3 or 0.92, 3) end
+        if ws > 0 then box(c, canvas, x_name + wm, x_name + wm + ws, by, BAR_H, c.sta, dim and 0.3 or 0.92, 3) end
+      end
     end
     if rec.disp ~= rec.total then
       rec.disp = rec.total
       rec.text = c.fmt_val(rec.total)
     end
-    local vcol = (rec.mag >= rec.sta) and c.mag or c.sta
-    label(c, canvas, rec.text, x + RIGHT_W - VAL_W, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, vcol, a)
+    label(c, canvas, rec.text, x + RIGHT_W - VAL_W - 4, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, pool_col(c, p), a)
     ry = ry + ROW_H + ROW_GAP
   end
-  return ry
+  local y1 = ry + 2
+  sec_rect[sec].y0, sec_rect[sec].y1 = y, y1
+  frame(c, canvas, x, y, x + RIGHT_W, y1)
+  return y1
 end
 
 local function draw_histogram(c, canvas, cw, y, h, S)
   local x = cw - RIGHT_W
   local na, nb = order[SEC_SPENT].n, order[SEC_REC].n
-  local slots = math_floor((h - 2 * (HDR_H + 2) - SEC_GAP) / (ROW_H + ROW_GAP))
+  local slots = math_floor((h - 2 * (HDR_H + 4) - SEC_GAP) / (ROW_H + ROW_GAP))
   if slots < 0 then slots = 0 end
   local rows_a = math_ceil(slots / 2)
   if rows_a > na then rows_a = na end
@@ -414,8 +464,12 @@ local function draw_histogram(c, canvas, cw, y, h, S)
     if scroll[s] < 0 then scroll[s] = 0 end
   end
   row_hit.n = 0
-  local ry = draw_section(c, canvas, x, y, SEC_SPENT, rows_a, S.spent, S)
-  if nb > 0 then draw_section(c, canvas, x, ry + SEC_GAP, SEC_REC, rows_b, S.recovered, S) else sec_rect[SEC_REC].y0, sec_rect[SEC_REC].y1 = 0, 0 end
+  local y1 = draw_section(c, canvas, x, y, SEC_SPENT, rows_a, S.spent, S)
+  if nb > 0 then
+    draw_section(c, canvas, x, y1 + SEC_GAP, SEC_REC, rows_b, S.recovered, S)
+  else
+    sec_rect[SEC_REC].y0, sec_rect[SEC_REC].y1 = 0, 0
+  end
 end
 
 function M.attach(t)
@@ -462,14 +516,14 @@ function M.render()
   local S = strings()
   local top = (c.layout.H or 0) + 2
   draw_picker(c, canvas, top, S)
-  local y = top + PICK_H + 4
+  local y = top + PICK_H + 6
   local h = math_max(8, ch - c.time_strip - y - 2)
   lane.x, lane.w, lane.y, lane.h, lane.t0, lane.span = LANE_X, cw - RIGHT_W - LANE_X - GAP_X, y, h, t0, span
   lane.mid = y + math_floor(h / 2)
   if pick == PICK_BOTH then
-    draw_mirrored(c, canvas, TB, n)
+    draw_mirrored(c, canvas, TB, n, S)
   else
-    draw_single(c, canvas, TB, n, (pick == PICK_MAG) and MAG or STA)
+    draw_single(c, canvas, TB, n, (pick == PICK_MAG) and MAG or STA, S)
   end
   draw_time(c, canvas)
   draw_histogram(c, canvas, cw, y, h, S)
