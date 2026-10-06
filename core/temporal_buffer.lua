@@ -25,6 +25,7 @@ function M.init(capacity)
   for i = 1, capacity do
     state.data[i] = {
       t = 0, eDPS = 0, ShDPS = 0, crit = 0, noncrit = 0,
+      mag = 0, sta = 0, mag_in = 0, mag_out = 0, sta_in = 0, sta_out = 0,
       eos_groups     = { count = 0 },
       eos_abilities  = { count = 0 },
       dtype_groups   = { count = 0 },
@@ -138,6 +139,10 @@ function M.load_session(samples)
     M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
            s.eg or EMPTY_SHARES, s.ea or EMPTY_SHARES,
            s.dg or EMPTY_SHARES, s.da or EMPTY_SHARES, s.sa or EMPTY_SHARES, s.tg or EMPTY_SHARES)
+    local slot = M.at(M.count())
+    slot.mag, slot.sta = s.mag or 0, s.sta or 0
+    slot.mag_in, slot.mag_out = s.mag_in or 0, s.mag_out or 0
+    slot.sta_in, slot.sta_out = s.sta_in or 0, s.sta_out or 0
   end
   state.recording = false
   log:info("session loaded: samples=", #samples)

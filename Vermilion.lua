@@ -204,6 +204,7 @@ local function on_addon_loaded()
   Vermilion.GC.init()          -- GC pacing (ported): smooth the incremental collector
   Vermilion.Pipeline.init()
   Vermilion.Ultimate.init()
+  Vermilion.Resources.init()
   Vermilion.SessionStore.init()
   Vermilion.Trace.init()
   Vermilion.Logo.init()

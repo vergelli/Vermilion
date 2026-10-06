@@ -22,6 +22,8 @@ EVENT_UNIT_DEATH_STATE_CHANGED = 12
 EVENT_ACTIVE_WEAPON_PAIR_CHANGED = 13
 EVENT_POWER_UPDATE               = 14
 POWERTYPE_HEALTH                 = 32
+POWERTYPE_MAGICKA                = 0
+POWERTYPE_STAMINA                = 6
 COMBAT_MECHANIC_FLAGS_ULTIMATE   = 10
 ACTION_BAR_ULTIMATE_SLOT_INDEX   = 7
 REGISTER_FILTER_POWER_TYPE       = 107
@@ -567,6 +569,11 @@ function GetActiveHotbarCategory()
   return H.state.active_bar or HOTBAR_CATEGORY_PRIMARY
 end
 function GetUnitPower(tag, ptype)
+  if ptype == POWERTYPE_MAGICKA or ptype == POWERTYPE_STAMINA then
+    local p = H.state.power and H.state.power[ptype]
+    if p then return p.value, p.max, p.max end
+    return 0, 0, 0
+  end
   if ptype == COMBAT_MECHANIC_FLAGS_ULTIMATE then
     return H.state.ult_value or 0, 500, 500
   end
@@ -853,6 +860,11 @@ end
 
 function H.ult_power(value)
   return H.fire(EVENT_POWER_UPDATE, "player", 0, COMBAT_MECHANIC_FLAGS_ULTIMATE, value, 500, 500)
+end
+
+function H.res_power(ptype, value, max)
+  max = max or 30000
+  return H.fire(EVENT_POWER_UPDATE, "player", 0, ptype, value, max, max)
 end
 
 function H.ult_used()
