@@ -16,6 +16,12 @@ local DESC = {
     { name = "ShDPS",   width = 4, scale = 10 },
     { name = "crit",    width = 4, scale = 10 },
     { name = "noncrit", width = 4, scale = 10 },
+    { name = "mag",     width = 2, scale = 1000 },
+    { name = "sta",     width = 2, scale = 1000 },
+    { name = "mag_in",  width = 2 },
+    { name = "mag_out", width = 2 },
+    { name = "sta_in",  width = 2 },
+    { name = "sta_out", width = 2 },
   },
   steps = {
     { name = "b", width = 1 },

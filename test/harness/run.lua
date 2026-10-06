@@ -39,6 +39,7 @@ local CASES = {
   "shield_pairing",
   "shield_strip",
   "ultimate_band",
+  "resources",
   "targets_view",
   "kills",
   "self_damage",

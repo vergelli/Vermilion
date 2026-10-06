@@ -54,6 +54,10 @@ local VIS = {
   ult       = { PAD = 4, ROW_H = 5, GAP = 9, ICON = 14, AREA = 28 },
   ready     = { r = 1.00, g = 0.90, b = 0.30 },
   shield    = { PAD = 3, ROW_H = 6, AREA = 12, on = false, max = 0, t0 = 0, span = 0, xl = 0, bw = 1 },
+  res       = { PAD = 3, ROW_H = 7, GAP = 3, AREA = 23, on = false, t0 = 0, span = 0, xl = 0, bw = 1 },
+  mag       = { r = 0.36, g = 0.56, b = 0.96 },
+  sta       = { r = 0.46, g = 0.80, b = 0.36 },
+  low       = { r = 0.95, g = 0.42, b = 0.34 },
   corner_len = 16,
   corner_w   = 2,
   corners = {
@@ -71,12 +75,24 @@ local VIS = {
   kill_size = 14,
   kills_y = 0,
 }
+local RES = {}
 local function ult_inset()
   local U = Vermilion.Ultimate
   return (U and U.has_data()) and VIS.ult.AREA or 0
 end
+function RES.inset()
+  return VIS.res.on and VIS.res.AREA or 0
+end
 local function top_inset()
-  return ult_inset() + (VIS.shield.on and VIS.shield.AREA or 0)
+  return ult_inset() + (VIS.shield.on and VIS.shield.AREA or 0) + RES.inset()
+end
+function RES.present()
+  local TB = Vermilion.TemporalBuffer
+  for i = 1, TB.count() do
+    local s = TB.at(i)
+    if (s.mag or 0) > 0 or (s.sta or 0) > 0 then return true end
+  end
+  return false
 end
 local C_GRID_LINE = { r = 0.55, g = 0.58, b = 0.70, a = 0.25 }
 local C_GRID_LBL  = { r = 0.82, g = 0.85, b = 0.90, a = 0.92 }
@@ -414,6 +430,8 @@ local function release_all_pools()
     controls.pool_ult:ReleaseAllObjects()
     controls.pool_ult_icon:ReleaseAllObjects()
     controls.pool_kill:ReleaseAllObjects()
+    controls.pool_res:ReleaseAllObjects()
+    controls.pool_res_lbl:ReleaseAllObjects()
   end
   if controls.pool_c_seg then
     controls.pool_c_seg:ReleaseAllObjects()
@@ -1189,6 +1207,19 @@ local function show_report_card()
       or tostring(us.casts)
     add_row(GetString(VERMILION_REPORT_ULT_CASTS), casts, C_CARD_STAT)
   end
+  local rs = Vermilion.Resources and Vermilion.Resources.summary(Vermilion.TemporalBuffer)
+  if rs and rs.has then
+    if rs.mag_out > 0 then
+      add_row(GetString(VERMILION_RES_MAGICKA),
+        string_format(GetString(VERMILION_REPORT_RES_SUSTAIN), rs.mag_sigma, math_floor(rs.mag_low_pct * 100 + 0.5)),
+        (rs.mag_sigma < 0.8 or rs.mag_low_pct > 0.15) and C_CRIT_BELOW or C_CARD_STAT)
+    end
+    if rs.sta_out > 0 then
+      add_row(GetString(VERMILION_RES_STAMINA),
+        string_format(GetString(VERMILION_REPORT_RES_SUSTAIN), rs.sta_sigma, math_floor(rs.sta_low_pct * 100 + 0.5)),
+        (rs.sta_sigma < 0.8 or rs.sta_low_pct > 0.15) and C_CRIT_BELOW or C_CARD_STAT)
+    end
+  end
   if sm.dom_type ~= nil and DamageTypeColors then
     local dc = DamageTypeColors.lookup(sm.dom_type)
     add_row(GetString(VERMILION_REPORT_MAIN_TYPE),
@@ -1294,6 +1325,37 @@ local function hover_poll()
           (hit.t0 and (t - hit.t0)) or 0, mx, my)
         return
       end
+    end
+  end
+
+  if VIS.res.on and VIS.res.span > 0 and VIS.res.bw > 0
+     and Vermilion.TemporalBuffer.count() > 0
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS then
+    local R = VIS.res
+    local rel_x = mx - canvas:GetLeft()
+    local rel_y = my - canvas:GetTop() - RES.y0()
+    if rel_x >= 0 and rel_x <= canvas:GetWidth() and rel_y >= 0 and rel_y < R.AREA then
+      local p = (rel_y < R.PAD + R.ROW_H + R.GAP / 2) and 1 or 2
+      local t = R.t0 + (rel_x - R.xl) / R.bw * R.span
+      local TB = Vermilion.TemporalBuffer
+      local lo, hi = 1, TB.count()
+      while lo < hi do
+        local mid = math_floor((lo + hi + 1) / 2)
+        if TB.at(mid).t <= t then lo = mid else hi = mid - 1 end
+      end
+      local s = TB.at(lo)
+      local level = (p == 1) and (s.mag or 0) or (s.sta or 0)
+      local gin = (p == 1) and (s.mag_in or 0) or (s.sta_in or 0)
+      local gout = (p == 1) and (s.mag_out or 0) or (s.sta_out or 0)
+      local sigma = Vermilion.Resources.window_sigma(TB, lo, 10, p)
+      local name = (p == 1) and GetString(VERMILION_RES_MAGICKA) or GetString(VERMILION_RES_STAMINA)
+      local col = (level > 0 and level < 0.30) and VIS.low or ((p == 1) and VIS.mag or VIS.sta)
+      local stat = string_format(GetString(VERMILION_RES_CARD_FLOWS), fmt_val(gin), fmt_val(gout))
+      if sigma then stat = stat .. string_format(GetString(VERMILION_RES_CARD_SIGMA), sigma) end
+      if hover_key ~= nil then hover_key = nil; render_current_view() end
+      show_moment_card(col, string_format("%s  %d%%", name, math_floor(level * 100 + 0.5)), stat,
+        (hit.t0 and (s.t - hit.t0)) or 0, mx, my)
+      return
     end
   end
 
@@ -1545,6 +1607,9 @@ local function shield_cell(x0, x1, y, level)
   seg:SetHidden(false)
 end
 
+function RES.y0()
+  return CHIP.H + ult_inset() + (VIS.shield.on and VIS.shield.AREA or 0)
+end
 local function draw_shield_band_at(t0, span, x_left, bw)
   local pool = controls.pool_shield
   pool:ReleaseAllObjects()
@@ -1736,9 +1801,76 @@ local function draw_kills(span_ms, n)
   draw_kills_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, CHIP.H + top_inset() + 2)
 end
 
+function RES.cell(x0, x1, y_bottom, level, c)
+  if x1 <= x0 then return end
+  local h = math_floor(level * VIS.res.ROW_H + 0.5)
+  if h < 1 then h = 1 end
+  local seg = controls.pool_res:AcquireObject()
+  seg:ClearAnchors()
+  seg:SetDrawLevel(6)
+  seg:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x0, y_bottom - h)
+  seg:SetWidth(x1 - x0)
+  seg:SetHeight(h)
+  seg:SetColor(c.r, c.g, c.b, 0.92)
+  seg:SetHidden(false)
+end
+
+function RES.row(p, y, t0, span, x_left, bw, key, c, letter)
+  local TB = Vermilion.TemporalBuffer
+  local n = TB.count()
+  local track = controls.pool_res:AcquireObject()
+  track:ClearAnchors()
+  track:SetDrawLevel(3)
+  track:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x_left, y)
+  track:SetWidth(bw)
+  track:SetHeight(VIS.res.ROW_H)
+  track:SetColor(c.r, c.g, c.b, 0.10)
+  track:SetHidden(false)
+  local lbl = controls.pool_res_lbl:AcquireObject()
+  lbl:ClearAnchors()
+  lbl:SetText(letter)
+  lbl:SetColor(c.r, c.g, c.b, 0.95)
+  lbl:SetDimensions(VIS.ult.ICON, VIS.res.ROW_H + 6)
+  lbl:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, 0, y - 3)
+  lbl:SetHidden(false)
+  local y_bottom = y + VIS.res.ROW_H
+  local low = Vermilion.Resources.low()
+  local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
+  for k = 1, n do
+    local s = TB.at(k)
+    local level = s[key] or 0
+    local x0 = x_left + math_floor((s.t - t0) / span * bw + 0.5)
+    local nxt = TB.at(k + 1)
+    local x1 = nxt and (x_left + math_floor((nxt.t - t0) / span * bw + 0.5)) or (x_left + bw)
+    if x1 <= x0 then x1 = x0 + 1 end
+    local h = math_floor(level * VIS.res.ROW_H + 0.5)
+    local is_low = level > 0 and level < 0.30
+    if level > 0 and run_x0 and h == run_h and is_low == run_low and x0 <= run_x1 then
+      run_x1 = x1
+    else
+      if run_x0 then RES.cell(run_x0, run_x1, y_bottom, run_h / VIS.res.ROW_H, run_low and VIS.low or c) end
+      if level > 0 then run_x0, run_x1, run_h, run_low = x0, x1, h, is_low else run_x0 = nil end
+    end
+  end
+  if run_x0 then RES.cell(run_x0, run_x1, y_bottom, run_h / VIS.res.ROW_H, run_low and VIS.low or c) end
+end
+
+function RES.band(t0, span, x_left, bw)
+  controls.pool_res:ReleaseAllObjects()
+  controls.pool_res_lbl:ReleaseAllObjects()
+  local R = VIS.res
+  if not R.on or span <= 0 or bw <= 0 then return end
+  if Vermilion.TemporalBuffer.count() == 0 then return end
+  R.t0, R.span, R.xl, R.bw = t0, span, x_left, bw
+  local y = RES.y0() + R.PAD
+  RES.row(1, y, t0, span, x_left, bw, "mag", VIS.mag, "M")
+  RES.row(2, y + R.ROW_H + R.GAP, t0, span, x_left, bw, "sta", VIS.sta, "S")
+end
+
 local function draw_bands_at(t0, span, x_left, bw, t_last)
   draw_ult_band_at(t0, span, x_left, bw, t_last)
   draw_shield_band_at(t0, span, x_left, bw)
+  RES.band(t0, span, x_left, bw)
 end
 
 local function draw_ult_band(span_ms, n)
@@ -1747,6 +1879,8 @@ local function draw_ult_band(span_ms, n)
     controls.pool_ult_icon:ReleaseAllObjects()
     controls.pool_shield:ReleaseAllObjects()
     controls.pool_shield_icon:ReleaseAllObjects()
+    controls.pool_res:ReleaseAllObjects()
+    controls.pool_res_lbl:ReleaseAllObjects()
     return
   end
   local t_last = Vermilion.TemporalBuffer.at(n).t
@@ -2088,21 +2222,21 @@ function M.on_shown()
   fade_in(f)
 end
 
-local REC_PULSE = "VermilionRecPulse"
+local REC = { PULSE = "VermilionRecPulse" }
 
-local function rec_pulse_stop()
-  zev.unregister_update(REC_PULSE)
+function REC.pulse_stop()
+  zev.unregister_update(REC.PULSE)
   if controls.btn_record then controls.btn_record:SetAlpha(1) end
 end
 
-local function rec_pulse_start()
+function REC.pulse_start()
   if controls.rec_pulsing then return end
   controls.rec_pulsing = true
   controls.rec_pulse_t = 0
-  zev.register_update(REC_PULSE, 50, function()
+  zev.register_update(REC.PULSE, 50, function()
     if not Vermilion.TemporalBuffer.is_recording() or controls.window:IsHidden() then
       controls.rec_pulsing = false
-      rec_pulse_stop()
+      REC.pulse_stop()
       return
     end
     local t = controls.rec_pulse_t + 50
@@ -2111,7 +2245,7 @@ local function rec_pulse_start()
   end)
 end
 
-local function rec_mode_tag(mode)
+function REC.mode_tag(mode)
   if mode == "boss" then return GetString(VERMILION_REC_TAG_BOSS) end
   if mode == "combat" then return GetString(VERMILION_REC_TAG_COMBAT) end
   return GetString(VERMILION_REC_TAG_MANUAL)
@@ -2131,7 +2265,7 @@ function M.refresh_record_button()
   end
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. word)
   if controls.rec_mode then
-    local tag = rec_mode_tag(mode)
+    local tag = REC.mode_tag(mode)
     local extra = ""
     if Vermilion.AutoRecord.get_auto_stop() then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
     local sv = Vermilion.SavedVars
@@ -2139,10 +2273,10 @@ function M.refresh_record_button()
     controls.rec_mode:SetText(tag .. extra)
   end
   if recording and not controls.window:IsHidden() then
-    rec_pulse_start()
+    REC.pulse_start()
   elseif not recording then
     controls.rec_pulsing = false
-    rec_pulse_stop()
+    REC.pulse_stop()
   end
 end
 
@@ -2244,6 +2378,8 @@ local function on_sample_update()
                                 sample_eos_scratch, sample_eos_abilities,
                                 sample_dtype_groups, sample_dtype_abilities,
                                 VIS.sample_shields, VIS.sample_targets)
+  Vermilion.Resources.sample_into(Vermilion.TemporalBuffer.at(Vermilion.TemporalBuffer.count()))
+  if not VIS.res.on and Vermilion.Resources.saw() then VIS.res.on = true end
   Vermilion.DebuffTracker.expire_stale(now)
 
   update_header(edps + shdps)
@@ -2287,6 +2423,8 @@ function M.on_record_click()
   recording_start_ms = GetGameTimeMilliseconds()
   Vermilion.DebuffTracker.start_session(recording_start_ms)
   Vermilion.Ultimate.start_session(recording_start_ms)
+  Vermilion.Resources.start_session()
+  VIS.res.on = false
   Vermilion.Kills.start_session()
   local sv       = Vermilion.SavedVars
   local interval = (sv and sv.temporal and sv.temporal.sample_rate_ms)
@@ -2312,6 +2450,7 @@ function M.on_stop_click()
   zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
   Vermilion.DebuffTracker.finalize(GetGameTimeMilliseconds())
   Vermilion.Ultimate.finalize(GetGameTimeMilliseconds())
+  Vermilion.Resources.finalize()
   Vermilion.Kills.finalize()
   Vermilion.SessionStore.on_session_stop()
   summary_text = build_summary_text()
@@ -2337,6 +2476,8 @@ function M.on_flush_click()
   Vermilion.TemporalBuffer.clear()
   Vermilion.DebuffTracker.reset()
   Vermilion.Ultimate.reset()
+  Vermilion.Resources.reset()
+  VIS.res.on = false
   Vermilion.Kills.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
@@ -2585,8 +2726,8 @@ function M.record_help()
   end
 end
 
-local function menu_mark(on) return on and "● " or "○ " end
-local function menu_check(on) return on and "☑ " or "☐ " end
+function REC.mark(on) return on and "● " or "○ " end
+function REC.check(on) return on and "☑ " or "☐ " end
 
 function M.on_record_menu_click()
   if type(ClearMenu) ~= "function" or type(AddMenuItem) ~= "function" or type(ShowMenu) ~= "function" then return end
@@ -2597,12 +2738,12 @@ function M.on_record_menu_click()
   ClearMenu()
   AddMenuItem(recording and GetString(VERMILION_RECMENU_STOP) or GetString(VERMILION_RECMENU_NOW), function() M.toggle_record() end)
   AddMenuItem(GetString(VERMILION_RECMENU_AUTO_HDR), nil, MENU_ADD_OPTION_LABEL)
-  AddMenuItem(menu_mark(mode == "boss") .. GetString(VERMILION_RECMENU_BOSS), function() M.set_record_mode("boss") end)
-  AddMenuItem(menu_mark(mode == "combat") .. GetString(VERMILION_RECMENU_COMBAT), function() M.set_record_mode("combat") end)
-  AddMenuItem(menu_mark(mode == "off") .. GetString(VERMILION_RECMENU_MANUAL), function() M.set_record_mode("off") end)
+  AddMenuItem(REC.mark(mode == "boss") .. GetString(VERMILION_RECMENU_BOSS), function() M.set_record_mode("boss") end)
+  AddMenuItem(REC.mark(mode == "combat") .. GetString(VERMILION_RECMENU_COMBAT), function() M.set_record_mode("combat") end)
+  AddMenuItem(REC.mark(mode == "off") .. GetString(VERMILION_RECMENU_MANUAL), function() M.set_record_mode("off") end)
   AddMenuItem(GetString(VERMILION_RECMENU_STOPS_HDR), nil, MENU_ADD_OPTION_LABEL)
-  AddMenuItem(menu_check(Vermilion.AutoRecord.get_auto_stop()) .. GetString(VERMILION_RECMENU_AUTOSTOP), function() M.toggle_auto_stop() end)
-  AddMenuItem(menu_check(autosave) .. GetString(VERMILION_RECMENU_AUTOSAVE), function() M.toggle_autosave() end)
+  AddMenuItem(REC.check(Vermilion.AutoRecord.get_auto_stop()) .. GetString(VERMILION_RECMENU_AUTOSTOP), function() M.toggle_auto_stop() end)
+  AddMenuItem(REC.check(autosave) .. GetString(VERMILION_RECMENU_AUTOSAVE), function() M.toggle_autosave() end)
   AddMenuItem(GetString(VERMILION_RECMENU_HELP), function() M.record_help() end)
   ShowMenu(controls.btn_record_menu)
 end
@@ -2692,6 +2833,7 @@ function M.load_session(sess)
   release_all_pools()
   hide_grid(controls.grid)
   Vermilion.TemporalBuffer.load_session(series)
+  VIS.res.on = RES.present()
   local steps = (sess.streams.steps and sess.desc.steps) and vsf.unpack(sess.streams.steps, sess.desc.steps) or nil
   Vermilion.DebuffTracker.load_session(sess.debuffs or {}, steps or {}, 0, sess.head.dur_ms or 0)
   if sess.streams.ult and sess.desc.ult then
@@ -2831,6 +2973,14 @@ function M.init()
     function(c) c:SetDrawLevel(5) end,
     function(c) c:SetHidden(true) end)
   controls.pool_ult          = make_fill_pool("VermilionGraphUlt")
+  controls.pool_res          = make_fill_pool("VermilionGraphRes")
+  controls.pool_res_lbl      = Pool.new("VermilionGraphResLbl", controls.canvas, CT_LABEL,
+    function(c)
+      c:SetFont("ZoFontGameSmall")
+      c:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
+      c:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+    end,
+    function(c) c:SetHidden(true) end)
   controls.pool_ult_icon     = Pool.new("VermilionGraphUltIcon", controls.canvas, CT_TEXTURE,
     function(c)
       if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
