@@ -20,15 +20,15 @@ return function(H)
 
   local seen = {}
   local start = label._text
-  for _ = 1, 6 do
+  for _ = 1, 7 do
     seen[label._text] = true
     G.next_view()
   end
-  ok(label._text == start, "six steps forward come back to the first view")
+  ok(label._text == start, "seven steps forward come back to the first view")
   local n = 0
   for _ in pairs(seen) do n = n + 1 end
-  ok(n == 6, "six distinct views cycle, got " .. n)
-  ok(seen["SKILL"] and seen["TYPE"] and seen["PRESSURE"] and seen["CRIT"] and seen["CONTRIB"] and seen["DEBUFFS"], "the views are SKILL, TYPE, TARGETS, CRIT, CONTRIB and DEBUFFS")
+  ok(n == 7, "seven distinct views cycle, got " .. n)
+  ok(seen["SKILL"] and seen["TYPE"] and seen["PRESSURE"] and seen["CRIT"] and seen["CONTRIB"] and seen["DEBUFFS"] and seen["RESOURCES"], "the views are SKILL, TYPE, PRESSURE, CRIT, CONTRIB, DEBUFFS and RESOURCES")
 
   G.prev_view()
   local back = label._text
