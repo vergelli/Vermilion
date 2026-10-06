@@ -2255,23 +2255,17 @@ function M.refresh_record_button()
   if not controls.btn_record then return end
   local recording = Vermilion.TemporalBuffer.is_recording()
   local mode = Vermilion.AutoRecord.get_mode()
-  local word
-  if recording then
-    word = GetString(VERMILION_REC_RECORDING)
-  elseif mode ~= "off" then
-    word = GetString(VERMILION_REC_ARMED)
-  else
-    word = GetString(VERMILION_GRAPH_RECORD)
-  end
+  local word = recording and GetString(VERMILION_REC_RECORDING) or GetString(VERMILION_GRAPH_RECORD)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. word)
   if controls.rec_mode then
     local tag = REC.mode_tag(mode)
     local extra = ""
-    if Vermilion.AutoRecord.get_auto_stop() then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
+    if mode ~= "off" or Vermilion.AutoRecord.get_auto_stop() then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
     local sv = Vermilion.SavedVars
     if sv and sv.settings and sv.settings.session_autosave then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSAVE) end
     controls.rec_mode:SetText(tag .. extra)
   end
+  REC.refresh_panel()
   if recording and not controls.window:IsHidden() then
     REC.pulse_start()
   elseif not recording then
@@ -2495,6 +2489,7 @@ end
 
 function M.on_close_click()
   Sound.play("close")
+  M.record_panel_close()
   light.exit()
   Vermilion.Visibility.set("graph", false)
   stop_hover_poll(); hide_hover_ui(); hover_key = nil
@@ -2717,35 +2712,128 @@ function M.toggle_autosave()
   return now
 end
 
-function M.record_help()
-  if type(InitializeTooltip) ~= "function" or type(SetTooltipText) ~= "function" or not InformationTooltip then return end
-  InitializeTooltip(InformationTooltip, controls.btn_record, TOP, 0, 6, BOTTOM)
-  SetTooltipText(InformationTooltip, GetString(VERMILION_RECMENU_HELP_TEXT))
-  if type(zo_callLater) == "function" then
-    zo_callLater(function() if type(ClearTooltip) == "function" then ClearTooltip(InformationTooltip) end end, 8000)
+REC.T = { on = "EsoUI/Art/Buttons/RadioButtonDown.dds", off = "EsoUI/Art/Buttons/RadioButtonUp.dds", hot = "EsoUI/Art/Buttons/RadioButtonUpHighlight.dds",
+          on_dis = "EsoUI/Art/Buttons/RadioButtonDisabledDown.dds", off_dis = "EsoUI/Art/Buttons/RadioButtonDisabledUp.dds" }
+
+function REC.radio(parent, x, y, w, text, on_click)
+  local WM = WINDOW_MANAGER
+  local r = {}
+  r.hit = WM:CreateControl(nil, parent, CT_CONTROL)
+  r.hit:SetAnchor(TOPLEFT, parent, TOPLEFT, x, y)
+  r.hit:SetDimensions(w, 20)
+  r.hit:SetMouseEnabled(true)
+  r.dot = WM:CreateControl(nil, r.hit, CT_TEXTURE)
+  r.dot:SetDimensions(16, 16)
+  r.dot:SetAnchor(LEFT, r.hit, LEFT, 0, 0)
+  r.dot:SetTexture(REC.T.off)
+  r.label = WM:CreateControl(nil, r.hit, CT_LABEL)
+  r.label:SetFont("ZoFontGameSmall")
+  r.label:SetAnchor(LEFT, r.hit, LEFT, 20, 0)
+  r.label:SetDimensions(w - 20, 20)
+  r.label:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  r.label:SetText(text)
+  r.on, r.enabled = false, true
+  r.hit:SetHandler("OnMouseUp", function(_, _, upInside)
+    if upInside and r.enabled then on_click() end
+  end)
+  r.hit:SetHandler("OnMouseEnter", function()
+    if r.enabled and not r.on then r.dot:SetTexture(REC.T.hot) end
+  end)
+  r.hit:SetHandler("OnMouseExit", function() REC.paint(r) end)
+  return r
+end
+
+function REC.paint(r)
+  if r.enabled then
+    r.dot:SetTexture(r.on and REC.T.on or REC.T.off)
+    r.label:SetColor(r.on and 0.95 or 0.72, r.on and 0.95 or 0.72, r.on and 0.95 or 0.72, 1)
+  else
+    r.dot:SetTexture(r.on and REC.T.on_dis or REC.T.off_dis)
+    r.label:SetColor(0.45, 0.45, 0.45, 1)
   end
 end
 
-function REC.mark(on) return on and "● " or "○ " end
-function REC.check(on) return on and "☑ " or "☐ " end
+function REC.header(parent, y, text)
+  local l = WINDOW_MANAGER:CreateControl(nil, parent, CT_LABEL)
+  l:SetFont("ZoFontGameSmall")
+  l:SetAnchor(TOPLEFT, parent, TOPLEFT, 12, y)
+  l:SetDimensions(54, 20)
+  l:SetVerticalAlignment(TEXT_ALIGN_CENTER)
+  l:SetColor(0.95, 0.42, 0.34, 0.9)
+  l:SetText(text)
+  return l
+end
 
-function M.on_record_menu_click()
-  if type(ClearMenu) ~= "function" or type(AddMenuItem) ~= "function" or type(ShowMenu) ~= "function" then return end
-  local recording = Vermilion.TemporalBuffer.is_recording()
+function REC.build_panel()
+  local panel = controls.rec_panel
+  if not panel or controls.rec_rows then return end
+  if panel.SetDrawTier then panel:SetDrawTier(DT_HIGH) end
+  if panel.SetDrawLayer and DL_OVERLAY then panel:SetDrawLayer(DL_OVERLAY) end
+  local R = {}
+  controls.rec_rows = R
+  local x0, cw = 70, 86
+  REC.header(panel, 12, GetString(VERMILION_RECPANEL_START))
+  R.start_off   = REC.radio(panel, x0,          12, cw, GetString(VERMILION_RECPANEL_BY_HAND),   function() M.set_record_mode("off") end)
+  R.start_any   = REC.radio(panel, x0 + cw,     12, cw, GetString(VERMILION_RECPANEL_ANY_FIGHT), function() M.set_record_mode("combat") end)
+  R.start_boss  = REC.radio(panel, x0 + 2 * cw, 12, cw, GetString(VERMILION_RECPANEL_BOSS),      function() M.set_record_mode("boss") end)
+  REC.header(panel, 40, GetString(VERMILION_RECPANEL_STOP))
+  R.stop_hand   = REC.radio(panel, x0,          40, cw,     GetString(VERMILION_RECPANEL_BY_HAND),   function() if Vermilion.AutoRecord.get_auto_stop() then M.toggle_auto_stop() end end)
+  R.stop_fight  = REC.radio(panel, x0 + cw,     40, 2 * cw, GetString(VERMILION_RECPANEL_FIGHT_END), function() if not Vermilion.AutoRecord.get_auto_stop() then M.toggle_auto_stop() end end)
+  REC.header(panel, 68, GetString(VERMILION_RECPANEL_SAVE))
+  R.save_hand   = REC.radio(panel, x0,          68, cw,     GetString(VERMILION_RECPANEL_BY_HAND),   function() local sv = Vermilion.SavedVars if sv.settings and sv.settings.session_autosave then M.toggle_autosave() end end)
+  R.save_auto   = REC.radio(panel, x0 + cw,     68, 2 * cw, GetString(VERMILION_RECPANEL_ON_STOP),   function() local sv = Vermilion.SavedVars if not (sv.settings and sv.settings.session_autosave) then M.toggle_autosave() end end)
+  R.summary = WINDOW_MANAGER:CreateControl(nil, panel, CT_LABEL)
+  R.summary:SetFont("ZoFontGameSmall")
+  R.summary:SetAnchor(TOPLEFT, panel, TOPLEFT, 12, 100)
+  R.summary:SetDimensions(320, 40)
+  R.summary:SetVerticalAlignment(TEXT_ALIGN_TOP)
+  R.summary:SetColor(0.72, 0.72, 0.72, 1)
+  if R.summary.SetWrapMode and TEXT_WRAP_MODE_ELLIPSIS then R.summary:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS) end
+end
+
+function REC.summary_text(mode, auto_stop, autosave)
+  local starts = (mode == "boss") and GetString(VERMILION_RECSUM_START_BOSS)
+              or (mode == "combat") and GetString(VERMILION_RECSUM_START_ANY)
+              or GetString(VERMILION_RECSUM_START_HAND)
+  local stops = (mode ~= "off" or auto_stop) and GetString(VERMILION_RECSUM_STOP_FIGHT) or GetString(VERMILION_RECSUM_STOP_HAND)
+  local saves = autosave and GetString(VERMILION_RECSUM_SAVE_AUTO) or GetString(VERMILION_RECSUM_SAVE_HAND)
+  return string_format(GetString(VERMILION_RECSUM_FORMAT), starts, stops, saves)
+end
+
+function REC.refresh_panel()
+  local R = controls.rec_rows
+  if not R then return end
   local mode = Vermilion.AutoRecord.get_mode()
+  local auto_stop = Vermilion.AutoRecord.get_auto_stop()
   local sv = Vermilion.SavedVars
   local autosave = sv and sv.settings and sv.settings.session_autosave == true
-  ClearMenu()
-  AddMenuItem(recording and GetString(VERMILION_RECMENU_STOP) or GetString(VERMILION_RECMENU_NOW), function() M.toggle_record() end)
-  AddMenuItem(GetString(VERMILION_RECMENU_AUTO_HDR), nil, MENU_ADD_OPTION_LABEL)
-  AddMenuItem(REC.mark(mode == "boss") .. GetString(VERMILION_RECMENU_BOSS), function() M.set_record_mode("boss") end)
-  AddMenuItem(REC.mark(mode == "combat") .. GetString(VERMILION_RECMENU_COMBAT), function() M.set_record_mode("combat") end)
-  AddMenuItem(REC.mark(mode == "off") .. GetString(VERMILION_RECMENU_MANUAL), function() M.set_record_mode("off") end)
-  AddMenuItem(GetString(VERMILION_RECMENU_STOPS_HDR), nil, MENU_ADD_OPTION_LABEL)
-  AddMenuItem(REC.check(Vermilion.AutoRecord.get_auto_stop()) .. GetString(VERMILION_RECMENU_AUTOSTOP), function() M.toggle_auto_stop() end)
-  AddMenuItem(REC.check(autosave) .. GetString(VERMILION_RECMENU_AUTOSAVE), function() M.toggle_autosave() end)
-  AddMenuItem(GetString(VERMILION_RECMENU_HELP), function() M.record_help() end)
-  ShowMenu(controls.btn_record_menu)
+  R.start_off.on, R.start_any.on, R.start_boss.on = (mode == "off"), (mode == "combat"), (mode == "boss")
+  local manual_start = (mode == "off")
+  R.stop_hand.enabled, R.stop_fight.enabled = manual_start, manual_start
+  R.stop_hand.on  = manual_start and not auto_stop
+  R.stop_fight.on = (not manual_start) or auto_stop
+  R.save_hand.on, R.save_auto.on = not autosave, autosave
+  for _, key in ipairs({ "start_off", "start_any", "start_boss", "stop_hand", "stop_fight", "save_hand", "save_auto" }) do REC.paint(R[key]) end
+  R.summary:SetText(REC.summary_text(mode, auto_stop, autosave))
+end
+
+function M.record_panel_open() return controls.rec_panel ~= nil and not controls.rec_panel:IsHidden() end
+
+function M.on_record_menu_click()
+  if not controls.rec_panel then return end
+  if M.record_panel_open() then
+    controls.rec_panel:SetHidden(true)
+    Sound.play("close")
+    return
+  end
+  REC.build_panel()
+  REC.refresh_panel()
+  controls.rec_panel:SetHidden(false)
+  Sound.play("page")
+end
+
+function M.record_panel_close()
+  if controls.rec_panel and not controls.rec_panel:IsHidden() then controls.rec_panel:SetHidden(true) end
 end
 
 function M.toggle_record()
@@ -2916,6 +3004,7 @@ function M.init()
   controls.btn_record    = VermilionGraphWindowRecordBtn
   controls.btn_record_menu = VermilionGraphWindowRecordMenuBtn
   controls.rec_mode      = VermilionGraphWindowRecModeLabel
+  controls.rec_panel     = VermilionGraphWindowRecPanel
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
   controls.btn_lib       = VermilionGraphWindowLibBtn
@@ -3045,7 +3134,7 @@ function M.init()
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
-  controls.btn_record_menu:SetText("▾")
+  controls.btn_record_menu:SetText("|t12:12:EsoUI/Art/Buttons/large_downArrow_up.dds|t")
   controls.rec_mode:SetColor(0.62, 0.62, 0.62, 1)
   controls.btn_stop:SetText("|t9:9:Vermilion/assets/stop.dds|t " .. GetString(VERMILION_GRAPH_STOP))
   controls.btn_flush:SetText(GetString(VERMILION_GRAPH_FLUSH))
