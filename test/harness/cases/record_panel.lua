@@ -12,9 +12,17 @@ return function(H)
   sv.settings.session_autosave = false
   G.refresh_record_button()
 
-  local btn, caret, tag, panel = VermilionGraphWindowRecordBtn, VermilionGraphWindowRecordMenuBtn, VermilionGraphWindowRecModeLabel, VermilionGraphWindowRecPanel
+  local btn, caret, tag, panel = VermilionGraphWindowRecordBtn, VermilionGraphWindowRecordMenuBtn, VermilionGraphWindowRecModeLabel, VermilionRecPanel
   ok(btn and caret and tag and panel, "the record button has a main half, an arrow and a panel")
-  ok(caret._text:find("large_downArrow_up.dds", 1, true), "the arrow is the game's own down arrow texture, got " .. tostring(caret._text))
+  ok(caret._text:find("|t16:16:EsoUI/Art/Buttons/large_downArrow_up.dds|t", 1, true), "the arrow is the game's own down arrow texture at 16 px, got " .. tostring(caret._text))
+  ok(not caret._onOnMouseEnter, "the arrow carries no tooltip")
+  ok(H.xml_tags["VermilionRecPanel"] == "TopLevelControl", "the panel is its own top level control so it sits above the canvas and takes the mouse, got " .. tostring(H.xml_tags["VermilionRecPanel"]))
+  ok(rawget(_G, "VermilionGraphWindowRecPanel") == nil, "no panel is left inside the graph window")
+  local xml = assert(io.open("ui/graph.xml", "r")):read("*a")
+  ok(xml:find('name="VermilionRecPanel"[^>]*tier="HIGH"') ~= nil, "the panel is declared on the high tier")
+  ok(xml:find('RecModeLabel.-relativeTo="%$%(parent%)StatusLabel"') ~= nil, "the mode tag hangs off the status label, away from the view tabs")
+  local a = panel._anchor_list and panel._anchor_list[1]
+  ok(a and a.relTo == caret and a.point == TOPLEFT and a.relPoint == BOTTOMLEFT, "the panel hangs under the arrow")
   ok(not btn._text:find("Armed", 1, true) and btn._text:find("Record", 1, true), "the main half reads Record, never Armed")
   ok(panel:IsHidden(), "the panel starts closed")
 
@@ -27,11 +35,11 @@ return function(H)
   ok(#rows == 7, "seven radio dots: three starts, two stops, two saves, got " .. #rows)
   local function dots(frag) local n = 0 for _, d in ipairs(rows) do if d._tex:find(frag, 1, true) then n = n + 1 end end return n end
   ok(dots("RadioButtonDown.dds") == 3 and dots("RadioButtonUp.dds") >= 2, "one choice is lit per row, by hand everywhere, got " .. dots("RadioButtonDown.dds") .. " lit")
-  local summary
   for _, c in ipairs(H.controls) do
-    if c._parent == panel and type(c._text) == "string" and c._text:find("Starts ", 1, true) then summary = c end
+    ok(not (c._parent == panel and type(c._text) == "string" and c._text:find("Starts ", 1, true)), "no sentence reads the choices back")
   end
-  ok(summary and summary._text == "Starts when you press Record, stops when you press Stop, saves only when you press Save.", "the sentence reads the manual combination back, got " .. tostring(summary and summary._text))
+  local ph = tonumber(xml:match('name="VermilionRecPanel".-<Dimensions x="%d+" y="(%d+)"/>'))
+  ok(ph and ph <= 100, "the panel is as tall as its three rows, got " .. tostring(ph))
 
   local function click(label_text)
     for _, c in ipairs(H.controls) do
@@ -45,10 +53,10 @@ return function(H)
   end
   ok(click("Any fight"), "the Any fight radio is clickable")
   ok(AR.get_mode() == "combat" and sv.settings.auto_record == "combat", "choosing a start writes the pref")
-  ok(summary._text:find("with any fight", 1, true) and summary._text:find("a few seconds after the fight ends", 1, true), "an automatic start implies stopping with the fight, got " .. tostring(summary._text))
   ok(dots("RadioButtonDisabled") == 2, "the stop row is greyed while the start is automatic, got " .. dots("RadioButtonDisabled"))
   ok(btn._text:find("Record", 1, true) and not btn._text:find("Armed", 1, true), "the main half still reads Record")
-  ok(tag._text:find("any fight", 1, true) and tag._text:find("stops with the fight", 1, true), "the tag names the mode and the implied stop, got " .. tostring(tag._text))
+  ok(tag._text:find("any fight", 1, true) and not tag._text:find("stops with the fight", 1, true), "the tag names the mode and leaves the implied stop to the panel, got " .. tostring(tag._text))
+  ok(xml:find('StatusLabel.-<Anchor point="TOPLEFT"  offsetX="314"  offsetY="38"/>%s*<Dimensions y="14"/>') ~= nil, "the status label sizes to its text so the tag can follow it")
 
   ok(click("By hand"), "back to a manual start")
   ok(AR.get_mode() == "off" and dots("RadioButtonDisabled") == 0, "the stop row comes back")
@@ -56,14 +64,33 @@ return function(H)
   ok(AR.get_auto_stop() == true and sv.settings.auto_stop == true, "choosing the stop writes the pref")
   ok(click("When it stops"), "the save radio is clickable")
   ok(sv.settings.session_autosave == true, "choosing the save writes the pref")
-  ok(summary._text == "Starts when you press Record, stops a few seconds after the fight ends, saves itself into the library.", "the sentence follows every choice, got " .. tostring(summary._text))
 
   G.on_record_menu_click()
   ok(panel:IsHidden(), "the arrow closes the panel")
   G.on_record_menu_click()
+  ok(not panel:IsHidden(), "and opens it again")
+  caret:SetDimensions(18, 22)
+  panel:SetDimensions(344, 96)
+  local px, py = panel:GetLeft(), panel:GetTop()
+  H.state.mouse_x, H.state.mouse_y = px + 30, py + 20
+  H.fire(EVENT_GLOBAL_MOUSE_UP, MOUSE_BUTTON_INDEX_LEFT or 1, false, false, false, false)
+  ok(not panel:IsHidden(), "a click inside the panel keeps it open")
+  H.state.mouse_x, H.state.mouse_y = caret:GetLeft() + 2, caret:GetTop() + 2
+  H.fire(EVENT_GLOBAL_MOUSE_UP, MOUSE_BUTTON_INDEX_LEFT or 1, false, false, false, false)
+  ok(not panel:IsHidden(), "a click on the arrow is the arrow's business, not a click away")
+  H.state.mouse_x, H.state.mouse_y = px + 400, py + 400
+  H.fire(EVENT_GLOBAL_MOUSE_UP, MOUSE_BUTTON_INDEX_LEFT or 1, false, false, false, false)
+  ok(panel:IsHidden(), "a click anywhere else closes the panel")
+  ok(H.fire(EVENT_GLOBAL_MOUSE_UP, MOUSE_BUTTON_INDEX_LEFT or 1, false, false, false, false) == 0, "the mouse listener is gone once the panel is closed")
+  G.on_record_menu_click()
   G.on_close_click()
   ok(panel:IsHidden(), "closing the window closes the panel")
   Vermilion.Visibility.set("graph", true)
+  G.on_record_menu_click()
+  Vermilion.Visibility.set("graph", false)
+  ok(panel:IsHidden(), "hiding the window hides the panel")
+  Vermilion.Visibility.set("graph", true)
+  H.state.mouse_x, H.state.mouse_y = 400, 300
 
   G.on_record_main_click()
   ok(TB.is_recording() and btn._text:find("Recording", 1, true), "the main half starts a recording and says so")

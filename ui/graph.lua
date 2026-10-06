@@ -2260,9 +2260,9 @@ function M.refresh_record_button()
   if controls.rec_mode then
     local tag = REC.mode_tag(mode)
     local extra = ""
-    if mode ~= "off" or Vermilion.AutoRecord.get_auto_stop() then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
+    if mode == "off" and Vermilion.AutoRecord.get_auto_stop() then extra = extra .. " · " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
     local sv = Vermilion.SavedVars
-    if sv and sv.settings and sv.settings.session_autosave then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSAVE) end
+    if sv and sv.settings and sv.settings.session_autosave then extra = extra .. " · " .. GetString(VERMILION_REC_TAG_AUTOSAVE) end
     controls.rec_mode:SetText(tag .. extra)
   end
   REC.refresh_panel()
@@ -2782,22 +2782,6 @@ function REC.build_panel()
   REC.header(panel, 68, GetString(VERMILION_RECPANEL_SAVE))
   R.save_hand   = REC.radio(panel, x0,          68, cw,     GetString(VERMILION_RECPANEL_BY_HAND),   function() local sv = Vermilion.SavedVars if sv.settings and sv.settings.session_autosave then M.toggle_autosave() end end)
   R.save_auto   = REC.radio(panel, x0 + cw,     68, 2 * cw, GetString(VERMILION_RECPANEL_ON_STOP),   function() local sv = Vermilion.SavedVars if not (sv.settings and sv.settings.session_autosave) then M.toggle_autosave() end end)
-  R.summary = WINDOW_MANAGER:CreateControl(nil, panel, CT_LABEL)
-  R.summary:SetFont("ZoFontGameSmall")
-  R.summary:SetAnchor(TOPLEFT, panel, TOPLEFT, 12, 100)
-  R.summary:SetDimensions(320, 40)
-  R.summary:SetVerticalAlignment(TEXT_ALIGN_TOP)
-  R.summary:SetColor(0.72, 0.72, 0.72, 1)
-  if R.summary.SetWrapMode and TEXT_WRAP_MODE_ELLIPSIS then R.summary:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS) end
-end
-
-function REC.summary_text(mode, auto_stop, autosave)
-  local starts = (mode == "boss") and GetString(VERMILION_RECSUM_START_BOSS)
-              or (mode == "combat") and GetString(VERMILION_RECSUM_START_ANY)
-              or GetString(VERMILION_RECSUM_START_HAND)
-  local stops = (mode ~= "off" or auto_stop) and GetString(VERMILION_RECSUM_STOP_FIGHT) or GetString(VERMILION_RECSUM_STOP_HAND)
-  local saves = autosave and GetString(VERMILION_RECSUM_SAVE_AUTO) or GetString(VERMILION_RECSUM_SAVE_HAND)
-  return string_format(GetString(VERMILION_RECSUM_FORMAT), starts, stops, saves)
 end
 
 function REC.refresh_panel()
@@ -2814,7 +2798,17 @@ function REC.refresh_panel()
   R.stop_fight.on = (not manual_start) or auto_stop
   R.save_hand.on, R.save_auto.on = not autosave, autosave
   for _, key in ipairs({ "start_off", "start_any", "start_boss", "stop_hand", "stop_fight", "save_hand", "save_auto" }) do REC.paint(R[key]) end
-  R.summary:SetText(REC.summary_text(mode, auto_stop, autosave))
+end
+
+function REC.inside(c, x, y)
+  if not c or c:IsHidden() then return false end
+  return x >= c:GetLeft() and x <= c:GetRight() and y >= c:GetTop() and y <= c:GetBottom()
+end
+
+function REC.away()
+  local x, y = GetUIMousePosition()
+  if REC.inside(controls.rec_panel, x, y) or REC.inside(controls.btn_record_menu, x, y) then return end
+  M.record_panel_close()
 end
 
 function M.record_panel_open() return controls.rec_panel ~= nil and not controls.rec_panel:IsHidden() end
@@ -2822,18 +2816,22 @@ function M.record_panel_open() return controls.rec_panel ~= nil and not controls
 function M.on_record_menu_click()
   if not controls.rec_panel then return end
   if M.record_panel_open() then
-    controls.rec_panel:SetHidden(true)
+    M.record_panel_close()
     Sound.play("close")
     return
   end
   REC.build_panel()
   REC.refresh_panel()
   controls.rec_panel:SetHidden(false)
+  if zc.EVENT_GLOBAL_MOUSE_UP then zev.register("Vermilion_RecPanelAway", zc.EVENT_GLOBAL_MOUSE_UP, REC.away) end
   Sound.play("page")
 end
 
 function M.record_panel_close()
-  if controls.rec_panel and not controls.rec_panel:IsHidden() then controls.rec_panel:SetHidden(true) end
+  if controls.rec_panel and not controls.rec_panel:IsHidden() then
+    controls.rec_panel:SetHidden(true)
+    if zc.EVENT_GLOBAL_MOUSE_UP then zev.unregister("Vermilion_RecPanelAway", zc.EVENT_GLOBAL_MOUSE_UP) end
+  end
 end
 
 function M.toggle_record()
@@ -3004,7 +3002,7 @@ function M.init()
   controls.btn_record    = VermilionGraphWindowRecordBtn
   controls.btn_record_menu = VermilionGraphWindowRecordMenuBtn
   controls.rec_mode      = VermilionGraphWindowRecModeLabel
-  controls.rec_panel     = VermilionGraphWindowRecPanel
+  controls.rec_panel     = VermilionRecPanel
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
   controls.btn_lib       = VermilionGraphWindowLibBtn
@@ -3134,8 +3132,12 @@ function M.init()
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
-  controls.btn_record_menu:SetText("|t12:12:EsoUI/Art/Buttons/large_downArrow_up.dds|t")
+  controls.btn_record_menu:SetText("|t16:16:EsoUI/Art/Buttons/large_downArrow_up.dds|t")
+  controls.rec_panel:ClearAnchors()
+  controls.rec_panel:SetAnchor(TOPLEFT, controls.btn_record_menu, BOTTOMLEFT, -42, 4)
+  controls.rec_panel:SetHidden(true)
   controls.rec_mode:SetColor(0.62, 0.62, 0.62, 1)
+  if controls.rec_mode.SetWrapMode and TEXT_WRAP_MODE_ELLIPSIS then controls.rec_mode:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS) end
   controls.btn_stop:SetText("|t9:9:Vermilion/assets/stop.dds|t " .. GetString(VERMILION_GRAPH_STOP))
   controls.btn_flush:SetText(GetString(VERMILION_GRAPH_FLUSH))
 
@@ -3149,7 +3151,6 @@ function M.init()
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.80, 0.30, 0.28)
   zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
-  zui.tooltip(controls.btn_record_menu, VERMILION_TIP_RECMENU)
   zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
   zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)

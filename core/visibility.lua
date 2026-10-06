@@ -15,6 +15,7 @@ local function apply()
   if VermilionGraphWindow then
     local show = in_hud and user_visible.graph
     VermilionGraphWindow:SetHidden(not show)
+    if not show and Vermilion.Graph and Vermilion.Graph.record_panel_close then Vermilion.Graph.record_panel_close() end
     if show and not graph_shown and Vermilion.Graph and Vermilion.Graph.on_shown then
       Vermilion.Graph.on_shown()
     end
