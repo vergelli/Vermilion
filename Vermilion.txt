@@ -57,6 +57,7 @@ core/session_store.lua
 core/debuff_tracker.lua
 core/ultimate.lua
 core/resources.lua
+core/casts.lua
 core/kills.lua
 core/heat.lua
 core/auto_record.lua
@@ -66,6 +67,7 @@ ui/settings.lua
 ui/contrib.lua
 ui/debuffs.lua
 ui/targets.lua
+ui/resources.lua
 ui/graph.xml
 ui/graph.lua
 ui/assign.xml

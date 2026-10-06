@@ -27,6 +27,9 @@ EVENT_GLOBAL_MOUSE_UP            = 9901
 POWERTYPE_STAMINA                = 6
 COMBAT_MECHANIC_FLAGS_ULTIMATE   = 10
 ACTION_BAR_ULTIMATE_SLOT_INDEX   = 7
+ACTION_BAR_FIRST_NORMAL_SLOT_INDEX = 2
+COMBAT_MECHANIC_FLAGS_MAGICKA    = 0
+COMBAT_MECHANIC_FLAGS_STAMINA    = 6
 REGISTER_FILTER_POWER_TYPE       = 107
 NUMBER_ABBREVIATION_PRECISION_TENTHS = 1
 
@@ -546,6 +549,12 @@ function GetSlotBoundId(slot, cat)
   return (bar and bar[slot]) or 0
 end
 function GetSlotAbilityCost(slot, mechanic, cat)
+  local sc = H.skill_costs
+  if sc then
+    local bar = sc[cat or (H.state.active_bar or HOTBAR_CATEGORY_PRIMARY)]
+    local e = bar and bar[slot]
+    if e then return e[mechanic] or 0 end
+  end
   local per_bar = H.state.ult_costs
   if per_bar and cat ~= nil and per_bar[cat] then return per_bar[cat] end
   return H.state.ult_cost or 250
@@ -870,6 +879,10 @@ end
 
 function H.ult_used()
   return H.fire(EVENT_ACTION_SLOT_ABILITY_USED, ACTION_BAR_ULTIMATE_SLOT_INDEX + 1)
+end
+
+function H.skill_used(slot)
+  return H.fire(EVENT_ACTION_SLOT_ABILITY_USED, slot)
 end
 
 function H.combat_state(in_combat)

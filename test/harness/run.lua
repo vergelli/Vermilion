@@ -40,6 +40,8 @@ local CASES = {
   "shield_strip",
   "ultimate_band",
   "resources",
+  "casts",
+  "resources_view",
   "targets_view",
   "kills",
   "self_damage",

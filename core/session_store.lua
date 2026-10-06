@@ -70,6 +70,12 @@ local DESC = {
     { name = "id",   width = 4 },
     { name = "cost", width = 2 },
   },
+  casts = {
+    { name = "t",    width = 4 },
+    { name = "id",   width = 4 },
+    { name = "pool", width = 1 },
+    { name = "cost", width = 2 },
+  },
 }
 
 M.DESC = DESC
@@ -252,6 +258,15 @@ function M.capture(cooperative)
     if cost > 65535 then cost = 65535 end
     ulta_recs[i] = { t = rel, bar = uab[i] or 1, id = uai[i], cost = cost }
   end
+  local ctt, cti, ctp, ctc, ctn = Vermilion.Casts.records()
+  local cast_recs = {}
+  for i = 1, ctn do
+    local rel = ctt[i] - t0
+    if rel < 0 then rel = 0 end
+    local cost = ctc[i] or 0
+    if cost > 65535 then cost = 65535 end
+    cast_recs[i] = { t = rel, id = cti[i] or 0, pool = ctp[i] or 0, cost = cost }
+  end
 
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
@@ -301,6 +316,7 @@ function M.capture(cooperative)
       ult       = vsf.pack(ult_recs, DESC.ult, nil, ye),
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
+      casts     = vsf.pack(cast_recs, DESC.casts, nil, ye),
     },
   }
   return session

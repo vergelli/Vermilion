@@ -103,6 +103,7 @@ local sum_scratch = {
   has = false, n = 0,
   mag_in = 0, mag_out = 0, mag_sigma = 0, mag_low = 0, mag_low_pct = 0,
   sta_in = 0, sta_out = 0, sta_sigma = 0, sta_low = 0, sta_low_pct = 0,
+  damage = 0, eff = 0,
 }
 
 function M.summary(TB)
@@ -110,9 +111,13 @@ function M.summary(TB)
   r.has, r.n = false, 0
   r.mag_in, r.mag_out, r.mag_sigma, r.mag_low, r.mag_low_pct = 0, 0, 0, 0, 0
   r.sta_in, r.sta_out, r.sta_sigma, r.sta_low, r.sta_low_pct = 0, 0, 0, 0, 0
+  r.damage, r.eff = 0, 0
   local n = TB.count()
+  local prev_t = nil
   for i = 1, n do
     local s = TB.at(i)
+    if prev_t then r.damage = r.damage + ((s.eDPS or 0) + (s.ShDPS or 0)) * (s.t - prev_t) / 1000 end
+    prev_t = s.t
     local m, st = s.mag or 0, s.sta or 0
     if m > 0 or st > 0 then r.has = true end
     r.mag_in  = r.mag_in  + (s.mag_in  or 0)
@@ -129,6 +134,8 @@ function M.summary(TB)
   end
   if r.mag_out > 0 then r.mag_sigma = r.mag_in / r.mag_out end
   if r.sta_out > 0 then r.sta_sigma = r.sta_in / r.sta_out end
+  local out = r.mag_out + r.sta_out
+  if out > 0 then r.eff = r.damage / out * 1000 end
   return r
 end
 
