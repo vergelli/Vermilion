@@ -114,9 +114,24 @@
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
           <Anchor point="TOPLEFT" offsetX="14" offsetY="34"/>
-          <Dimensions x="56" y="22"/>
-          <OnClicked>Vermilion.Graph.on_record_click()</OnClicked>
+          <Dimensions x="44" y="22"/>
+          <OnClicked>Vermilion.Graph.on_record_main_click()</OnClicked>
         </Button>
+
+        <Button name="$(parent)RecordMenuBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="58" offsetY="34"/>
+          <Dimensions x="14" y="22"/>
+          <OnClicked>Vermilion.Graph.on_record_menu_click()</OnClicked>
+        </Button>
+
+        <Label name="$(parent)RecModeLabel" font="ZoFontGameSmall"
+               horizontalAlignment="LEFT" verticalAlignment="CENTER">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="56"/>
+          <Dimensions x="118" y="10"/>
+        </Label>
 
         <Button name="$(parent)StopBtn"
                 mouseEnabled="true"

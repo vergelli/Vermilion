@@ -499,6 +499,15 @@ function PlaySound(id)
 end
 function zo_callLater(fn) fn() end
 
+MENU_ADD_OPTION_LABEL = 1
+MENU_ADD_OPTION_CHECKBOX = 2
+function ClearMenu() H.menu = { items = {}, shown = false } end
+function AddMenuItem(text, fn, itype)
+  H.menu = H.menu or { items = {}, shown = false }
+  H.menu.items[#H.menu.items + 1] = { text = text, fn = fn, itype = itype }
+end
+function ShowMenu(owner) H.menu = H.menu or { items = {} }; H.menu.shown = true; H.menu.owner = owner end
+
 function GetGameTimeMilliseconds() return T end
 function GetAPIVersion() return 101050 end
 function GetWorldName() return H.state.world end

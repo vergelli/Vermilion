@@ -24,12 +24,12 @@ return function(H)
   Vermilion.Graph.on_stop_click()
   Vermilion.Graph.on_flush_click()
 
-  local btn = VermilionSettingsPanelAutoStopBtn
-  ok(btn ~= nil and btn._text == "Auto-stop: Off", "settings button reads Off by default, got " .. tostring(btn and btn._text))
+  local tag = VermilionGraphWindowRecModeLabel
+  ok(tag ~= nil and not tag._text:find("stops with the fight", 1, true), "the record tag does not mention auto-stop by default, got " .. tostring(tag and tag._text))
   H.sounds = {}
-  Vermilion.Settings.on_autostop_click()
-  ok(AR.get_auto_stop() == true and sv.settings.auto_stop == true, "the button turns auto-stop on and persists it")
-  ok(btn._text == "Auto-stop: On", "the button reads On, got " .. tostring(btn._text))
+  Vermilion.Graph.toggle_auto_stop()
+  ok(AR.get_auto_stop() == true and sv.settings.auto_stop == true, "the menu toggle turns auto-stop on and persists it")
+  ok(tag._text:find("stops with the fight", 1, true), "the record tag mentions auto-stop, got " .. tostring(tag._text))
   ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("on")), "turning it on confirms with the accept sound")
   ok(H.update_registered("VermilionAutoRecTick"), "auto-stop alone registers the tick")
 
@@ -74,7 +74,7 @@ return function(H)
   AR.set_mode("off")
   ok(H.update_registered("VermilionAutoRecTick"), "the tick stays while auto-stop is on")
 
-  Vermilion.Settings.on_autostop_click()
+  Vermilion.Graph.toggle_auto_stop()
   ok(AR.get_auto_stop() == false, "the button turns auto-stop off")
   ok(not H.update_registered("VermilionAutoRecTick"), "the tick goes away with both off")
 

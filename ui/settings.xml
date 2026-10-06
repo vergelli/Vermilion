@@ -215,32 +215,11 @@
           <Dimensions x="272" y="1"/>
         </Texture>
 
-        <Button name="$(parent)AutoRecBtn"
-                mouseEnabled="true"
-                font="ZoFontGameSmall"
-                inherits="ZO_DefaultButton">
+        <Label name="$(parent)RecordingNote" font="ZoFontGameSmall"
+               horizontalAlignment="LEFT" verticalAlignment="TOP" wrapMode="ELLIPSIS">
           <Anchor point="TOPLEFT" offsetX="314" offsetY="68"/>
-          <Dimensions x="272" y="22"/>
-          <OnClicked>Vermilion.Settings.on_autorec_click()</OnClicked>
-        </Button>
-
-        <Button name="$(parent)AutosaveBtn"
-                mouseEnabled="true"
-                font="ZoFontGameSmall"
-                inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="96"/>
-          <Dimensions x="132" y="22"/>
-          <OnClicked>Vermilion.Settings.on_autosave_click()</OnClicked>
-        </Button>
-
-        <Button name="$(parent)AutoStopBtn"
-                mouseEnabled="true"
-                font="ZoFontGameSmall"
-                inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="454" offsetY="96"/>
-          <Dimensions x="132" y="22"/>
-          <OnClicked>Vermilion.Settings.on_autostop_click()</OnClicked>
-        </Button>
+          <Dimensions x="272" y="50"/>
+        </Label>
 
         <Label name="$(parent)SecGeneral" font="ZoFontGameSmall"
                horizontalAlignment="LEFT" verticalAlignment="CENTER">

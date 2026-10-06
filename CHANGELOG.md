@@ -5,6 +5,9 @@ All notable changes to Vermilion are documented here. This project follows
 
 ## [Unreleased]
 
+### Changed
+- Recording is configured from the record button. Its right half opens a menu with the automatic mode (boss fights, any fight, manual only), the two options that act when a recording stops (stop with the fight, save the session) and a help entry; the three buttons in Settings are gone, a note points to the button. The main half records or stops, reads Record, Armed (an automatic mode waiting for a fight) or Recording, pulses while recording, and a small tag under it names the mode.
+
 ### Added
 - Developer panel (debug builds only): every diagnostic command becomes a clickable row, grouped by purpose, with the command it runs shown beside it. `/vermilion dev` opens it, as does the DEV button next to the version in Settings.
 - The game's own encounter log can be switched from the addon: `/vermilion elog [on|off|status]` and the matching panel row, which shows whether the engine is writing `Documents\Elder Scrolls Online\live\Logs\Encounter.log` right now.
