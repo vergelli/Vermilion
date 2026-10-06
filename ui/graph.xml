@@ -133,6 +133,20 @@
           <Dimensions x="118" y="10"/>
         </Label>
 
+        <Control name="$(parent)RecPanel" mouseEnabled="true" hidden="true">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="60"/>
+          <Dimensions x="344" y="150"/>
+          <Controls>
+            <Backdrop name="$(parent)Bg">
+              <AnchorFill/>
+              <Edge file="EsoUI/Art/Tooltips/UI-Border.dds"
+                    edgeFileWidth="128" edgeFileHeight="16" edgeSize="4"/>
+              <Center file="EsoUI/Art/Tooltips/UI-TooltipCenter.dds"/>
+              <Insets left="4" top="4" right="-4" bottom="-4"/>
+            </Backdrop>
+          </Controls>
+        </Control>
+
         <Button name="$(parent)StopBtn"
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
