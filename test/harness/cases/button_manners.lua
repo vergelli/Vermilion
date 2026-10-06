@@ -7,7 +7,7 @@ return function(H)
     "VermilionGraphWindowPrevViewBtn", "VermilionGraphWindowNextViewBtn",
     "VermilionGraphWindowSettingsBtn", "VermilionGraphWindowCloseBtn",
     "VermilionLibraryOpenBtn", "VermilionLibraryLockBtn", "VermilionLibraryDeleteBtn", "VermilionLibraryCloseBtn",
-    "VermilionSettingsPanelAutoRecBtn", "VermilionSettingsPanelAutosaveBtn", "VermilionSettingsPanelAutoStopBtn",
+    "VermilionGraphWindowRecordMenuBtn",
     "VermilionSettingsPanelSoundsBtn", "VermilionSettingsPanelUnknownBtn", "VermilionSettingsPanelLogoBtn",
     "VermilionSettingsPanelResetBtn", "VermilionSettingsPanelCloseBtn",
     "VermilionSettingsPanelPSaveBtn", "VermilionSettingsPanelPDeleteBtn", "VermilionSettingsPanelLightBtn", "VermilionSettingsPanelKillsBtn",

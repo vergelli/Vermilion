@@ -2088,10 +2088,69 @@ function M.on_shown()
   fade_in(f)
 end
 
+local REC_PULSE = "VermilionRecPulse"
+
+local function rec_pulse_stop()
+  zev.unregister_update(REC_PULSE)
+  if controls.btn_record then controls.btn_record:SetAlpha(1) end
+end
+
+local function rec_pulse_start()
+  if controls.rec_pulsing then return end
+  controls.rec_pulsing = true
+  controls.rec_pulse_t = 0
+  zev.register_update(REC_PULSE, 50, function()
+    if not Vermilion.TemporalBuffer.is_recording() or controls.window:IsHidden() then
+      controls.rec_pulsing = false
+      rec_pulse_stop()
+      return
+    end
+    local t = controls.rec_pulse_t + 50
+    controls.rec_pulse_t = t
+    controls.btn_record:SetAlpha(0.72 + 0.28 * math.abs(math.cos(t / 900 * math.pi)))
+  end)
+end
+
+local function rec_mode_tag(mode)
+  if mode == "boss" then return GetString(VERMILION_REC_TAG_BOSS) end
+  if mode == "combat" then return GetString(VERMILION_REC_TAG_COMBAT) end
+  return GetString(VERMILION_REC_TAG_MANUAL)
+end
+
+function M.refresh_record_button()
+  if not controls.btn_record then return end
+  local recording = Vermilion.TemporalBuffer.is_recording()
+  local mode = Vermilion.AutoRecord.get_mode()
+  local word
+  if recording then
+    word = GetString(VERMILION_REC_RECORDING)
+  elseif mode ~= "off" then
+    word = GetString(VERMILION_REC_ARMED)
+  else
+    word = GetString(VERMILION_GRAPH_RECORD)
+  end
+  controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. word)
+  if controls.rec_mode then
+    local tag = rec_mode_tag(mode)
+    local extra = ""
+    if Vermilion.AutoRecord.get_auto_stop() then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSTOP) end
+    local sv = Vermilion.SavedVars
+    if sv and sv.settings and sv.settings.session_autosave then extra = extra .. "  ·  " .. GetString(VERMILION_REC_TAG_AUTOSAVE) end
+    controls.rec_mode:SetText(tag .. extra)
+  end
+  if recording and not controls.window:IsHidden() then
+    rec_pulse_start()
+  elseif not recording then
+    controls.rec_pulsing = false
+    rec_pulse_stop()
+  end
+end
+
 local function refresh_button_colors()
   local recording = Vermilion.TemporalBuffer.is_recording()
-  controls.btn_record:SetEnabled(not recording)
+  controls.btn_record:SetEnabled(true)
   controls.btn_stop:SetEnabled(recording)
+  M.refresh_record_button()
   if controls.btn_save then controls.btn_save:SetEnabled(M.save_available()) end
   update_hover_gate()
   update_summary_chip()
@@ -2488,6 +2547,66 @@ function M.on_save_click()
   return true
 end
 
+function M.on_record_main_click()
+  M.toggle_record()
+end
+
+function M.set_record_mode(mode)
+  if not Vermilion.AutoRecord.set_mode(mode) then return false end
+  Sound.play("page")
+  M.refresh_record_button()
+  return true
+end
+
+function M.toggle_auto_stop()
+  local now = not Vermilion.AutoRecord.get_auto_stop()
+  Vermilion.AutoRecord.set_auto_stop(now)
+  Sound.play(now and "on" or "off")
+  M.refresh_record_button()
+  return now
+end
+
+function M.toggle_autosave()
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  local now = not (sv.settings.session_autosave == true)
+  sv.settings.session_autosave = now
+  Sound.play(now and "on" or "off")
+  M.refresh_record_button()
+  return now
+end
+
+function M.record_help()
+  if type(InitializeTooltip) ~= "function" or type(SetTooltipText) ~= "function" or not InformationTooltip then return end
+  InitializeTooltip(InformationTooltip, controls.btn_record, TOP, 0, 6, BOTTOM)
+  SetTooltipText(InformationTooltip, GetString(VERMILION_RECMENU_HELP_TEXT))
+  if type(zo_callLater) == "function" then
+    zo_callLater(function() if type(ClearTooltip) == "function" then ClearTooltip(InformationTooltip) end end, 8000)
+  end
+end
+
+local function menu_mark(on) return on and "● " or "○ " end
+local function menu_check(on) return on and "☑ " or "☐ " end
+
+function M.on_record_menu_click()
+  if type(ClearMenu) ~= "function" or type(AddMenuItem) ~= "function" or type(ShowMenu) ~= "function" then return end
+  local recording = Vermilion.TemporalBuffer.is_recording()
+  local mode = Vermilion.AutoRecord.get_mode()
+  local sv = Vermilion.SavedVars
+  local autosave = sv and sv.settings and sv.settings.session_autosave == true
+  ClearMenu()
+  AddMenuItem(recording and GetString(VERMILION_RECMENU_STOP) or GetString(VERMILION_RECMENU_NOW), function() M.toggle_record() end)
+  AddMenuItem(GetString(VERMILION_RECMENU_AUTO_HDR), nil, MENU_ADD_OPTION_LABEL)
+  AddMenuItem(menu_mark(mode == "boss") .. GetString(VERMILION_RECMENU_BOSS), function() M.set_record_mode("boss") end)
+  AddMenuItem(menu_mark(mode == "combat") .. GetString(VERMILION_RECMENU_COMBAT), function() M.set_record_mode("combat") end)
+  AddMenuItem(menu_mark(mode == "off") .. GetString(VERMILION_RECMENU_MANUAL), function() M.set_record_mode("off") end)
+  AddMenuItem(GetString(VERMILION_RECMENU_STOPS_HDR), nil, MENU_ADD_OPTION_LABEL)
+  AddMenuItem(menu_check(Vermilion.AutoRecord.get_auto_stop()) .. GetString(VERMILION_RECMENU_AUTOSTOP), function() M.toggle_auto_stop() end)
+  AddMenuItem(menu_check(autosave) .. GetString(VERMILION_RECMENU_AUTOSAVE), function() M.toggle_autosave() end)
+  AddMenuItem(GetString(VERMILION_RECMENU_HELP), function() M.record_help() end)
+  ShowMenu(controls.btn_record_menu)
+end
+
 function M.toggle_record()
   if Vermilion.TemporalBuffer.is_recording() then
     M.on_stop_click()
@@ -2653,6 +2772,8 @@ function M.init()
   controls.window        = VermilionGraphWindow
   controls.title         = VermilionGraphWindowTitleLabel
   controls.btn_record    = VermilionGraphWindowRecordBtn
+  controls.btn_record_menu = VermilionGraphWindowRecordMenuBtn
+  controls.rec_mode      = VermilionGraphWindowRecModeLabel
   controls.btn_stop      = VermilionGraphWindowStopBtn
   controls.btn_flush     = VermilionGraphWindowFlushBtn
   controls.btn_lib       = VermilionGraphWindowLibBtn
@@ -2774,6 +2895,8 @@ function M.init()
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
+  controls.btn_record_menu:SetText("▾")
+  controls.rec_mode:SetColor(0.62, 0.62, 0.62, 1)
   controls.btn_stop:SetText("|t9:9:Vermilion/assets/stop.dds|t " .. GetString(VERMILION_GRAPH_STOP))
   controls.btn_flush:SetText(GetString(VERMILION_GRAPH_FLUSH))
 
@@ -2783,9 +2906,11 @@ function M.init()
     btn:SetPressedFontColor(r * 0.85, g * 0.85, b * 0.85, 1)
   end
   tint_btn(controls.btn_record, 0.95, 0.42, 0.34)
+  tint_btn(controls.btn_record_menu, 0.95, 0.42, 0.34)
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.80, 0.30, 0.28)
   zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
+  zui.tooltip(controls.btn_record_menu, VERMILION_TIP_RECMENU)
   zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
   zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)
@@ -2797,6 +2922,7 @@ function M.init()
   zui.tooltip(VermilionGraphWindowSettingsBtn, VERMILION_TIP_SETTINGS)
   zui.tooltip(VermilionGraphWindowCloseBtn, VERMILION_TIP_CLOSE)
   wire_save_hooks()
+  M.refresh_record_button()
 
   local strip = VermilionGraphWindowTabs
   controls.tabs = { strip = strip }

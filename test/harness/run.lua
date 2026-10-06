@@ -24,6 +24,7 @@ local CASES = {
   "session_nav",
   "button_manners",
   "settings_panel",
+  "record_menu",
   "user_profiles",
   "pixel_grid",
   "grow_to_fill",

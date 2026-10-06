@@ -19,8 +19,7 @@ return function(H)
     VermilionSettingsPanelSliderTrackCritThresh,
   }
   local right_col = {
-    VermilionSettingsPanelAutoRecBtn,
-    VermilionSettingsPanelAutosaveBtn,
+    VermilionSettingsPanelRecordingNote,
     VermilionSettingsPanelUnknownBtn,
     VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn,
@@ -36,14 +35,6 @@ return function(H)
     ok(r.x == panel.x + 314, (c._name or "?") .. " must sit in the right column, x=" .. r.x)
     ok(r.x + r.w <= panel.x + 590, (c._name or "?") .. " must stay inside the panel")
     ok(r.y + r.h <= panel.y + panel.h - 30, (c._name or "?") .. " must clear the reset row")
-  end
-  do
-    local a = H.layout(VermilionSettingsPanelAutosaveBtn)
-    local b = H.layout(VermilionSettingsPanelAutoStopBtn)
-    ok(b.y == a.y, "Auto-stop shares the Autosave row")
-    ok(b.x >= a.x + a.w + 4, "Auto-stop starts after Autosave with a gap")
-    ok(b.x + b.w <= panel.x + 590, "Auto-stop stays inside the panel")
-    ok(a.w == b.w, "Autosave and Auto-stop split the row evenly")
   end
   for _, name in ipairs({ "SecProfile", "SecGraph", "SecRecording", "SecGeneral" }) do
     local lbl = rawget(_G, "VermilionSettingsPanel" .. name)
