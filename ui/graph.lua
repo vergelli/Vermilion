@@ -2431,6 +2431,7 @@ function M.on_record_click()
   Vermilion.Ultimate.start_session(recording_start_ms)
   Vermilion.Resources.start_session()
   Vermilion.Casts.start_session()
+  Vermilion.Restores.start_session()
   VIS.res.on = false
   Vermilion.Kills.start_session()
   local sv       = Vermilion.SavedVars
@@ -2459,6 +2460,7 @@ function M.on_stop_click()
   Vermilion.Ultimate.finalize(GetGameTimeMilliseconds())
   Vermilion.Resources.finalize()
   Vermilion.Casts.finalize()
+  Vermilion.Restores.finalize()
   Vermilion.Kills.finalize()
   Vermilion.SessionStore.on_session_stop()
   summary_text = build_summary_text()
@@ -2486,6 +2488,7 @@ function M.on_flush_click()
   Vermilion.Ultimate.reset()
   Vermilion.Resources.reset()
   Vermilion.Casts.reset()
+  Vermilion.Restores.reset()
   VIS.res.on = false
   Vermilion.Kills.reset()
   controls.save_locked = false
@@ -2949,6 +2952,11 @@ function M.load_session(sess)
     Vermilion.Casts.load_session(vsf.unpack(sess.streams.casts, sess.desc.casts) or {})
   else
     Vermilion.Casts.reset()
+  end
+  if sess.streams.restores and sess.desc.restores then
+    Vermilion.Restores.load_session(vsf.unpack(sess.streams.restores, sess.desc.restores) or {}, sess.head.regen)
+  else
+    Vermilion.Restores.reset()
   end
   if sess.streams.kills and sess.desc.kills then
     local kr = vsf.unpack(sess.streams.kills, sess.desc.kills) or {}
@@ -3414,6 +3422,7 @@ function M.init()
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
     mag = VIS.mag, sta = VIS.sta, low = VIS.low,
+    icon = controls.pool_c_icon,
     hide_grid = hide_grid,
     now = GetGameTimeMilliseconds,
     show_card = show_rows_card,

@@ -18,10 +18,10 @@ local DESC = {
     { name = "noncrit", width = 4, scale = 10 },
     { name = "mag",     width = 2, scale = 1000 },
     { name = "sta",     width = 2, scale = 1000 },
-    { name = "mag_in",  width = 2 },
-    { name = "mag_out", width = 2 },
-    { name = "sta_in",  width = 2 },
-    { name = "sta_out", width = 2 },
+    { name = "mag_in",  width = 3 },
+    { name = "mag_out", width = 3 },
+    { name = "sta_in",  width = 3 },
+    { name = "sta_out", width = 3 },
   },
   steps = {
     { name = "b", width = 1 },
@@ -74,7 +74,13 @@ local DESC = {
     { name = "t",    width = 4 },
     { name = "id",   width = 4 },
     { name = "pool", width = 1 },
-    { name = "cost", width = 2 },
+    { name = "cost", width = 3 },
+  },
+  restores = {
+    { name = "t",    width = 4 },
+    { name = "id",   width = 4 },
+    { name = "pool", width = 1 },
+    { name = "amt",  width = 3 },
   },
 }
 
@@ -267,6 +273,15 @@ function M.capture(cooperative)
     if cost > 65535 then cost = 65535 end
     cast_recs[i] = { t = rel, id = cti[i] or 0, pool = ctp[i] or 0, cost = cost }
   end
+  local rtt, rti, rtp, rta, rtn = Vermilion.Restores.records()
+  local restore_recs = {}
+  for i = 1, rtn do
+    local rel = rtt[i] - t0
+    if rel < 0 then rel = 0 end
+    local amt = rta[i] or 0
+    if amt > 65535 then amt = 65535 end
+    restore_recs[i] = { t = rel, id = rti[i] or 0, pool = rtp[i] or 0, amt = amt }
+  end
 
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
@@ -285,6 +300,7 @@ function M.capture(cooperative)
       locked = false,
       difficulty = start_diff or 0,
       kind = start_kind,
+      regen = { mag = Vermilion.Restores.regen(1), sta = Vermilion.Restores.regen(2) },
       sum = {
         avg = math_floor(sum_eos / n_series + 0.5),
         peak = math_floor(peak_eos + 0.5),
@@ -317,6 +333,7 @@ function M.capture(cooperative)
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
       casts     = vsf.pack(cast_recs, DESC.casts, nil, ye),
+      restores  = vsf.pack(restore_recs, DESC.restores, nil, ye),
     },
   }
   return session

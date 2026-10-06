@@ -4,17 +4,22 @@ local M = Vermilion.ResourcesView
 
 local math_floor    = math.floor
 local math_max      = math.max
+local math_ceil     = math.ceil
 local string_format = string.format
 local table_sort    = table.sort
 
 local PICK_MAG, PICK_STA, PICK_BOTH = 1, 2, 3
 local MAG, STA  = 1, 2
 local PICK_H    = 20
-local RIGHT_W   = 160
-local NAME_W    = 72
-local VAL_W     = 40
-local ROW_H     = 16
+local RIGHT_W   = 176
+local ICON      = 18
+local ROW_H     = 24
 local ROW_GAP   = 2
+local NAME_H    = 14
+local BAR_H     = 5
+local VAL_W     = 46
+local HDR_H     = 16
+local SEC_GAP   = 6
 local LANE_X    = 6
 local GAP_X     = 12
 local LOW       = 0.30
@@ -26,39 +31,51 @@ local C_DIM     = { r = 0.62, g = 0.58, b = 0.56 }
 local C_TEXT    = { r = 0.94, g = 0.88, b = 0.86 }
 local C_OUT     = { r = 0.86, g = 0.50, b = 0.44 }
 local C_MID     = { r = 1.00, g = 1.00, b = 1.00 }
+local C_REGEN   = { r = 0.76, g = 0.72, b = 0.70 }
 
 local PCT_TEXT = {}
 for i = 0, 100 do PCT_TEXT[i] = i .. "%" end
 
 local ctx = nil
 local pick = PICK_BOTH
-local scroll, max_scroll = 0, 0
+local scroll = { 0, 0 }
+local max_scroll = { 0, 0 }
 local hover_row = nil
-local by_id = {}
-local order = { n = 0 }
+local by_id = { {}, {} }
+local order = { { n = 0 }, { n = 0 } }
 local gen = 0
-local totals = { spend = 0, casts = 0 }
+local totals = { spend = 0, casts = 0, regained = 0, energized = 0 }
+local sums = nil
 local lane = { x = 0, w = 0, y = 0, h = 0, t0 = 0, span = 0, mid = 0 }
 local pick_hit = { { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, y0 = 0, y1 = 0 }
-local row_hit = { n = 0, y0 = {}, y1 = {}, rec = {} }
+local row_hit = { n = 0, y0 = {}, y1 = {}, rec = {}, sec = {} }
+local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
 local ROWS = { {}, {}, {}, {} }
 local str = nil
+local SEC_SPENT, SEC_REC = 1, 2
 
 local function strings()
   if str then return str end
   str = {
-    pick    = { GetString(VERMILION_RES_PICK_MAG), GetString(VERMILION_RES_PICK_STA), GetString(VERMILION_RES_PICK_BOTH) },
-    pools   = { GetString(VERMILION_RES_MAGICKA), GetString(VERMILION_RES_STAMINA) },
-    spent   = GetString(VERMILION_RESH_SPENT),
-    casts   = GetString(VERMILION_RESH_CASTS),
-    total   = GetString(VERMILION_RESH_TOTAL),
-    share   = GetString(VERMILION_RESH_SHARE),
-    pool    = GetString(VERMILION_RESH_POOL),
-    top     = GetString(VERMILION_RESH_TOP),
-    starved = GetString(VERMILION_RESH_STARVED),
-    more    = GetString(VERMILION_RESH_MORE),
-    flows   = GetString(VERMILION_RES_CARD_FLOWS),
-    sigma   = GetString(VERMILION_RES_CARD_SIGMA),
+    pick      = { GetString(VERMILION_RES_PICK_MAG), GetString(VERMILION_RES_PICK_STA), GetString(VERMILION_RES_PICK_BOTH) },
+    pools     = { GetString(VERMILION_RES_MAGICKA), GetString(VERMILION_RES_STAMINA) },
+    spent     = GetString(VERMILION_RESH_SPENT),
+    recovered = GetString(VERMILION_RESH_RECOVERED),
+    recovery  = GetString(VERMILION_RESH_RECOVERY),
+    rec_by    = GetString(VERMILION_RESH_RECOVERED_BY),
+    regen     = GetString(VERMILION_RESH_REGEN),
+    restores  = GetString(VERMILION_RESH_RESTORES),
+    rec_total = GetString(VERMILION_RESH_REC_TOTAL),
+    rec_share = GetString(VERMILION_RESH_REC_SHARE),
+    casts     = GetString(VERMILION_RESH_CASTS),
+    total     = GetString(VERMILION_RESH_TOTAL),
+    share     = GetString(VERMILION_RESH_SHARE),
+    pool      = GetString(VERMILION_RESH_POOL),
+    top       = GetString(VERMILION_RESH_TOP),
+    starved   = GetString(VERMILION_RESH_STARVED),
+    more      = GetString(VERMILION_RESH_MORE),
+    flows     = GetString(VERMILION_RES_CARD_FLOWS),
+    sigma     = GetString(VERMILION_RES_CARD_SIGMA),
   }
   return str
 end
@@ -83,36 +100,73 @@ local function pool_col(c, p) return (p == MAG) and c.mag or c.sta end
 local function wants(p) return pick == PICK_BOTH or (pick == PICK_MAG and p == MAG) or (pick == PICK_STA and p == STA) end
 local function by_total_desc(a, b) return a.total > b.total end
 
+local function rec_for(sec, id)
+  local rec = by_id[sec][id]
+  if not rec then
+    rec = { id = id, sec = sec, name = nil, icon = nil, r = 0, g = 0, b = 0, n = 0, mag = 0, sta = 0, total = 0, gen = -1, disp = -1, text = "" }
+    by_id[sec][id] = rec
+  end
+  if rec.gen ~= gen then
+    rec.gen = gen
+    rec.n, rec.mag, rec.sta, rec.total = 0, 0, 0, 0
+    local o = order[sec]
+    o.n = o.n + 1
+    o[o.n] = rec
+  end
+  return rec
+end
+
+local function add(rec, p, v)
+  rec.n = rec.n + 1
+  if p == MAG then rec.mag = rec.mag + v else rec.sta = rec.sta + v end
+  rec.total = rec.total + v
+end
+
+local function finish(sec)
+  local o = order[sec]
+  for k = o.n + 1, #o do o[k] = nil end
+  if o.n > 1 then table_sort(o, by_total_desc) end
+end
+
 local function aggregate()
-  local ct, cid, cpool, ccost, n = Vermilion.Casts.records()
   gen = gen + 1
-  order.n = 0
-  totals.spend, totals.casts = 0, 0
+  order[SEC_SPENT].n, order[SEC_REC].n = 0, 0
+  totals.spend, totals.casts, totals.regained, totals.energized = 0, 0, 0, 0
+  local _, cid, cpool, ccost, n = Vermilion.Casts.records()
   for i = 1, n do
-    local p = cpool[i]
-    local cost = ccost[i]
+    local p, cost = cpool[i], ccost[i]
     if p > 0 and cost > 0 and wants(p) then
-      local id = cid[i]
-      local rec = by_id[id]
-      if not rec then
-        rec = { id = id, name = nil, casts = 0, mag = 0, sta = 0, total = 0, gen = -1, disp = -1, text = "" }
-        by_id[id] = rec
-      end
-      if rec.gen ~= gen then
-        rec.gen = gen
-        rec.casts, rec.mag, rec.sta, rec.total = 0, 0, 0, 0
-        order.n = order.n + 1
-        order[order.n] = rec
-      end
-      rec.casts = rec.casts + 1
-      if p == MAG then rec.mag = rec.mag + cost else rec.sta = rec.sta + cost end
-      rec.total = rec.total + cost
+      add(rec_for(SEC_SPENT, cid[i]), p, cost)
       totals.spend = totals.spend + cost
       totals.casts = totals.casts + 1
     end
   end
-  for k = order.n + 1, #order do order[k] = nil end
-  if order.n > 1 then table_sort(order, by_total_desc) end
+  finish(SEC_SPENT)
+  local R = Vermilion.Restores
+  local em, es = 0, 0
+  if R then
+    local _, rid, rpool, ramt, rn = R.records()
+    for i = 1, rn do
+      local p = rpool[i]
+      if p > 0 and wants(p) then
+        add(rec_for(SEC_REC, rid[i]), p, ramt[i])
+        if p == MAG then em = em + ramt[i] else es = es + ramt[i] end
+      end
+    end
+  end
+  totals.energized = em + es
+  local in_m = (sums and wants(MAG)) and sums.mag_in or 0
+  local in_s = (sums and wants(STA)) and sums.sta_in or 0
+  totals.regained = in_m + in_s
+  local res_m, res_s = in_m - em, in_s - es
+  if res_m < 0 then res_m = 0 end
+  if res_s < 0 then res_s = 0 end
+  if res_m + res_s > 0 then
+    local rec = rec_for(SEC_REC, 0)
+    if res_m > 0 then add(rec, MAG, res_m) end
+    if res_s > 0 then add(rec, STA, res_s) end
+  end
+  finish(SEC_REC)
 end
 
 local function box(c, canvas, x0, x1, y, h, col, a, lvl)
@@ -124,6 +178,20 @@ local function box(c, canvas, x0, x1, y, h, col, a, lvl)
   seg:SetDrawLevel(lvl)
   seg:SetColor(col.r, col.g, col.b, a)
   seg:SetHidden(false)
+end
+
+local function label(c, canvas, text, x, y, w, h, align, col, a)
+  local lbl = c.lbl:AcquireObject()
+  lbl:ClearAnchors()
+  lbl:SetText(text)
+  lbl:SetHorizontalAlignment(align)
+  lbl:SetMaxLineCount(1)
+  lbl:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS)
+  lbl:SetColor(col.r, col.g, col.b, a)
+  lbl:SetDimensions(w, h)
+  lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, y)
+  lbl:SetHidden(false)
+  return lbl
 end
 
 local function x_of(t) return lane.x + math_floor((t - lane.t0) / lane.span * lane.w + 0.5) end
@@ -138,7 +206,7 @@ local function level_of(s, p) return (p == MAG) and (s.mag or 0) or (s.sta or 0)
 local function in_of(s, p)    return (p == MAG) and (s.mag_in or 0) or (s.sta_in or 0) end
 local function out_of(s, p)   return (p == MAG) and (s.mag_out or 0) or (s.sta_out or 0) end
 
-local function draw_levels(c, canvas, TB, n, p, y_base, H, up, alpha, low_alpha, lvl)
+local function draw_levels(c, canvas, TB, n, p, y_base, H, up)
   local col = pool_col(c, p)
   local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
   for k = 1, n do
@@ -151,15 +219,20 @@ local function draw_levels(c, canvas, TB, n, p, y_base, H, up, alpha, low_alpha,
     if h > 0 and run_x0 and h == run_h and low == run_low and x0 <= run_x1 then
       run_x1 = x1
     else
-      if run_x0 then
-        box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, run_low and low_alpha or alpha, lvl)
-      end
+      if run_x0 then box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, 0.85, 3) end
       if h > 0 then run_x0, run_x1, run_h, run_low = x0, x1, h, low else run_x0 = nil end
     end
   end
-  if run_x0 then
-    box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, run_low and low_alpha or alpha, lvl)
-  end
+  if run_x0 then box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, run_low and c.low or col, 0.85, 3) end
+end
+
+local function draw_threshold(c, canvas, y_zero, H, up)
+  local hb = math_floor(H * STARVE + 0.5)
+  if hb < 1 then return end
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - hb) or y_zero, hb, c.low, 0.07, 1)
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - hb) or (y_zero + hb), 1, c.low, 0.35, 2)
+  local h30 = math_floor(H * LOW + 0.5)
+  box(c, canvas, lane.x, lane.x + lane.w, up and (y_zero - h30) or (y_zero + h30), 1, C_MID, 0.14, 2)
 end
 
 local function draw_starved(c, canvas, TB, n, p, y)
@@ -177,21 +250,9 @@ local function draw_starved(c, canvas, TB, n, p, y)
   end
 end
 
-local function draw_mirrored(c, canvas, TB, n)
-  local half = math_floor(lane.h / 2) - TICK_H - 2
-  if half < 4 then return end
-  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true,  0.85, 0.85, 3)
-  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false, 0.85, 0.85, 3)
-  box(c, canvas, lane.x, lane.x + lane.w, lane.mid, 1, C_MID, 0.18, 4)
-  draw_starved(c, canvas, TB, n, MAG, lane.y)
-  draw_starved(c, canvas, TB, n, STA, lane.y + lane.h - TICK_H)
-end
-
-local function draw_single(c, canvas, TB, n, p)
+local function draw_flows(c, canvas, TB, n, p, y_mid, half)
+  if half < 3 then return end
   local col = pool_col(c, p)
-  local H = lane.h - TICK_H - 2
-  if H < 8 then return end
-  draw_levels(c, canvas, TB, n, p, lane.y + lane.h, H, true, 0.16, 0.22, 1)
   local max_f = 0
   for k = 1, n do
     local s = TB.at(k)
@@ -200,7 +261,6 @@ local function draw_single(c, canvas, TB, n, p)
     if b > max_f then max_f = b end
   end
   if max_f > 0 then
-    local half = math_floor(H / 2) - 2
     for k = 1, n do
       local s = TB.at(k)
       local x0, x1 = x_of(s.t), x_next(TB, k)
@@ -208,26 +268,38 @@ local function draw_single(c, canvas, TB, n, p)
       if x1 - x0 > 2 then x1 = x1 - 1 end
       local hi = math_floor(in_of(s, p) / max_f * half + 0.5)
       local ho = math_floor(out_of(s, p) / max_f * half + 0.5)
-      if hi > 0 then box(c, canvas, x0, x1, lane.mid - hi, hi, col, 0.9, 3) end
-      if ho > 0 then box(c, canvas, x0, x1, lane.mid + 1, ho, C_OUT, 0.9, 3) end
+      if hi > 0 then box(c, canvas, x0, x1, y_mid - hi, hi, col, 0.9, 3) end
+      if ho > 0 then box(c, canvas, x0, x1, y_mid + 1, ho, C_OUT, 0.9, 3) end
     end
   end
-  box(c, canvas, lane.x, lane.x + lane.w, lane.mid, 1, C_MID, 0.18, 4)
-  draw_starved(c, canvas, TB, n, p, lane.y)
+  box(c, canvas, lane.x, lane.x + lane.w, y_mid, 1, C_MID, 0.18, 4)
 end
 
-local function label(c, canvas, text, x, y, w, h, align, col, a)
-  local lbl = c.lbl:AcquireObject()
-  lbl:ClearAnchors()
-  lbl:SetText(text)
-  lbl:SetHorizontalAlignment(align)
-  lbl:SetMaxLineCount(1)
-  lbl:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS)
-  lbl:SetColor(col.r, col.g, col.b, a)
-  lbl:SetDimensions(w, h)
-  lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, y)
-  lbl:SetHidden(false)
-  return lbl
+local function draw_mirrored(c, canvas, TB, n)
+  local half = math_floor(lane.h / 2) - TICK_H - 2
+  if half < 4 then return end
+  lane.mid = lane.y + math_floor(lane.h / 2)
+  draw_threshold(c, canvas, lane.mid - 1, half, true)
+  draw_threshold(c, canvas, lane.mid + 1, half, false)
+  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true)
+  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false)
+  box(c, canvas, lane.x, lane.x + lane.w, lane.mid, 1, C_MID, 0.18, 4)
+  draw_starved(c, canvas, TB, n, MAG, lane.y)
+  draw_starved(c, canvas, TB, n, STA, lane.y + lane.h - TICK_H)
+end
+
+local function draw_single(c, canvas, TB, n, p)
+  local body = lane.h - TICK_H - 2 - SEC_GAP
+  if body < 16 then return end
+  local h_lv = math_floor(body * 0.42)
+  local y_lv = lane.y + TICK_H + 2
+  local y_fl = y_lv + h_lv + SEC_GAP
+  local h_fl = lane.y + lane.h - y_fl
+  lane.mid = y_fl + math_floor(h_fl / 2)
+  draw_threshold(c, canvas, y_lv + h_lv, h_lv, true)
+  draw_levels(c, canvas, TB, n, p, y_lv + h_lv, h_lv, true)
+  draw_flows(c, canvas, TB, n, p, lane.mid, math_floor(h_fl / 2) - 2)
+  draw_starved(c, canvas, TB, n, p, lane.y)
 end
 
 local function draw_picker(c, canvas, top, S)
@@ -260,47 +332,90 @@ local function draw_time(c, canvas)
   label(c, canvas, c.fmt_secs(lane.span), lane.x + lane.w - 50, y, 50, h, TEXT_ALIGN_RIGHT, C_DIM, 0.9)
 end
 
-local function draw_histogram(c, canvas, cw, y, h, S)
-  local x = cw - RIGHT_W
-  label(c, canvas, S.spent, x, y, RIGHT_W, ROW_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
-  local n = order.n
-  local y_rows = y + ROW_H + 4
-  local rows = math_floor((h - ROW_H - 4) / (ROW_H + ROW_GAP))
-  if rows > n then rows = n end
-  if rows < 0 then rows = 0 end
-  max_scroll = (n > rows) and (n - rows) or 0
-  if scroll > max_scroll then scroll = max_scroll end
-  if scroll < 0 then scroll = 0 end
-  local top_total = (n > 0) and order[1].total or 0
-  local bar_x = x + NAME_W + 4
-  local bar_w = RIGHT_W - NAME_W - VAL_W - 8
-  row_hit.n = rows
+local function dress(rec, S)
+  if rec.name then return end
+  if rec.id > 0 then
+    local SC = Vermilion.SkillColors
+    rec.name = SC.ability_name(rec.id)
+    rec.icon = SC.ability_icon(rec.id)
+    local col = SC.group_color(SC.group_of(rec.id))
+    rec.r, rec.g, rec.b = col.r, col.g, col.b
+  else
+    rec.name = S.recovery
+    rec.icon = nil
+    rec.r, rec.g, rec.b = C_REGEN.r, C_REGEN.g, C_REGEN.b
+  end
+end
+
+local function draw_section(c, canvas, x, y, sec, rows, title, S)
+  local o = order[sec]
+  local n = o.n
+  local off = scroll[sec]
+  local rest = n - rows - off
+  label(c, canvas, title, x, y, RIGHT_W - 60, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
+  if rest > 0 then label(c, canvas, string_format(S.more, rest), x + RIGHT_W - 70, y, 70, HDR_H, TEXT_ALIGN_RIGHT, C_DIM, 0.8) end
+  box(c, canvas, x, y + HDR_H - 2, x + RIGHT_W, 1, C_MID, 0.08, 2)
+  local ry = y + HDR_H + 2
+  sec_rect[sec].y0, sec_rect[sec].y1 = y, ry + rows * (ROW_H + ROW_GAP)
+  local top_total = (n > 0) and o[1].total or 0
+  local x_name = x + ICON + 6
+  local name_w = RIGHT_W - ICON - 6 - VAL_W - 4
   for i = 1, rows do
-    local rec = order[i + scroll]
-    local ry = y_rows + (i - 1) * (ROW_H + ROW_GAP)
-    row_hit.y0[i], row_hit.y1[i], row_hit.rec[i] = ry, ry + ROW_H, rec
+    local rec = o[i + off]
+    dress(rec, S)
+    local k = row_hit.n + 1
+    row_hit.n = k
+    row_hit.y0[k], row_hit.y1[k], row_hit.rec[k], row_hit.sec[k] = ry, ry + ROW_H, rec, sec
     local dim = (hover_row ~= nil and rec ~= hover_row)
-    if not rec.name then rec.name = Vermilion.SkillColors.ability_name(rec.id) end
     local a = dim and 0.45 or 1
-    label(c, canvas, rec.name, x, ry, NAME_W, ROW_H, TEXT_ALIGN_LEFT, C_TEXT, a)
+    if rec.icon then
+      local ic = c.icon:AcquireObject()
+      ic:ClearAnchors()
+      ic:SetTexture(rec.icon)
+      ic:SetDimensions(ICON, ICON)
+      ic:SetColor(1, 1, 1, a)
+      ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, ry + math_floor((ROW_H - ICON) / 2))
+      ic:SetHidden(false)
+    end
+    label(c, canvas, rec.name, x_name, ry + 1, name_w, NAME_H, TEXT_ALIGN_LEFT, C_TEXT, a)
+    local by = ry + NAME_H + 3
+    box(c, canvas, x_name, x_name + name_w, by, BAR_H, C_MID, dim and 0.03 or 0.06, 2)
     if top_total > 0 then
-      local bh = 8
-      local by = ry + math_floor((ROW_H - bh) / 2)
-      box(c, canvas, bar_x, bar_x + bar_w, by, bh, C_MID, dim and 0.03 or 0.06, 2)
-      local wm = math_floor(bar_w * rec.mag / top_total + 0.5)
-      local ws = math_floor(bar_w * rec.sta / top_total + 0.5)
-      if wm > 0 then box(c, canvas, bar_x, bar_x + wm, by, bh, c.mag, dim and 0.25 or 0.9, 3) end
-      if ws > 0 then box(c, canvas, bar_x + wm, bar_x + wm + ws, by, bh, c.sta, dim and 0.25 or 0.9, 3) end
+      local bw = math_floor(name_w * rec.total / top_total + 0.5)
+      if bw < 1 then bw = 1 end
+      box(c, canvas, x_name, x_name + bw, by, BAR_H, rec, dim and 0.3 or 0.92, 3)
     end
     if rec.disp ~= rec.total then
       rec.disp = rec.total
       rec.text = c.fmt_val(rec.total)
     end
-    label(c, canvas, rec.text, x + RIGHT_W - VAL_W, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, C_TEXT, a)
+    local vcol = (rec.mag >= rec.sta) and c.mag or c.sta
+    label(c, canvas, rec.text, x + RIGHT_W - VAL_W, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, vcol, a)
+    ry = ry + ROW_H + ROW_GAP
   end
-  if n > rows then
-    label(c, canvas, string_format(S.more, n - rows - scroll), x, y_rows + rows * (ROW_H + ROW_GAP), RIGHT_W, ROW_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
+  return ry
+end
+
+local function draw_histogram(c, canvas, cw, y, h, S)
+  local x = cw - RIGHT_W
+  local na, nb = order[SEC_SPENT].n, order[SEC_REC].n
+  local slots = math_floor((h - 2 * (HDR_H + 2) - SEC_GAP) / (ROW_H + ROW_GAP))
+  if slots < 0 then slots = 0 end
+  local rows_a = math_ceil(slots / 2)
+  if rows_a > na then rows_a = na end
+  local rows_b = slots - rows_a
+  if rows_b > nb then rows_b = nb end
+  rows_a = slots - rows_b
+  if rows_a > na then rows_a = na end
+  max_scroll[SEC_SPENT] = (na > rows_a) and (na - rows_a) or 0
+  max_scroll[SEC_REC]   = (nb > rows_b) and (nb - rows_b) or 0
+  for s = 1, 2 do
+    if scroll[s] > max_scroll[s] then scroll[s] = max_scroll[s] end
+    if scroll[s] < 0 then scroll[s] = 0 end
   end
+  row_hit.n = 0
+  local ry = draw_section(c, canvas, x, y, SEC_SPENT, rows_a, S.spent, S)
+  if nb > 0 then draw_section(c, canvas, x, ry + SEC_GAP, SEC_REC, rows_b, S.recovered, S) else sec_rect[SEC_REC].y0, sec_rect[SEC_REC].y1 = 0, 0 end
 end
 
 function M.attach(t)
@@ -316,6 +431,7 @@ function M.render()
   c.sub:ReleaseAllObjects()
   c.rim:ReleaseAllObjects()
   c.lbl:ReleaseAllObjects()
+  if c.icon then c.icon:ReleaseAllObjects() end
   c.hit_reset()
   row_hit.n = 0
   lane.span = 0
@@ -326,8 +442,8 @@ function M.render()
     c.no_data:SetHidden(false)
     return
   end
-  local rs = Vermilion.Resources.summary(TB)
-  if not rs.has then
+  sums = Vermilion.Resources.summary(TB)
+  if not sums.has then
     c.no_data:SetText(GetString(VERMILION_GRAPH_NO_RES))
     c.no_data:SetHidden(false)
     return
@@ -388,26 +504,44 @@ local function starved_span(TB, k, p)
   return t_end - TB.at(i).t
 end
 
+local function row_card(c, rec, sec, S, mx, my)
+  local p = (rec.mag >= rec.sta) and MAG or STA
+  local nr = 0
+  local stat
+  if sec == SEC_SPENT then
+    stat = string_format(S.casts, rec.n, c.fmt_val(rec.total / math_max(rec.n, 1)))
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.total, c.fmt_val(rec.total)
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or ""
+  else
+    if rec.id == 0 then
+      local R = Vermilion.Restores
+      local rg = R and R.regen(p) or 0
+      stat = (rg > 0) and string_format(S.regen, c.fmt_val(rg)) or S.recovery
+    else
+      stat = string_format(S.restores, rec.n, c.fmt_val(rec.total / math_max(rec.n, 1)))
+    end
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.rec_total, c.fmt_val(rec.total)
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.rec_share, PCT_TEXT[math_floor(rec.total / math_max(totals.regained, 1) * 100 + 0.5)] or ""
+  end
+  nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.pool, (rec.mag > 0 and rec.sta > 0) and S.pick[PICK_BOTH] or S.pools[p]
+  c.show_card(pool_col(c, p), rec.name or "", stat, "", ROWS, nr, nil, mx, my)
+end
+
 function M.hover(mx, my)
   local c = ctx
   if not c then return end
   local canvas = c.canvas
   local rel_x, rel_y = mx - canvas:GetLeft(), my - canvas:GetTop()
   local S = strings()
-  local rec = nil
+  local rec, sec = nil, nil
   if rel_x >= canvas:GetWidth() - RIGHT_W then
     for i = 1, row_hit.n do
-      if rel_y >= row_hit.y0[i] and rel_y <= row_hit.y1[i] then rec = row_hit.rec[i] break end
+      if rel_y >= row_hit.y0[i] and rel_y <= row_hit.y1[i] then rec, sec = row_hit.rec[i], row_hit.sec[i] break end
     end
   end
   if rec ~= hover_row then hover_row = rec; c.rerender() end
   if rec then
-    local p = (rec.mag >= rec.sta) and MAG or STA
-    local nr = 0
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.total, c.fmt_val(rec.total)
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or ""
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.pool, S.pools[p]
-    c.show_card(pool_col(c, p), rec.name or "", string_format(S.casts, rec.casts, c.fmt_val(rec.total / rec.casts)), "", ROWS, nr, nil, mx, my)
+    row_card(c, rec, sec, S, mx, my)
     return
   end
   if lane.span <= 0 or rel_x < lane.x or rel_x > lane.x + lane.w or rel_y < lane.y or rel_y > lane.y + lane.h then
@@ -420,18 +554,34 @@ function M.hover(mx, my)
   local k = sample_index_at(TB, t)
   local s = TB.at(k)
   if not s then c.hide_card() return end
+  local nxt = TB.at(k + 1)
+  local t_next = nxt and nxt.t or (s.t + 1000)
   local level = level_of(s, p)
   local sigma = Vermilion.Resources.window_sigma(TB, k, 10, p)
   local stat = string_format(S.flows, c.fmt_val(in_of(s, p)), c.fmt_val(out_of(s, p)))
   if sigma then stat = stat .. string_format(S.sigma, sigma) end
   local nr = 0
+  local SC = Vermilion.SkillColors
   local top_id, top_cost = Vermilion.Casts.spend_top(s.t - WINDOW_MS, s.t, p)
   if top_id > 0 then
     nr = nr + 1
-    ROWS[nr][1], ROWS[nr][2] = S.top, string_format("%s  ·  %s", Vermilion.SkillColors.ability_name(top_id), c.fmt_val(top_cost))
+    ROWS[nr][1], ROWS[nr][2] = S.top, string_format("%s  ·  %s", SC.ability_name(top_id), c.fmt_val(top_cost))
+  end
+  local R = Vermilion.Restores
+  if R then
+    local rid, ramt = R.top(s.t, t_next, p)
+    if rid > 0 then
+      nr = nr + 1
+      ROWS[nr][1], ROWS[nr][2] = S.rec_by, string_format("%s  ·  %s", SC.ability_name(rid), c.fmt_val(ramt))
+    end
+    local rg = R.regen(p)
+    if rg > 0 then
+      nr = nr + 1
+      ROWS[nr][1], ROWS[nr][2] = S.recovery, string_format(S.regen, c.fmt_val(rg))
+    end
   end
   local starved_ms = starved_span(TB, k, p)
-  if starved_ms >= STARVE_MS then
+  if starved_ms >= STARVE_MS and nr < #ROWS then
     nr = nr + 1
     ROWS[nr][1], ROWS[nr][2] = S.starved, c.fmt_secs(starved_ms)
   end
@@ -450,7 +600,7 @@ function M.click(mx, my)
     if rel_x >= pick_hit[i].x0 and rel_x <= pick_hit[i].x1 then
       if pick == i then return false end
       M.set_pick(i)
-      scroll = 0
+      scroll[SEC_SPENT], scroll[SEC_REC] = 0, 0
       hover_row = nil
       return true
     end
@@ -459,18 +609,27 @@ function M.click(mx, my)
 end
 
 function M.scroll(dir)
-  local next_off = scroll + ((dir or 1) < 0 and -1 or 1)
+  local sec = SEC_SPENT
+  local c = ctx
+  if c then
+    local _, my = GetUIMousePosition()
+    local rel_y = my - c.canvas:GetTop()
+    local rb = sec_rect[SEC_REC]
+    if rb.y1 > rb.y0 and rel_y >= rb.y0 and rel_y <= rb.y1 then sec = SEC_REC end
+  end
+  local next_off = scroll[sec] + ((dir or 1) < 0 and -1 or 1)
   if next_off < 0 then next_off = 0 end
-  if next_off > max_scroll then next_off = max_scroll end
-  if next_off == scroll then return false end
-  scroll = next_off
+  if next_off > max_scroll[sec] then next_off = max_scroll[sec] end
+  if next_off == scroll[sec] then return false end
+  scroll[sec] = next_off
   return true
 end
 
-function M.reset_scroll() scroll = 0 end
-function M.scroll_state() return scroll, max_scroll end
+function M.reset_scroll() scroll[SEC_SPENT], scroll[SEC_REC] = 0, 0 end
+function M.scroll_state() return scroll[SEC_SPENT], max_scroll[SEC_SPENT] end
 function M.hovered() return hover_row end
 function M.clear_hover() hover_row = nil end
-function M.rows() return order, order.n end
+function M.rows() return order[SEC_SPENT], order[SEC_SPENT].n end
+function M.recovered() return order[SEC_REC], order[SEC_REC].n end
 function M.totals() return totals end
 function M.lane() return lane end

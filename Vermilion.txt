@@ -58,6 +58,7 @@ core/debuff_tracker.lua
 core/ultimate.lua
 core/resources.lua
 core/casts.lua
+core/restores.lua
 core/kills.lua
 core/heat.lua
 core/auto_record.lua

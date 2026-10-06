@@ -41,6 +41,7 @@ local CASES = {
   "ultimate_band",
   "resources",
   "casts",
+  "restores",
   "resources_view",
   "targets_view",
   "kills",
