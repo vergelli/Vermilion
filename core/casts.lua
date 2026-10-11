@@ -122,12 +122,16 @@ end
 function M.probe_lines()
   local api, zc = Vermilion.zenimax.api, Vermilion.zenimax.constants
   local out = {}
-  local cat = api.GetActiveHotbarCategory and api.GetActiveHotbarCategory() or zc.HOTBAR_CATEGORY_PRIMARY
-  out[#out + 1] = string.format("bar=%s  flags: magicka=%s stamina=%s  first=%s ult=%s",
-    tostring(cat), tostring(zc.COMBAT_MECHANIC_FLAGS_MAGICKA), tostring(zc.COMBAT_MECHANIC_FLAGS_STAMINA),
+  local active = api.GetActiveHotbarCategory and api.GetActiveHotbarCategory() or zc.HOTBAR_CATEGORY_PRIMARY
+  out[#out + 1] = string.format("active bar=%s  flags: magicka=%s stamina=%s  first=%s ult=%s",
+    tostring(active), tostring(zc.COMBAT_MECHANIC_FLAGS_MAGICKA), tostring(zc.COMBAT_MECHANIC_FLAGS_STAMINA),
     tostring(zc.ACTION_BAR_FIRST_NORMAL_SLOT_INDEX), tostring(zc.ACTION_BAR_ULTIMATE_SLOT_INDEX))
   local first = (zc.ACTION_BAR_FIRST_NORMAL_SLOT_INDEX or 2) + 1
   local last  = zc.ACTION_BAR_ULTIMATE_SLOT_INDEX or 7
+  local bars = { zc.HOTBAR_CATEGORY_PRIMARY or 0, zc.HOTBAR_CATEGORY_BACKUP or 1 }
+  for b = 1, #bars do
+  local cat = bars[b]
+  out[#out + 1] = string.format("bar %d", cat)
   for slot = first, last do
     local id = api.GetSlotBoundId and api.GetSlotBoundId(slot, cat) or 0
     if id and id > 0 then
@@ -144,6 +148,7 @@ function M.probe_lines()
     else
       out[#out + 1] = string.format("slot %d  empty", slot)
     end
+  end
   end
   out[#out + 1] = string.format("recorded casts=%d recording=%s", n, tostring(recording))
   return out

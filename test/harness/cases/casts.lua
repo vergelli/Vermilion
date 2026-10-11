@@ -58,7 +58,7 @@ return function(H)
   ok(top_s == 502 and tcs == 2200, "the stamina side ranks on its own")
 
   local lines = Cst.probe_lines()
-  ok(#lines >= 7 and lines[2]:find("Crushing Shock", 1, true) and lines[2]:find("pool=1 cost=2500", 1, true), "the probe lists the slotted skills with the pool and cost the recorder would take, got " .. tostring(lines[2]))
+  ok(#lines >= 13 and lines[3]:find("Crushing Shock", 1, true) and lines[3]:find("pool=1 cost=2500", 1, true) and lines[9]:find("Elemental Blockade", 1, true), "the probe lists both bars with the pool and cost the recorder would take, got " .. tostring(lines[3]) .. " / " .. tostring(lines[9]))
 
   for _ = 1, 600 do H.skill_used(3) end
   local alloc = H.addon_alloc(function()
