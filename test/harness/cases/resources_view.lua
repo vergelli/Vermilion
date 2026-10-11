@@ -58,7 +58,7 @@ return function(H)
   ok(VermilionGraphWindowViewportNoDataLabel._hidden == true, "the view has data to draw")
 
   local function scan()
-    local r = { mag = 0, sta = 0, low = 0, ticks = 0, out = 0, band = 0, warn = 0, gold = 0, faded = 0, mag_bar = 0, icons = 0, pool_icons = 0, labels = {} }
+    local r = { mag = 0, sta = 0, low = 0, ticks = 0, out = 0, band = 0, warn = 0, warn_cols = 0, grey = 0, gold = 0, faded = 0, mag_bar = 0, icons = 0, pool_icons = 0, labels = {} }
     for _, c in ipairs(H.controls) do
       local name = c._name or ""
       if c._hidden == false then
@@ -68,7 +68,11 @@ return function(H)
             if c._vpts then r.faded = r.faded + 1 end
             if c._h == 5 then r.mag_bar = r.mag_bar + 1 end
           end
-          if math.abs(c._r - 0.95) < 0.01 and math.abs(c._g - 0.80) < 0.01 then r.warn = r.warn + 1 end
+          if math.abs(c._r - 0.95) < 0.01 and math.abs(c._g - 0.80) < 0.01 then
+            r.warn = r.warn + 1
+            if c._a == 0.85 then r.warn_cols = r.warn_cols + 1 end
+          end
+          if math.abs(c._r - 0.70) < 0.01 and math.abs(c._g - 0.66) < 0.01 then r.grey = r.grey + 1 end
           if math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then r.gold = r.gold + 1 end
           if math.abs(c._r - 0.46) < 0.01 and math.abs(c._g - 0.80) < 0.01 then
             r.sta = r.sta + 1
@@ -98,7 +102,8 @@ return function(H)
   ok(r.band >= 2, "the 15% band is painted on both sides of the midline, got " .. r.band)
   ok(r.warn >= 2, "the 15 to 30% band and its line are yellow, got " .. r.warn)
   ok(r.gold >= 20, "the picker, the two halves and the two lists wear gold frames, got " .. r.gold)
-  ok(r.faded >= 2, "level columns fade toward the midline in BOTH, got " .. r.faded)
+  ok(r.faded == 0, "level columns are solid in BOTH")
+  ok(r.warn_cols >= 1, "columns between 15 and 30% are yellow, got " .. r.warn_cols)
   ok(r.mag_bar >= 1, "the recovered list colours its bars by pool, got " .. r.mag_bar)
   ok(r.pool_icons >= 2, "a missing ability icon and the recovery row fall back to the pool's icon, got " .. r.pool_icons)
   ok(r.out == 0, "the mirrored layout draws levels, not flow bars")
@@ -130,9 +135,8 @@ return function(H)
   G.next_view(); G.prev_view()
   ok(view_label._text == "RESOURCES", "back on the view")
   r = scan()
-  ok(r.sta == 0 and r.mag > 0 and r.out > 0, "a single pool draws its level lane and its flow lane, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out)
+  ok(r.sta == 0 and r.mag > 0 and r.out == 0 and r.grey > 0, "a single pool draws its level lane and a flow lane stacked by skill and by source, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out .. " grey " .. r.grey)
   ok(r.band >= 1 and r.ticks >= 1, "the band and the starvation mark stay in the single layout")
-  ok(r.faded == 0, "the single layout draws solid columns")
   ok(has(r.labels, "LEVEL") and has(r.labels, "REGAINED") and has(r.labels, "SPENT"), "the two lanes name what they show")
   local order2, n2 = RV.rows()
   ok(n2 == 1 and order2[1].id == 501, "the spend list follows the pick, got " .. n2)
@@ -152,6 +156,8 @@ return function(H)
   for _, c in ipairs(H.controls) do if c._hidden == false and type(c._text) == "string" then rows_seen[c._text] = true end end
   ok(rows_seen["Top spender · 10 s"], "the card names the top spender of the last ten seconds")
   ok(rows_seen["Recovery"], "the card names the recovery per tick")
+  ok(math.abs((VermilionHoverCardTime._r or 0) - 0.80) < 0.01, "the time line reads in gold")
+  ok(VermilionHoverCardEdgeT and math.abs(VermilionHoverCardEdgeT._r - 0.80) < 0.01, "the card wears a gold edge")
   hit._onOnMouseExit(hit)
 
   local name_lbl
@@ -166,6 +172,8 @@ return function(H)
   ok(VermilionHoverCardName._text == "Heavy Attack", "hovering a restore row names the source, got " .. tostring(VermilionHoverCardName._text))
   ok((VermilionHoverCardStat._text or ""):find("restores", 1, true) ~= nil, "the card counts the restores, got " .. tostring(VermilionHoverCardStat._text))
   ok(RV.hovered() ~= nil and RV.hovered().id == 701, "the hovered row is tracked")
+  ok(math.abs((VermilionHoverCardRowVal1._r or 0) - 0.36) < 0.01 and math.abs((VermilionHoverCardRowVal1._b or 0) - 0.96) < 0.01, "the recovered amount is painted in the pool's colour")
+  ok(math.abs((VermilionHoverCardRowVal2._r or 0) - 0.92) < 0.01, "the share stays neutral")
   hit._onOnMouseExit(hit)
   RV.clear_hover()
   H.state.mouse_x, H.state.mouse_y = 400, 300
@@ -201,6 +209,8 @@ return function(H)
   local _, n4 = RV.rows()
   local rec4, nr4 = RV.recovered()
   ok(n4 == 0 and nr4 == 1 and rec4[1].id == 0, "no casts means an empty spend list and the recovery alone explains the regained, got " .. n4 .. " and " .. nr4)
+  r = scan()
+  ok(r.out > 0, "without casts the spend bars fall back to the plain colour, got " .. r.out)
   ok(VermilionGraphWindowViewportNoDataLabel._hidden == true, "the pools still draw")
 
   RV.set_pick(3)

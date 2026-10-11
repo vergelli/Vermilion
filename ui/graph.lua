@@ -58,6 +58,7 @@ local VIS = {
   mag       = { r = 0.36, g = 0.56, b = 0.96 },
   sta       = { r = 0.46, g = 0.80, b = 0.36 },
   low       = { r = 0.95, g = 0.42, b = 0.34 },
+  gold      = { r = 0.80, g = 0.68, b = 0.40 },
   corner_len = 16,
   corner_w   = 2,
   corners = {
@@ -168,6 +169,7 @@ local C_CRIT_IDLE  = { r = 0.55, g = 0.55, b = 0.55, a = 0.85 }
 local C_CRIT_BELOW = { r = 0.90, g = 0.32, b = 0.28, a = 1.0 }
 local C_CRIT_ON    = { r = 0.95, g = 0.78, b = 0.30, a = 1.0 }
 local C_CRIT_ABOVE = { r = 0.42, g = 0.85, b = 0.45, a = 1.0 }
+M.KIND = { time = VIS.gold, damage = C_LINE_EDPS, shield = C_SHDPS, crit = C_CRIT, magicka = VIS.mag, stamina = VIS.sta, ultimate = VIS.ready, warn = C_CRIT_BELOW, neutral = C_CARD_STAT }
 local CRIT_MARGIN  = 5
 
 -- small helpers
@@ -685,6 +687,17 @@ local function build_hover_card()
   accent:SetWidth(3)
   accent:SetColor(C_CARD_ACCENT.r, C_CARD_ACCENT.g, C_CARD_ACCENT.b, 1.0)
 
+  for _, e in ipairs({ { "T", TOPLEFT, TOPRIGHT, true }, { "B", BOTTOMLEFT, BOTTOMRIGHT, true }, { "L", TOPLEFT, BOTTOMLEFT, false }, { "R", TOPRIGHT, BOTTOMRIGHT, false } }) do
+    local edge = WM:CreateControl("VermilionHoverCardEdge" .. e[1], root, CT_TEXTURE)
+    edge:SetTexture(FILL_TEXTURE)
+    edge:SetTextureCoords(0, 1, 0, 0.05)
+    edge:SetAnchor(e[2], root, e[2], 0, 0)
+    edge:SetAnchor(e[3], root, e[3], 0, 0)
+    if e[4] then edge:SetHeight(1) else edge:SetWidth(1) end
+    edge:SetColor(VIS.gold.r, VIS.gold.g, VIS.gold.b, 0.45)
+    edge:SetDrawLevel(2)
+  end
+
   local swatch = WM:CreateControl("VermilionHoverCardSwatch", root, CT_TEXTURE)
   swatch:SetTexture(FILL_TEXTURE)
   swatch:SetTextureCoords(0, 1, 0, 0.05)
@@ -710,7 +723,7 @@ local function build_hover_card()
   time:SetFont("ZoFontGameSmall")
   time:SetHorizontalAlignment(TEXT_ALIGN_LEFT)
   time:SetVerticalAlignment(TEXT_ALIGN_CENTER)
-  time:SetColor(C_CARD_TIME.r, C_CARD_TIME.g, C_CARD_TIME.b, 1.0)
+  time:SetColor(VIS.gold.r, VIS.gold.g, VIS.gold.b, 1.0)
   time:SetAnchor(TOPLEFT, root, TOPLEFT, 12, 40)
   time:SetDimensions(CARD_W - 20, 12)
 
@@ -981,6 +994,8 @@ local function show_rows_card(color, name_text, stat_text, time_text, rows, n_ro
     row.name:SetColor(C_CARD_STAT.r, C_CARD_STAT.g, C_CARD_STAT.b, 1.0)
     row.name:SetHidden(false)
     row.val:SetText(rows[i][2])
+    local vc = rows[i][3] or C_CARD_TIME
+    row.val:SetColor(vc.r, vc.g, vc.b, 1.0)
     row.val:SetHidden(false)
   end
   fit_card_rows(card, n, CARD_W)
@@ -3395,7 +3410,7 @@ function M.init()
   Vermilion.TargetsView.attach({
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
-    layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
+    layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val, kinds = M.KIND,
     ult_band = draw_bands_at, ult_inset = top_inset,
     kills = function()
       if Vermilion.Settings and Vermilion.Settings.kill_markers and not Vermilion.Settings.kill_markers() then return nil end
@@ -3421,7 +3436,7 @@ function M.init()
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
-    mag = VIS.mag, sta = VIS.sta, low = VIS.low,
+    mag = VIS.mag, sta = VIS.sta, low = VIS.low, kinds = M.KIND,
     icon = controls.pool_c_icon,
     hide_grid = hide_grid,
     now = GetGameTimeMilliseconds,
