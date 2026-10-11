@@ -30,6 +30,17 @@ local function mechanic_cost(api, zc, slot, cat, id, flag)
   return cost or 0
 end
 
+local function slot_ability(api, zc, slot, cat)
+  local id = api.GetSlotBoundId(slot, cat) or 0
+  if id <= 0 then return 0, false end
+  if api.GetSlotType and api.GetAbilityIdForCraftedAbilityId and zc.ACTION_TYPE_CRAFTED_ABILITY
+     and api.GetSlotType(slot, cat) == zc.ACTION_TYPE_CRAFTED_ABILITY then
+    local real = api.GetAbilityIdForCraftedAbilityId(id)
+    if real and real > 0 then return real, true end
+  end
+  return id, false
+end
+
 local function slot_cost(api, zc, slot, cat, id)
   local magf, staf = zc.COMBAT_MECHANIC_FLAGS_MAGICKA, zc.COMBAT_MECHANIC_FLAGS_STAMINA
   if api.GetAbilityBaseCostInfo then
@@ -52,8 +63,9 @@ local function slot_cost(api, zc, slot, cat, id)
   local cs = staf and api.GetSlotAbilityCost(slot, staf, cat) or 0
   cm, cs = cm or 0, cs or 0
   if cm <= 0 and cs <= 0 then return 0, 0 end
-  if cm >= cs then return MAG, cm end
-  return STA, cs
+  if cs <= 0 then return MAG, cm end
+  if cm <= 0 then return STA, cs end
+  return 0, 0
 end
 
 function M.on_used(slot)
@@ -62,7 +74,7 @@ function M.on_used(slot)
   local api, zc = Vermilion.zenimax.api, Vermilion.zenimax.constants
   if not api.GetSlotBoundId then return end
   local cat = api.GetActiveHotbarCategory and api.GetActiveHotbarCategory() or zc.HOTBAR_CATEGORY_PRIMARY
-  local id = api.GetSlotBoundId(slot, cat) or 0
+  local id = slot_ability(api, zc, slot, cat)
   if id <= 0 then return end
   local pool, cost = slot_cost(api, zc, slot, cat, id)
   if cost > COST_CAP then cost = COST_CAP end
@@ -133,7 +145,8 @@ function M.probe_lines()
   local cat = bars[b]
   out[#out + 1] = string.format("bar %d", cat)
   for slot = first, last do
-    local id = api.GetSlotBoundId and api.GetSlotBoundId(slot, cat) or 0
+    local id, crafted = 0, false
+    if api.GetSlotBoundId then id, crafted = slot_ability(api, zc, slot, cat) end
     if id and id > 0 then
       local base, flags, per_tick
       if api.GetAbilityBaseCostInfo then base, flags, per_tick = api.GetAbilityBaseCostInfo(id, nil, "player") end
@@ -142,8 +155,9 @@ function M.probe_lines()
       local sm = api.GetSlotAbilityCost and zc.COMBAT_MECHANIC_FLAGS_MAGICKA and api.GetSlotAbilityCost(slot, zc.COMBAT_MECHANIC_FLAGS_MAGICKA, cat)
       local ss = api.GetSlotAbilityCost and zc.COMBAT_MECHANIC_FLAGS_STAMINA and api.GetSlotAbilityCost(slot, zc.COMBAT_MECHANIC_FLAGS_STAMINA, cat)
       local pool, cost = slot_cost(api, zc, slot, cat, id)
-      out[#out + 1] = string.format("slot %d  %s (%d)  base=%s flags=%s tick=%s  abilitycost mag=%s sta=%s  slotcost mag=%s sta=%s  -> pool=%d cost=%d",
+      out[#out + 1] = string.format("slot %d  %s (%d)%s  base=%s flags=%s tick=%s  abilitycost mag=%s sta=%s  slotcost mag=%s sta=%s  -> pool=%d cost=%d",
         slot, tostring(api.GetAbilityName and api.GetAbilityName(id) or "?"), id,
+        crafted and string.format(" scribed from %d", api.GetSlotBoundId(slot, cat) or 0) or "",
         tostring(base), tostring(flags), tostring(per_tick), tostring(cm), tostring(cs), tostring(sm), tostring(ss), pool, cost)
     else
       out[#out + 1] = string.format("slot %d  empty", slot)
