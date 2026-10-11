@@ -755,7 +755,7 @@ function M.init()
   M.on_pname_focus(false)
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
-  VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION)
+  VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION .. (Vermilion.Constants.DEBUG and ("  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
   M.refresh_dev_button()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))

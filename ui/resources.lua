@@ -377,6 +377,25 @@ local function draw_flows(c, canvas, TB, n, p, y_mid, half)
   box(c, canvas, lane.x, lane.x + lane.w, y_mid, 1, C_MID, 0.18, 4)
 end
 
+local function draw_deaths(c, canvas)
+  local R = Vermilion.Resources
+  if not (c.icon and c.kill_icon and R.deaths) then return end
+  local dts, dn = R.deaths()
+  for i = 1, dn do
+    local t = dts[i]
+    if t >= lane.t0 and t <= lane.t0 + lane.span then
+      local ic = c.icon:AcquireObject()
+      ic:ClearAnchors()
+      ic:SetTexture(c.kill_icon)
+      ic:SetDimensions(14, 14)
+      ic:SetColor(1, 0.92, 0.88, 0.95)
+      ic:SetDrawLevel(7)
+      ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x_of(t) - 7, lane.mid - 7)
+      ic:SetHidden(false)
+    end
+  end
+end
+
 local function lane_tag(c, canvas, text, y)
   label(c, canvas, text, lane.x + 4, y, 90, 12, TEXT_ALIGN_LEFT, C_DIM, 0.75)
 end
@@ -601,6 +620,7 @@ function M.render()
     draw_single(c, canvas, TB, n, (pick == PICK_MAG) and MAG or STA, S)
   end
   draw_time(c, canvas)
+  draw_deaths(c, canvas)
   draw_histogram(c, canvas, cw, y, h, S)
 end
 

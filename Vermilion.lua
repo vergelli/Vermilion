@@ -83,9 +83,6 @@ local function on_slash(input)
 
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       Vermilion.Diagnostics.full_report(sub == "gc" or sub == "full") ; return
-    elseif cmd == "castprobe" then
-      Vermilion.CopyBox.show("Vermilion Cast Probe", table.concat(Vermilion.Casts.probe_lines(), "\n"))
-      return
     elseif cmd == "gcprobe" then
 
       local n = tonumber(string_match(input, "^%s*%S+%s+(%d+)")) or 1000
@@ -166,6 +163,11 @@ local function on_slash(input)
       d("[Vm] " .. Vermilion.Trace.mark(label))
       return
     end
+  end
+
+  if cmd == "castprobe" then
+    Vermilion.CopyBox.show("Vermilion Cast Probe", table.concat(Vermilion.Casts.probe_lines(), "\n"))
+    return
   end
 
   if cmd == "graph" then

@@ -51,6 +51,12 @@ return function(H)
     H.damage_out({ hit = 1000, ability_id = 501 })
     H.advance(1000)
   end
+  H.death(true)
+  H.res_power(POWERTYPE_MAGICKA, 0, 30000); H.res_power(POWERTYPE_STAMINA, 0, 20000)
+  H.advance(1000)
+  H.death(false)
+  H.res_power(POWERTYPE_MAGICKA, 30000, 30000); H.res_power(POWERTYPE_STAMINA, 20000, 20000)
+  H.advance(1000)
   G.on_stop_click()
   H.advance(500)
 
@@ -58,7 +64,7 @@ return function(H)
   ok(VermilionGraphWindowViewportNoDataLabel._hidden == true, "the view has data to draw")
 
   local function scan()
-    local r = { mag = 0, sta = 0, low = 0, ticks = 0, out = 0, band = 0, warn = 0, warn_cols = 0, grey = 0, gold = 0, faded = 0, mag_bar = 0, icons = 0, pool_icons = 0, labels = {} }
+    local r = { mag = 0, sta = 0, low = 0, ticks = 0, out = 0, band = 0, warn = 0, warn_cols = 0, grey = 0, gold = 0, faded = 0, mag_bar = 0, icons = 0, pool_icons = 0, skulls = 0, labels = {} }
     for _, c in ipairs(H.controls) do
       local name = c._name or ""
       if c._hidden == false then
@@ -89,6 +95,7 @@ return function(H)
         elseif name:find("^VermilionContribIcon") then
           r.icons = r.icons + 1
           if type(c._tex) == "string" and c._tex:find("champion_points_", 1, true) then r.pool_icons = r.pool_icons + 1 end
+          if type(c._tex) == "string" and c._tex:find("deathRecap", 1, true) then r.skulls = r.skulls + 1 end
         end
       end
     end
@@ -106,6 +113,7 @@ return function(H)
   ok(r.warn_cols >= 1, "columns between 15 and 30% are yellow, got " .. r.warn_cols)
   ok(r.mag_bar >= 1, "the recovered list colours its bars by pool, got " .. r.mag_bar)
   ok(r.pool_icons >= 2, "a missing ability icon and the recovery row fall back to the pool's icon, got " .. r.pool_icons)
+  ok(r.skulls == 1, "the death wears a skull on the midline, got " .. r.skulls)
   ok(r.out == 0, "the mirrored layout draws levels, not flow bars")
   ok(has(r.labels, "MAGICKA") and has(r.labels, "STAMINA") and has(r.labels, "BOTH"), "the picker offers magicka, stamina and both")
   ok(has(r.labels, "SPENT BY SKILL") and has(r.labels, "RECOVERED BY"), "the two lists have their headers")
@@ -191,6 +199,7 @@ return function(H)
   ok(n3 == 1 and order3[1].id == 501 and order3[1].n == 26 and nr3 == 2 and rec3[1].n == 6, "both lists are rebuilt from the saved streams, got " .. n3 .. " and " .. nr3)
   r = scan()
   ok(r.mag > 0, "a loaded session draws the pool")
+  ok(r.skulls == 1, "the death comes back with the session, got " .. r.skulls)
 
   local old = {}
   for k, v in pairs(sess) do old[k] = v end
