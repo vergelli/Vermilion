@@ -4,6 +4,7 @@ local M = Vermilion.ResourcesView
 
 local math_floor    = math.floor
 local math_max      = math.max
+local math_min      = math.min
 local math_ceil     = math.ceil
 local string_format = string.format
 local table_sort    = table.sort
@@ -27,13 +28,13 @@ local STARVE    = 0.15
 local STARVE_MS = 2000
 local TICK_H    = 3
 local WINDOW_MS = 10000
-local GRAD_LO   = 0.22
 local C_DIM     = { r = 0.62, g = 0.58, b = 0.56 }
 local C_TEXT    = { r = 0.94, g = 0.88, b = 0.86 }
 local C_OUT     = { r = 0.86, g = 0.50, b = 0.44 }
 local C_MID     = { r = 1.00, g = 1.00, b = 1.00 }
 local C_WARN    = { r = 0.95, g = 0.80, b = 0.30 }
 local C_GOLD    = { r = 0.80, g = 0.68, b = 0.40 }
+local C_REGEN   = { r = 0.70, g = 0.66, b = 0.64 }
 local ICON_POOL = { "EsoUI/Art/Champion/champion_points_magicka_icon.dds", "EsoUI/Art/Champion/champion_points_stamina_icon.dds" }
 
 local PCT_TEXT = {}
@@ -54,6 +55,8 @@ local pick_hit = { { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, y
 local row_hit = { n = 0, y0 = {}, y1 = {}, rec = {}, sec = {} }
 local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
 local ROWS = { {}, {}, {}, {} }
+local col_cache = {}
+local seg_id, seg_v, seg_n = {}, {}, 0
 local str = nil
 local SEC_SPENT, SEC_REC = 1, 2
 
@@ -103,8 +106,19 @@ function M.set_pick(p)
 end
 
 local function pool_col(c, p) return (p == MAG) and c.mag or c.sta end
+local function kind(c, name) return c.kinds and c.kinds[name] or nil end
 local function wants(p) return pick == PICK_BOTH or (pick == PICK_MAG and p == MAG) or (pick == PICK_STA and p == STA) end
 local function by_total_desc(a, b) return a.total > b.total end
+
+local function skill_col(id)
+  local col = col_cache[id]
+  if not col then
+    local SC = Vermilion.SkillColors
+    col = SC.group_color(SC.group_of(id))
+    col_cache[id] = col
+  end
+  return col
+end
 
 local function rec_for(sec, id)
   local rec = by_id[sec][id]
@@ -187,12 +201,6 @@ local function box(c, canvas, x0, x1, y, h, col, a, lvl)
   return seg
 end
 
-local function fade(seg, col, toward_top)
-  if not (seg.SetVertexColors and VERTEX_POINTS_TOPLEFT and VERTEX_POINTS_BOTTOMLEFT) then return end
-  local pts = toward_top and (VERTEX_POINTS_TOPLEFT + VERTEX_POINTS_TOPRIGHT) or (VERTEX_POINTS_BOTTOMLEFT + VERTEX_POINTS_BOTTOMRIGHT)
-  seg:SetVertexColors(pts, col.r, col.g, col.b, GRAD_LO)
-end
-
 local function frame(c, canvas, x0, y0, x1, y1)
   box(c, canvas, x0, x1, y0, 1, C_GOLD, 0.38, 6)
   box(c, canvas, x0, x1, y1 - 1, 1, C_GOLD, 0.38, 6)
@@ -226,28 +234,38 @@ local function level_of(s, p) return (p == MAG) and (s.mag or 0) or (s.sta or 0)
 local function in_of(s, p)    return (p == MAG) and (s.mag_in or 0) or (s.sta_in or 0) end
 local function out_of(s, p)   return (p == MAG) and (s.mag_out or 0) or (s.sta_out or 0) end
 
-local function draw_levels(c, canvas, TB, n, p, y_base, H, up, grad)
-  local col = pool_col(c, p)
-  local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
+local function state_of(level)
+  if level <= 0 then return 0 end
+  if level < STARVE then return 2 end
+  if level < LOW then return 1 end
+  return 0
+end
+
+local function state_col(c, p, st)
+  if st == 2 then return c.low end
+  if st == 1 then return C_WARN end
+  return pool_col(c, p)
+end
+
+local function draw_levels(c, canvas, TB, n, p, y_base, H, up)
+  local run_x0, run_x1, run_h, run_st = nil, nil, -1, 0
   for k = 1, n + 1 do
     local s = TB.at(k)
-    local h, low, x0, x1 = 0, false, 0, 0
+    local h, st, x0, x1 = 0, 0, 0, 0
     if s then
       local level = level_of(s, p)
       h = math_floor(level * H + 0.5)
-      low = level > 0 and level < LOW
+      st = state_of(level)
       x0, x1 = x_of(s.t), x_next(TB, k)
       if x1 <= x0 then x1 = x0 + 1 end
     end
-    if s and h > 0 and run_x0 and h == run_h and low == run_low and x0 <= run_x1 then
+    if s and h > 0 and run_x0 and h == run_h and st == run_st and x0 <= run_x1 then
       run_x1 = x1
     else
       if run_x0 then
-        local rc = run_low and c.low or col
-        local seg = box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, rc, 0.85, 3)
-        if grad then fade(seg, rc, not up) end
+        box(c, canvas, run_x0, run_x1, up and (y_base - run_h) or y_base, run_h, state_col(c, p, run_st), 0.85, 3)
       end
-      if s and h > 0 then run_x0, run_x1, run_h, run_low = x0, x1, h, low else run_x0 = nil end
+      if s and h > 0 then run_x0, run_x1, run_h, run_st = x0, x1, h, st else run_x0 = nil end
     end
   end
 end
@@ -288,15 +306,72 @@ local function draw_flows(c, canvas, TB, n, p, y_mid, half)
     if b > max_f then max_f = b end
   end
   if max_f > 0 then
+    local ct, cid, cpool, ccost, cn = Vermilion.Casts.records()
+    local R = Vermilion.Restores
+    local rt, rpool, ramt, rn = nil, nil, nil, 0
+    if R then
+      local a, _, b, d, e = R.records()
+      rt, rpool, ramt, rn = a, b, d, e
+    end
+    local ci, ri = 1, 1
     for k = 1, n do
       local s = TB.at(k)
+      local prv = (k > 1) and TB.at(k - 1) or nil
+      local t_lo = prv and prv.t or -1
       local x0, x1 = x_of(s.t), x_next(TB, k)
       if x1 <= x0 then x1 = x0 + 1 end
       if x1 - x0 > 2 then x1 = x1 - 1 end
-      local hi = math_floor(in_of(s, p) / max_f * half + 0.5)
-      local ho = math_floor(out_of(s, p) / max_f * half + 0.5)
-      if hi > 0 then box(c, canvas, x0, x1, y_mid - hi, hi, col, 0.9, 3) end
-      if ho > 0 then box(c, canvas, x0, x1, y_mid + 1, ho, C_OUT, 0.9, 3) end
+      local out = out_of(s, p)
+      local ho = math_floor(out / max_f * half + 0.5)
+      if ho > 0 then
+        while ci <= cn and ct[ci] < t_lo do ci = ci + 1 end
+        seg_n = 0
+        local total = 0
+        local j = ci
+        while j <= cn and ct[j] < s.t do
+          if cpool[j] == p and ccost[j] > 0 then
+            local id = cid[j]
+            local found = 0
+            for i = 1, seg_n do
+              if seg_id[i] == id then found = i break end
+            end
+            if found == 0 then seg_n = seg_n + 1; seg_id[seg_n], seg_v[seg_n] = id, 0; found = seg_n end
+            seg_v[found] = seg_v[found] + ccost[j]
+            total = total + ccost[j]
+          end
+          j = j + 1
+        end
+        if total > 0 then
+          local y, used = y_mid + 1, 0
+          for i = 1, seg_n do
+            local h = (i == seg_n) and (ho - used) or math_floor(ho * seg_v[i] / total + 0.5)
+            if h > 0 then
+              box(c, canvas, x0, x1, y, h, skill_col(seg_id[i]), 0.9, 3)
+              y, used = y + h, used + h
+            end
+          end
+        else
+          box(c, canvas, x0, x1, y_mid + 1, ho, C_OUT, 0.9, 3)
+        end
+      end
+      local inv = in_of(s, p)
+      local hi = math_floor(inv / max_f * half + 0.5)
+      if hi > 0 then
+        local e = 0
+        if rn > 0 then
+          while ri <= rn and rt[ri] < t_lo do ri = ri + 1 end
+          local j = ri
+          while j <= rn and rt[j] < s.t do
+            if rpool[j] == p then e = e + ramt[j] end
+            j = j + 1
+          end
+        end
+        local he = (e > 0 and inv > 0) and math_floor(hi * math_min(e, inv) / inv + 0.5) or 0
+        if he > hi then he = hi end
+        local hr = hi - he
+        if hr > 0 then box(c, canvas, x0, x1, y_mid - hr, hr, C_REGEN, 0.9, 3) end
+        if he > 0 then box(c, canvas, x0, x1, y_mid - hr - he, he, col, 0.9, 3) end
+      end
     end
   end
   box(c, canvas, lane.x, lane.x + lane.w, y_mid, 1, C_MID, 0.18, 4)
@@ -314,8 +389,8 @@ local function draw_mirrored(c, canvas, TB, n, S)
   frame(c, canvas, lane.x, lane.mid, lane.x + lane.w, lane.y + lane.h)
   draw_threshold(c, canvas, lane.mid - 1, half, true)
   draw_threshold(c, canvas, lane.mid + 1, half, false)
-  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true, true)
-  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false, true)
+  draw_levels(c, canvas, TB, n, MAG, lane.mid - 1, half, true)
+  draw_levels(c, canvas, TB, n, STA, lane.mid + 1, half, false)
   draw_starved(c, canvas, TB, n, MAG, lane.y + 1)
   draw_starved(c, canvas, TB, n, STA, lane.y + lane.h - TICK_H - 1)
   lane_tag(c, canvas, S.pick[PICK_MAG], lane.y + TICK_H + 2)
@@ -334,7 +409,7 @@ local function draw_single(c, canvas, TB, n, p, S)
   frame(c, canvas, lane.x, y_fl, lane.x + lane.w, y_fl + h_fl)
   local H = h_lv - TICK_H - 3
   draw_threshold(c, canvas, y_lv + h_lv - 1, H, true)
-  draw_levels(c, canvas, TB, n, p, y_lv + h_lv - 1, H, true, false)
+  draw_levels(c, canvas, TB, n, p, y_lv + h_lv - 1, H, true)
   draw_starved(c, canvas, TB, n, p, y_lv + 1)
   draw_flows(c, canvas, TB, n, p, lane.mid, math_floor(h_fl / 2) - 3)
   lane_tag(c, canvas, S.lane_lv, y_lv + TICK_H + 2)
@@ -380,12 +455,12 @@ local function dress(rec, S)
     rec.name = SC.ability_name(rec.id)
     local icon = SC.ability_icon(rec.id) or ""
     rec.icon = (icon ~= "" and not icon:lower():find("icon_missing", 1, true)) and icon or nil
-    local col = SC.group_color(SC.group_of(rec.id))
+    local col = skill_col(rec.id)
     rec.r, rec.g, rec.b = col.r, col.g, col.b
   else
     rec.name = S.recovery
     rec.icon = nil
-    rec.r, rec.g, rec.b = C_DIM.r, C_DIM.g, C_DIM.b
+    rec.r, rec.g, rec.b = C_REGEN.r, C_REGEN.g, C_REGEN.b
   end
 end
 
@@ -560,12 +635,13 @@ end
 
 local function row_card(c, rec, sec, S, mx, my)
   local p = (rec.mag >= rec.sta) and MAG or STA
+  local pc = pool_col(c, p)
   local nr = 0
   local stat
   if sec == SEC_SPENT then
     stat = string_format(S.casts, rec.n, c.fmt_val(rec.total / math_max(rec.n, 1)))
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.total, c.fmt_val(rec.total)
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or ""
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.total, c.fmt_val(rec.total), pc
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or "", kind(c, "neutral")
   else
     if rec.id == 0 then
       local R = Vermilion.Restores
@@ -574,11 +650,11 @@ local function row_card(c, rec, sec, S, mx, my)
     else
       stat = string_format(S.restores, rec.n, c.fmt_val(rec.total / math_max(rec.n, 1)))
     end
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.rec_total, c.fmt_val(rec.total)
-    nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.rec_share, PCT_TEXT[math_floor(rec.total / math_max(totals.regained, 1) * 100 + 0.5)] or ""
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.rec_total, c.fmt_val(rec.total), pc
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.rec_share, PCT_TEXT[math_floor(rec.total / math_max(totals.regained, 1) * 100 + 0.5)] or "", kind(c, "neutral")
   end
-  nr = nr + 1; ROWS[nr][1], ROWS[nr][2] = S.pool, (rec.mag > 0 and rec.sta > 0) and S.pick[PICK_BOTH] or S.pools[p]
-  c.show_card(pool_col(c, p), rec.name or "", stat, "", ROWS, nr, nil, mx, my)
+  nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.pool, (rec.mag > 0 and rec.sta > 0) and S.pick[PICK_BOTH] or S.pools[p], pc
+  c.show_card(pc, rec.name or "", stat, "", ROWS, nr, nil, mx, my)
 end
 
 function M.hover(mx, my)
@@ -603,13 +679,14 @@ function M.hover(mx, my)
     return
   end
   local p = (pick == PICK_MAG) and MAG or (pick == PICK_STA) and STA or ((rel_y < lane.mid) and MAG or STA)
+  local pc = pool_col(c, p)
   local t = lane.t0 + (rel_x - lane.x) / lane.w * lane.span
   local TB = Vermilion.TemporalBuffer
   local k = sample_index_at(TB, t)
   local s = TB.at(k)
   if not s then c.hide_card() return end
-  local nxt = TB.at(k + 1)
-  local t_next = nxt and nxt.t or (s.t + 1000)
+  local prv = (k > 1) and TB.at(k - 1) or nil
+  local t_lo = prv and prv.t or -1
   local level = level_of(s, p)
   local sigma = Vermilion.Resources.window_sigma(TB, k, 10, p)
   local stat = string_format(S.flows, c.fmt_val(in_of(s, p)), c.fmt_val(out_of(s, p)))
@@ -619,28 +696,28 @@ function M.hover(mx, my)
   local top_id, top_cost = Vermilion.Casts.spend_top(s.t - WINDOW_MS, s.t, p)
   if top_id > 0 then
     nr = nr + 1
-    ROWS[nr][1], ROWS[nr][2] = S.top, string_format("%s  ·  %s", SC.ability_name(top_id), c.fmt_val(top_cost))
+    ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.top, string_format("%s  ·  %s", SC.ability_name(top_id), c.fmt_val(top_cost)), pc
   end
   local R = Vermilion.Restores
   if R then
-    local rid, ramt = R.top(s.t, t_next, p)
+    local rid, ramt = R.top(t_lo, s.t, p)
     if rid > 0 then
       nr = nr + 1
-      ROWS[nr][1], ROWS[nr][2] = S.rec_by, string_format("%s  ·  %s", SC.ability_name(rid), c.fmt_val(ramt))
+      ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.rec_by, string_format("%s  ·  %s", SC.ability_name(rid), c.fmt_val(ramt)), pc
     end
     local rg = R.regen(p)
     if rg > 0 then
       nr = nr + 1
-      ROWS[nr][1], ROWS[nr][2] = S.recovery, string_format(S.regen, c.fmt_val(rg))
+      ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.recovery, string_format(S.regen, c.fmt_val(rg)), pc
     end
   end
   local starved_ms = starved_span(TB, k, p)
   if starved_ms >= STARVE_MS and nr < #ROWS then
     nr = nr + 1
-    ROWS[nr][1], ROWS[nr][2] = S.starved, c.fmt_secs(starved_ms)
+    ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.starved, c.fmt_secs(starved_ms), kind(c, "time")
   end
   c.crosshair(math_floor(rel_x))
-  local col = (level > 0 and level < LOW) and c.low or pool_col(c, p)
+  local col = state_col(c, p, state_of(level))
   c.show_card(col, string_format("%s  %d%%", S.pools[p], math_floor(level * 100 + 0.5)), stat,
     "t  " .. c.fmt_secs(s.t - lane.t0), ROWS, nr, nil, mx, my)
 end

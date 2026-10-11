@@ -527,14 +527,17 @@ function M.hover(mx, my)
   local n_rows = 0
   n_rows = n_rows + 1
   ROWS[n_rows][1], ROWS[n_rows][2] = S.damage, c.fmt_val(rec.total)
+  ROWS[n_rows][3] = c.kinds and c.kinds.damage
   if rec.abs > 0 then
     n_rows = n_rows + 1
     ROWS[n_rows][1] = S.absorbed
     ROWS[n_rows][2] = string_format("%s  ·  %s", c.fmt_val(rec.abs), PCT_TEXT[math_floor(rec.abs / math_max(rec.total, 1) * 100 + 0.5)] or "")
+    ROWS[n_rows][3] = c.kinds and c.kinds.shield
   end
   n_rows = n_rows + 1
   ROWS[n_rows][1] = S.share
   ROWS[n_rows][2] = PCT_TEXT[math_floor(rec.total / math_max(totals.damage, 1) * 100 + 0.5)] or ""
+  ROWS[n_rows][3] = c.kinds and c.kinds.neutral
   if av > 0 and s and s.shield_abilities and (s.shield_abilities.count or 0) > 0 then
     local SC = Vermilion.SkillColors
     local sa = s.shield_abilities
@@ -543,6 +546,7 @@ function M.hover(mx, my)
       n_rows = n_rows + 1
       ROWS[n_rows][1] = S.shield
       ROWS[n_rows][2] = SC.ability_name(sa[k].id)
+      ROWS[n_rows][3] = c.kinds and c.kinds.shield
     end
   end
   c.crosshair(math_floor(rel_x))
