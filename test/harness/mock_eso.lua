@@ -554,6 +554,15 @@ function GetSlotBoundId(slot, cat)
   local bar = bars[cat]
   return (bar and bar[slot]) or 0
 end
+ACTION_TYPE_ABILITY = 1 ACTION_TYPE_CRAFTED_ABILITY = 9
+function GetSlotType(slot, cat)
+  local st = H.slot_types
+  if cat == nil then cat = H.state.active_bar or HOTBAR_CATEGORY_PRIMARY end
+  return (st and st[cat] and st[cat][slot]) or ACTION_TYPE_ABILITY
+end
+function GetAbilityIdForCraftedAbilityId(id)
+  return (H.crafted and H.crafted[id]) or 0
+end
 function GetSlotAbilityCost(slot, mechanic, cat)
   local sc = H.skill_costs
   if sc then
