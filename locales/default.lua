@@ -49,6 +49,7 @@ ZO_CreateStringId("VERMILION_HELP_HELP",    "  /vermilion help    show this list
 
 -- Graph window
 ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analysis")
+ZO_CreateStringId("VERMILION_DEBUG_TAG",     "debug")
 ZO_CreateStringId("VERMILION_GRAPH_RECORD",  "Record")
 ZO_CreateStringId("VERMILION_GRAPH_STOP",    "Stop")
 ZO_CreateStringId("VERMILION_REC_RECORDING", "Recording")

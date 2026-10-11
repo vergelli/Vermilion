@@ -2973,6 +2973,11 @@ function M.load_session(sess)
   else
     Vermilion.Restores.reset()
   end
+  if sess.streams.deaths and sess.desc.deaths then
+    Vermilion.Resources.load_session(vsf.unpack(sess.streams.deaths, sess.desc.deaths) or {})
+  else
+    Vermilion.Resources.load_session(nil)
+  end
   if sess.streams.kills and sess.desc.kills then
     local kr = vsf.unpack(sess.streams.kills, sess.desc.kills) or {}
     local gk = sess.gkeys or {}
@@ -3172,7 +3177,7 @@ function M.init()
     end,
     function(c) c:SetHidden(true) end)
 
-  controls.title:SetText(GetString(VERMILION_GRAPH_TITLE))
+  controls.title:SetText(GetString(VERMILION_GRAPH_TITLE) .. (Vermilion.Constants.DEBUG and ("  ·  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
   controls.btn_record_menu:SetText("|t16:16:EsoUI/Art/Buttons/large_downArrow_up.dds|t")
@@ -3436,7 +3441,7 @@ function M.init()
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
-    mag = VIS.mag, sta = VIS.sta, low = VIS.low, kinds = M.KIND,
+    mag = VIS.mag, sta = VIS.sta, low = VIS.low, kinds = M.KIND, kill_icon = VIS.kill_icon,
     icon = controls.pool_c_icon,
     hide_grid = hide_grid,
     now = GetGameTimeMilliseconds,

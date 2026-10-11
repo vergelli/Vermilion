@@ -17,8 +17,15 @@ local gained = { 0, 0 }
 local spent  = { 0, 0 }
 local seen   = { false, false }
 local saw_any = false
+local dead = false
+local skip = { false, false }
+local deaths_t = {}
+local n_deaths = 0
+local DEATH_CAP = 256
 
 local function bump(key) Vermilion.Diagnostics.bump(key) end
+
+local function now_ms() return Vermilion.zenimax.api.GetGameTimeMilliseconds() end
 
 local function clamp01(v)
   if v < 0 then return 0 end
@@ -33,9 +40,13 @@ function M.on_power(p, value, powerMax, effectiveMax)
   if effectiveMax and effectiveMax > 0 then mx = effectiveMax
   elseif powerMax and powerMax > 0 then mx = powerMax end
   if seen[p] then
-    local d = value - cur[p]
-    if d > 0 then gained[p] = gained[p] + d
-    elseif d < 0 then spent[p] = spent[p] - d end
+    if dead or skip[p] then
+      skip[p] = false
+    else
+      local d = value - cur[p]
+      if d > 0 then gained[p] = gained[p] + d
+      elseif d < 0 then spent[p] = spent[p] - d end
+    end
   end
   cur[p] = value
   max[p] = mx
@@ -57,6 +68,30 @@ function M.sample_into(slot)
   slot.sta_in  = flow(gained[STA])
   slot.sta_out = flow(spent[STA])
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
+  skip[MAG], skip[STA] = false, false
+end
+
+function M.on_death(is_dead)
+  if is_dead then
+    if dead then return end
+    dead = true
+    if recording and n_deaths < DEATH_CAP then
+      n_deaths = n_deaths + 1
+      deaths_t[n_deaths] = now_ms()
+    end
+  elseif dead then
+    dead = false
+    skip[MAG], skip[STA] = true, true
+  end
+end
+
+function M.deaths() return deaths_t, n_deaths end
+function M.is_dead() return dead end
+
+function M.load_session(recs)
+  recs = recs or {}
+  for i = 1, #recs do deaths_t[i] = recs[i].t or 0 end
+  n_deaths = #recs
 end
 
 local function seed(p, ptype)
@@ -74,6 +109,8 @@ end
 function M.start_session()
   recording = true
   saw_any = false
+  n_deaths = 0
+  skip[MAG], skip[STA] = false, false
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
   local zc = Vermilion.zenimax.constants
@@ -90,6 +127,8 @@ end
 function M.reset()
   recording = false
   saw_any = false
+  n_deaths = 0
+  skip[MAG], skip[STA] = false, false
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
 end
@@ -180,6 +219,13 @@ function M.init()
   end
   register("Vermilion_E_ResMag", MAG, zc.POWERTYPE_MAGICKA)
   register("Vermilion_E_ResSta", STA, zc.POWERTYPE_STAMINA)
+  if zc.EVENT_UNIT_DEATH_STATE_CHANGED then
+    local zev = Vermilion.zenimax.events
+    zev.register("Vermilion_E_ResDeath", zc.EVENT_UNIT_DEATH_STATE_CHANGED, function(unitTag, isDead)
+      if unitTag == "player" then M.on_death(isDead == true) end
+    end)
+    zev.add_filter("Vermilion_E_ResDeath", zc.EVENT_UNIT_DEATH_STATE_CHANGED, zc.REGISTER_FILTER_UNIT_TAG, "player")
+  end
   seed(MAG, zc.POWERTYPE_MAGICKA)
   seed(STA, zc.POWERTYPE_STAMINA)
   log:info("init: magicka", cur[MAG], "/", max[MAG], "stamina", cur[STA], "/", max[STA])

@@ -82,6 +82,9 @@ local DESC = {
     { name = "pool", width = 1 },
     { name = "amt",  width = 3 },
   },
+  deaths = {
+    { name = "t", width = 4 },
+  },
 }
 
 M.DESC = DESC
@@ -282,6 +285,13 @@ function M.capture(cooperative)
     if amt > 65535 then amt = 65535 end
     restore_recs[i] = { t = rel, id = rti[i] or 0, pool = rtp[i] or 0, amt = amt }
   end
+  local dts, dn = Vermilion.Resources.deaths()
+  local death_recs = {}
+  for i = 1, dn do
+    local rel = dts[i] - t0
+    if rel < 0 then rel = 0 end
+    death_recs[i] = { t = rel }
+  end
 
   local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
@@ -334,6 +344,7 @@ function M.capture(cooperative)
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
       casts     = vsf.pack(cast_recs, DESC.casts, nil, ye),
       restores  = vsf.pack(restore_recs, DESC.restores, nil, ye),
+      deaths    = vsf.pack(death_recs, DESC.deaths, nil, ye),
     },
   }
   return session
