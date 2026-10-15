@@ -143,7 +143,13 @@ return function(H)
   G.next_view(); G.prev_view()
   ok(view_label._text == "RESOURCES", "back on the view")
   r = scan()
-  ok(r.sta == 0 and r.mag > 0 and r.out == 0 and r.grey > 0, "a single pool draws its level lane and a flow lane stacked by skill and by source, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out .. " grey " .. r.grey)
+  ok(r.sta == 0 and r.mag > 0 and r.out > 0, "a single pool draws its level lane and the burn line of the flow lane, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out)
+  ok(r.grey > 0, "the dead stretch of the flow lane is greyed, got " .. r.grey)
+  local fills = 0
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionTargetSeg") and c._a and math.abs(c._a - 0.28) < 0.001 then fills = fills + 1 end
+  end
+  ok(fills > 0, "the gap between burn and income is filled, got " .. fills)
   ok(r.band >= 1 and r.ticks >= 1, "the band and the starvation mark stay in the single layout")
   ok(has(r.labels, "LEVEL") and has(r.labels, "REGAINED") and has(r.labels, "SPENT"), "the two lanes name what they show")
   local order2, n2 = RV.rows()
@@ -163,6 +169,7 @@ return function(H)
   local rows_seen = {}
   for _, c in ipairs(H.controls) do if c._hidden == false and type(c._text) == "string" then rows_seen[c._text] = true end end
   ok(rows_seen["Top spender · 10 s"], "the card names the top spender of the last ten seconds")
+  ok(rows_seen["Burn vs income · 5 s"], "the card reads the smoothed burn and income rates of the flow lane")
   ok(rows_seen["Recovery"], "the card names the recovery per tick")
   ok(math.abs((VermilionHoverCardTime._r or 0) - 0.80) < 0.01, "the time line reads in gold")
   ok(VermilionHoverCardEdgeT and math.abs(VermilionHoverCardEdgeT._r - 0.80) < 0.01, "the card wears a gold edge")

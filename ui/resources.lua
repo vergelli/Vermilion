@@ -28,6 +28,7 @@ local STARVE    = 0.15
 local STARVE_MS = 2000
 local TICK_H    = 3
 local WINDOW_MS = 10000
+local RATE_MS   = 5000
 local C_DIM     = { r = 0.62, g = 0.58, b = 0.56 }
 local C_TEXT    = { r = 0.94, g = 0.88, b = 0.86 }
 local C_OUT     = { r = 0.86, g = 0.50, b = 0.44 }
@@ -54,9 +55,11 @@ local lane = { x = 0, w = 0, y = 0, h = 0, t0 = 0, span = 0, mid = 0 }
 local pick_hit = { { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, y0 = 0, y1 = 0 }
 local row_hit = { n = 0, y0 = {}, y1 = {}, rec = {}, sec = {} }
 local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
-local ROWS = { {}, {}, {}, {} }
+local ROWS = { {}, {}, {}, {}, {} }
 local col_cache = {}
-local seg_id, seg_v, seg_n = {}, {}, 0
+local rate_in, rate_out, rate_n, rate_p = {}, {}, 0, 0
+local p_of_rates = 0
+local gdead = false
 local str = nil
 local SEC_SPENT, SEC_REC = 1, 2
 
@@ -85,6 +88,9 @@ local function strings()
     lane_lv   = GetString(VERMILION_RESH_LANE_LEVEL),
     lane_in   = GetString(VERMILION_RESH_LANE_IN),
     lane_out  = GetString(VERMILION_RESH_LANE_OUT),
+    lane_win  = GetString(VERMILION_RESH_LANE_WINDOW),
+    rates     = GetString(VERMILION_RESH_RATES),
+    rates_v   = GetString(VERMILION_RES_CARD_RATES),
   }
   return str
 end
@@ -295,86 +301,90 @@ local function draw_starved(c, canvas, TB, n, p, y)
   end
 end
 
-local function draw_flows(c, canvas, TB, n, p, y_mid, half)
-  if half < 3 then return end
-  local col = pool_col(c, p)
-  local max_f = 0
+local function build_rates(TB, n, p)
+  local lo, sin, sout, top = 1, 0, 0, 0
   for k = 1, n do
     local s = TB.at(k)
-    local a, b = in_of(s, p), out_of(s, p)
-    if a > max_f then max_f = a end
-    if b > max_f then max_f = b end
-  end
-  if max_f > 0 then
-    local ct, cid, cpool, ccost, cn = Vermilion.Casts.records()
-    local R = Vermilion.Restores
-    local rt, rpool, ramt, rn = nil, nil, nil, 0
-    if R then
-      local a, _, b, d, e = R.records()
-      rt, rpool, ramt, rn = a, b, d, e
+    sin, sout = sin + in_of(s, p), sout + out_of(s, p)
+    while lo < k and TB.at(lo).t <= s.t - RATE_MS do
+      local d = TB.at(lo)
+      sin, sout = sin - in_of(d, p), sout - out_of(d, p)
+      lo = lo + 1
     end
-    local ci, ri = 1, 1
-    for k = 1, n do
-      local s = TB.at(k)
-      local prv = (k > 1) and TB.at(k - 1) or nil
-      local t_lo = prv and prv.t or -1
-      local x0, x1 = x_of(s.t), x_next(TB, k)
+    local span = s.t - TB.at(lo).t + 1000
+    if span > RATE_MS then span = RATE_MS end
+    rate_in[k], rate_out[k] = sin * 1000 / span, sout * 1000 / span
+    if rate_in[k] > top then top = rate_in[k] end
+    if rate_out[k] > top then top = rate_out[k] end
+  end
+  rate_n, rate_p = n, p
+  return top
+end
+
+local function draw_steps(c, canvas, TB, n, vals, scale, y_base, H, col, a, lvl, thick)
+  local run_x0, run_x1, run_h = nil, nil, -1
+  for k = 1, n + 1 do
+    local s = TB.at(k)
+    local h, x0, x1 = -1, 0, 0
+    if s and k <= n then
+      h = math_floor(vals[k] * scale + 0.5)
+      if level_of(s, p_of_rates) <= 0 then h = -1 end
+      x0, x1 = x_of(s.t), x_next(TB, k)
       if x1 <= x0 then x1 = x0 + 1 end
-      if x1 - x0 > 2 then x1 = x1 - 1 end
-      local out = out_of(s, p)
-      local ho = math_floor(out / max_f * half + 0.5)
-      if ho > 0 then
-        while ci <= cn and ct[ci] < t_lo do ci = ci + 1 end
-        seg_n = 0
-        local total = 0
-        local j = ci
-        while j <= cn and ct[j] < s.t do
-          if cpool[j] == p and ccost[j] > 0 then
-            local id = cid[j]
-            local found = 0
-            for i = 1, seg_n do
-              if seg_id[i] == id then found = i break end
-            end
-            if found == 0 then seg_n = seg_n + 1; seg_id[seg_n], seg_v[seg_n] = id, 0; found = seg_n end
-            seg_v[found] = seg_v[found] + ccost[j]
-            total = total + ccost[j]
-          end
-          j = j + 1
-        end
-        if total > 0 then
-          local y, used = y_mid + 1, 0
-          for i = 1, seg_n do
-            local h = (i == seg_n) and (ho - used) or math_floor(ho * seg_v[i] / total + 0.5)
-            if h > 0 then
-              box(c, canvas, x0, x1, y, h, skill_col(seg_id[i]), 0.9, 3)
-              y, used = y + h, used + h
-            end
-          end
-        else
-          box(c, canvas, x0, x1, y_mid + 1, ho, C_OUT, 0.9, 3)
-        end
+    end
+    if h >= 0 and run_x0 and h == run_h and x0 <= run_x1 then
+      run_x1 = x1
+    else
+      if run_x0 and run_h > 0 then
+        local y = y_base - run_h
+        if y < y_base - H then y = y_base - H end
+        box(c, canvas, run_x0, run_x1, y, thick, col, a, lvl)
       end
-      local inv = in_of(s, p)
-      local hi = math_floor(inv / max_f * half + 0.5)
-      if hi > 0 then
-        local e = 0
-        if rn > 0 then
-          while ri <= rn and rt[ri] < t_lo do ri = ri + 1 end
-          local j = ri
-          while j <= rn and rt[j] < s.t do
-            if rpool[j] == p then e = e + ramt[j] end
-            j = j + 1
-          end
-        end
-        local he = (e > 0 and inv > 0) and math_floor(hi * math_min(e, inv) / inv + 0.5) or 0
-        if he > hi then he = hi end
-        local hr = hi - he
-        if hr > 0 then box(c, canvas, x0, x1, y_mid - hr, hr, C_REGEN, 0.9, 3) end
-        if he > 0 then box(c, canvas, x0, x1, y_mid - hr - he, he, col, 0.9, 3) end
-      end
+      if h >= 0 then run_x0, run_x1, run_h = x0, x1, h else run_x0 = nil end
     end
   end
-  box(c, canvas, lane.x, lane.x + lane.w, y_mid, 1, C_MID, 0.18, 4)
+end
+
+local function draw_flows(c, canvas, TB, n, p, y_top, h)
+  if h < 8 then return end
+  local col = pool_col(c, p)
+  local top = build_rates(TB, n, p)
+  p_of_rates = p
+  local H = h - 3
+  local y_base = y_top + h - 1
+  if top > 0 then
+    local scale = H / top
+    local gx0, glo, ghi, gcol = nil, 0, 0, nil
+    local gx1 = 0
+    for k = 1, n + 1 do
+      local s = TB.at(k)
+      local lo, hi, fc, x0, x1 = 0, 0, nil, 0, 0
+      local dead = false
+      if s and k <= n then
+        local hi_ = math_floor(rate_in[k] * scale + 0.5)
+        local ho_ = math_floor(rate_out[k] * scale + 0.5)
+        dead = level_of(s, p) <= 0
+        if not dead then
+          lo, hi = math_min(hi_, ho_), math_max(hi_, ho_)
+          fc = (ho_ > hi_) and C_OUT or col
+        end
+        x0, x1 = x_of(s.t), x_next(TB, k)
+        if x1 <= x0 then x1 = x0 + 1 end
+      end
+      if s and k <= n and gx0 and lo == glo and hi == ghi and fc == gcol and dead == gdead and x0 <= gx1 then
+        gx1 = x1
+      else
+        if gx0 then
+          if gdead then box(c, canvas, gx0, gx1, y_base - H, H, C_REGEN, 0.10, 2)
+          elseif ghi > glo then box(c, canvas, gx0, gx1, y_base - ghi, ghi - glo, gcol, 0.28, 2) end
+        end
+        if s and k <= n then gx0, gx1, glo, ghi, gcol, gdead = x0, x1, lo, hi, fc, dead else gx0 = nil end
+      end
+    end
+    draw_steps(c, canvas, TB, n, rate_out, scale, y_base, H, C_OUT, 0.95, 4, 2)
+    draw_steps(c, canvas, TB, n, rate_in, scale, y_base, H, col, 0.95, 4, 2)
+  end
+  box(c, canvas, lane.x, lane.x + lane.w, y_base, 1, C_MID, 0.18, 4)
 end
 
 local function draw_deaths(c, canvas)
@@ -396,8 +406,8 @@ local function draw_deaths(c, canvas)
   end
 end
 
-local function lane_tag(c, canvas, text, y)
-  label(c, canvas, text, lane.x + 4, y, 90, 12, TEXT_ALIGN_LEFT, C_DIM, 0.75)
+local function lane_tag(c, canvas, text, y, col, x, w)
+  label(c, canvas, text, x or (lane.x + 4), y, w or 90, 12, TEXT_ALIGN_LEFT, col or C_DIM, col and 0.9 or 0.75)
 end
 
 local function draw_mirrored(c, canvas, TB, n, S)
@@ -430,10 +440,12 @@ local function draw_single(c, canvas, TB, n, p, S)
   draw_threshold(c, canvas, y_lv + h_lv - 1, H, true)
   draw_levels(c, canvas, TB, n, p, y_lv + h_lv - 1, H, true)
   draw_starved(c, canvas, TB, n, p, y_lv + 1)
-  draw_flows(c, canvas, TB, n, p, lane.mid, math_floor(h_fl / 2) - 3)
+  draw_flows(c, canvas, TB, n, p, y_fl, h_fl)
   lane_tag(c, canvas, S.lane_lv, y_lv + TICK_H + 2)
-  lane_tag(c, canvas, S.lane_in, y_fl + 2)
-  lane_tag(c, canvas, S.lane_out, y_fl + h_fl - 14)
+  local col = pool_col(c, p)
+  lane_tag(c, canvas, S.lane_out, y_fl + 2, C_OUT, lane.x + 4, 44)
+  lane_tag(c, canvas, S.lane_in, y_fl + 2, col, lane.x + 50, 68)
+  lane_tag(c, canvas, S.lane_win, y_fl + 2, nil, lane.x + 122, 110)
 end
 
 local function draw_picker(c, canvas, top, S)
@@ -713,6 +725,10 @@ function M.hover(mx, my)
   if sigma then stat = stat .. string_format(S.sigma, sigma) end
   local nr = 0
   local SC = Vermilion.SkillColors
+  if pick ~= PICK_BOTH and rate_p == p and k <= rate_n then
+    nr = nr + 1
+    ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.rates, string_format(S.rates_v, c.fmt_val(rate_out[k]), c.fmt_val(rate_in[k])), (rate_out[k] > rate_in[k]) and C_OUT or pc
+  end
   local top_id, top_cost = Vermilion.Casts.spend_top(s.t - WINDOW_MS, s.t, p)
   if top_id > 0 then
     nr = nr + 1
