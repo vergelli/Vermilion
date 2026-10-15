@@ -24,6 +24,7 @@ return function(H)
   H.state.active_bar = HOTBAR_CATEGORY_PRIMARY
   H.ability_names = H.ability_names or {}
   H.ability_names[501], H.ability_names[502], H.ability_names[701] = "Crushing Shock", "Rending Slashes", "Heavy Attack"
+  H.ability_names[31] = "Rending Slashes"
   H.ability_icons = H.ability_icons or {}
   H.ability_icons[701] = "/esoui/art/icons/icon_missing.dds"
   H.state.power = { [POWERTYPE_MAGICKA] = { value = 30000, max = 30000 }, [POWERTYPE_STAMINA] = { value = 20000, max = 20000 } }
@@ -49,6 +50,7 @@ return function(H)
     mag = mag + 500; H.res_power(POWERTYPE_MAGICKA, mag, 30000)
     sta = sta + 900; H.res_power(POWERTYPE_STAMINA, sta, 20000)
     H.damage_out({ hit = 1000, ability_id = 501 })
+    H.damage_out({ hit = 3000, ability_id = 31 })
     H.advance(1000)
   end
   H.death(true)
@@ -154,8 +156,27 @@ return function(H)
   ok(has(r.labels, "LEVEL") and has(r.labels, "REGAINED") and has(r.labels, "SPENT"), "the two lanes name what they show")
   local order2, n2 = RV.rows()
   ok(n2 == 1 and order2[1].id == 501, "the spend list follows the pick, got " .. n2)
+  ok(order2[1].dmg > 0 and order2[1].eff_text:find("×", 1, true) == 1, "a skill whose casts dealt damage shows its damage per point spent, got " .. tostring(order2[1].eff_text))
+  local eff_lbls = 0
+  for _, t in ipairs(r.labels) do if t:find("×", 1, true) == 1 then eff_lbls = eff_lbls + 1 end end
+  ok(eff_lbls >= 1, "the ratio is drawn under the spend of the row, got " .. eff_lbls)
   local rec2, nr2 = RV.recovered()
   ok(nr2 == 2 and rec2[1].id == 701 and rec2[2].id == 0 and rec2[2].total == 20 * 500, "the recovered list follows the pick and ranks the heavy attack over the recovery, got " .. nr2)
+  do
+    local sta_lbl
+    for _, c in ipairs(H.controls) do
+      if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "STAMINA" then sta_lbl = sta_lbl or c end
+    end
+    local LS = H.layout(sta_lbl)
+    ok(RV.click(LS.x + 2, LS.y + 2) == true, "clicking STAMINA picks it")
+    G.next_view(); G.prev_view()
+    local o3, n3 = RV.rows()
+    local r502
+    for i = 1, n3 do if o3[i].id == 502 then r502 = o3[i] end end
+    ok(r502 and r502.dmg > 0 and r502.eff_text:find("×", 1, true) == 1, "damage joins the cast by ability name across different ids, got " .. tostring(r502 and r502.dmg) .. " " .. tostring(r502 and r502.eff_text))
+    ok(RV.click(L.x + 2, L.y + 2) == true, "back to MAGICKA")
+    G.next_view(); G.prev_view()
+  end
   ok(RV.click(L.x + 2, L.y + 2) == false, "clicking the active pick changes nothing")
 
   local lane = RV.lane()
