@@ -9,6 +9,8 @@ local log = Vermilion.Log.for_module("resources")
 local MAG, STA = 1, 2
 local FLOW_CAP = 65535
 local LOW = 0.15
+local GRACE_MS = 3000
+local DEATH_DROP = 0.5
 
 local recording = false
 local cur    = { 0, 0 }
@@ -18,7 +20,7 @@ local spent  = { 0, 0 }
 local seen   = { false, false }
 local saw_any = false
 local dead = false
-local skip = { false, false }
+local grace = { 0, 0 }
 local deaths_t = {}
 local n_deaths = 0
 local DEATH_CAP = 256
@@ -39,13 +41,16 @@ function M.on_power(p, value, powerMax, effectiveMax)
   local mx = max[p]
   if effectiveMax and effectiveMax > 0 then mx = effectiveMax
   elseif powerMax and powerMax > 0 then mx = powerMax end
-  if seen[p] then
-    if dead or skip[p] then
-      skip[p] = false
-    else
-      local d = value - cur[p]
-      if d > 0 then gained[p] = gained[p] + d
-      elseif d < 0 then spent[p] = spent[p] - d end
+  if seen[p] and not dead then
+    local d = value - cur[p]
+    if d < 0 then
+      if value == 0 and -d >= mx * DEATH_DROP then
+        grace[p] = now_ms() + GRACE_MS
+      else
+        spent[p] = spent[p] - d
+      end
+    elseif d > 0 and now_ms() >= grace[p] then
+      gained[p] = gained[p] + d
     end
   end
   cur[p] = value
@@ -68,7 +73,6 @@ function M.sample_into(slot)
   slot.sta_in  = flow(gained[STA])
   slot.sta_out = flow(spent[STA])
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
-  skip[MAG], skip[STA] = false, false
 end
 
 function M.on_death(is_dead)
@@ -81,7 +85,8 @@ function M.on_death(is_dead)
     end
   elseif dead then
     dead = false
-    skip[MAG], skip[STA] = true, true
+    local until_ms = now_ms() + GRACE_MS
+    grace[MAG], grace[STA] = until_ms, until_ms
   end
 end
 
@@ -110,7 +115,7 @@ function M.start_session()
   recording = true
   saw_any = false
   n_deaths = 0
-  skip[MAG], skip[STA] = false, false
+  grace[MAG], grace[STA] = 0, 0
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
   local zc = Vermilion.zenimax.constants
@@ -128,7 +133,7 @@ function M.reset()
   recording = false
   saw_any = false
   n_deaths = 0
-  skip[MAG], skip[STA] = false, false
+  grace[MAG], grace[STA] = 0, 0
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
 end

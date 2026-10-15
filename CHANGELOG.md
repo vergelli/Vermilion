@@ -5,6 +5,9 @@ All notable changes to Vermilion are documented here. This project follows
 
 ## [Unreleased]
 
+### Fixed
+- RESOURCES: dying no longer draws a spend spike and reviving no longer draws a gain spike. The tracker treats a drop to zero of at least half the pool as a death whatever the event order, and ignores gains for three seconds after a death drop or a revive.
+
 ### Changed
 - A debug build says so: the graph title and the version in Settings carry a debug tag. `/vermilion castprobe` works in every build.
 - Hover cards wear a thin gold edge, the time line reads in gold, and values are painted by what they are: damage in the eDPS red, shield work in orchid, magicka blue, stamina green, durations gold, shares neutral. PRESSURE and RESOURCES cards use it; the other views follow.
