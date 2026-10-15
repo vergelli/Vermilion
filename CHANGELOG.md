@@ -9,6 +9,7 @@ All notable changes to Vermilion are documented here. This project follows
 - RESOURCES: dying no longer draws a spend spike and reviving no longer draws a gain spike. The tracker treats a drop to zero of at least half the pool as a death whatever the event order, and ignores gains for three seconds after a death drop or a revive.
 
 ### Changed
+- RESOURCES: every SPENT BY SKILL row shows damage per point spent under its spend, a multiplier built by joining the damage you dealt to the skill by name; the hover adds the share of your damage. Rows with no damage behind them show a dash. Heals and buffs are not inefficient, they are utility.
 - RESOURCES: the flow lane shows burn against income, two rates smoothed over five seconds with the gap between them filled, vermilion while you spend more than you take in and the pool colour while you bank. Dead stretches are greyed. The hover adds the two rates of that second; the per-skill stacking lives on in SPENT BY SKILL.
 - A debug build says so: the graph title and the version in Settings carry a debug tag. `/vermilion castprobe` works in every build.
 - Hover cards wear a thin gold edge, the time line reads in gold, and values are painted by what they are: damage in the eDPS red, shield work in orchid, magicka blue, stamina green, durations gold, shares neutral. PRESSURE and RESOURCES cards use it; the other views follow.

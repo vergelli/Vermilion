@@ -58,6 +58,9 @@ local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
 local ROWS = { {}, {}, {}, {}, {} }
 local col_cache = {}
 local rate_in, rate_out, rate_n, rate_p = {}, {}, 0, 0
+local dmg_by_name = {}
+local dmg_key = { n = -1, t0 = 0, t1 = 0 }
+local dmg_total = 0
 local p_of_rates = 0
 local gdead = false
 local str = nil
@@ -90,6 +93,11 @@ local function strings()
     lane_out  = GetString(VERMILION_RESH_LANE_OUT),
     lane_win  = GetString(VERMILION_RESH_LANE_WINDOW),
     rates     = GetString(VERMILION_RESH_RATES),
+    eff       = GetString(VERMILION_RESH_EFF),
+    eff_none  = GetString(VERMILION_RESH_EFF_NONE),
+    dmg_share = GetString(VERMILION_RESH_DMG_SHARE),
+    times     = GetString(VERMILION_RESH_TIMES),
+    eff_dash  = GetString(VERMILION_RESH_EFF_DASH),
     rates_v   = GetString(VERMILION_RES_CARD_RATES),
   }
   return str
@@ -129,7 +137,7 @@ end
 local function rec_for(sec, id)
   local rec = by_id[sec][id]
   if not rec then
-    rec = { id = id, sec = sec, name = nil, icon = nil, r = 0, g = 0, b = 0, n = 0, mag = 0, sta = 0, total = 0, gen = -1, disp = -1, text = "" }
+    rec = { id = id, sec = sec, name = nil, icon = nil, r = 0, g = 0, b = 0, n = 0, mag = 0, sta = 0, total = 0, gen = -1, disp = -1, text = "", dmg = 0, eff_disp = -1, eff_text = "" }
     by_id[sec][id] = rec
   end
   if rec.gen ~= gen then
@@ -154,8 +162,41 @@ local function finish(sec)
   if o.n > 1 then table_sort(o, by_total_desc) end
 end
 
+local function damage_by_name(TB)
+  local n = TB.count()
+  local first, last = TB.at(1), TB.at(n)
+  local t0, t1 = first and first.t or 0, last and last.t or 0
+  if dmg_key.n == n and dmg_key.t0 == t0 and dmg_key.t1 == t1 then return end
+  dmg_key.n, dmg_key.t0, dmg_key.t1 = n, t0, t1
+  for k in pairs(dmg_by_name) do dmg_by_name[k] = nil end
+  dmg_total = 0
+  local SC = Vermilion.SkillColors
+  local t_prev = nil
+  for k = 1, n do
+    local s = TB.at(k)
+    local dt = t_prev and (s.t - t_prev) / 1000 or 1
+    if dt <= 0 then dt = 1 end
+    t_prev = s.t
+    local eos = ((s.eDPS or 0) + (s.ShDPS or 0)) * dt
+    if eos > 0 then
+      dmg_total = dmg_total + eos
+      local ab = s.eos_abilities
+      local cnt = ab and ab.count or 0
+      for i = 1, cnt do
+        local e = ab[i]
+        local id, sh = e.id or 0, e.share or 0
+        if id > 0 and sh > 0 then
+          local nm = SC.ability_name(id)
+          if nm and nm ~= "" then dmg_by_name[nm] = (dmg_by_name[nm] or 0) + sh * eos end
+        end
+      end
+    end
+  end
+end
+
 local function aggregate()
   gen = gen + 1
+  damage_by_name(Vermilion.TemporalBuffer)
   order[SEC_SPENT].n, order[SEC_REC].n = 0, 0
   totals.spend, totals.casts, totals.regained, totals.energized = 0, 0, 0, 0
   local _, cid, cpool, ccost, n = Vermilion.Casts.records()
@@ -543,7 +584,18 @@ local function draw_section(c, canvas, x, y, sec, rows, title, S)
       rec.disp = rec.total
       rec.text = c.fmt_val(rec.total)
     end
-    label(c, canvas, rec.text, x + RIGHT_W - VAL_W - 4, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, pool_col(c, p), a)
+    if sec == SEC_SPENT then
+      rec.dmg = dmg_by_name[rec.name] or 0
+      local ratio = (rec.total > 0) and (rec.dmg / rec.total) or 0
+      if rec.eff_disp ~= ratio then
+        rec.eff_disp = ratio
+        rec.eff_text = (ratio > 0) and string_format("%s%.1f", S.times, ratio) or S.eff_dash
+      end
+      label(c, canvas, rec.text, x + RIGHT_W - VAL_W - 4, ry, VAL_W, 12, TEXT_ALIGN_RIGHT, pool_col(c, p), a)
+      label(c, canvas, rec.eff_text, x + RIGHT_W - VAL_W - 4, ry + 12, VAL_W, 12, TEXT_ALIGN_RIGHT, (ratio > 0) and kind(c, "damage") or C_DIM, a * 0.85)
+    else
+      label(c, canvas, rec.text, x + RIGHT_W - VAL_W - 4, ry, VAL_W, ROW_H, TEXT_ALIGN_RIGHT, pool_col(c, p), a)
+    end
     ry = ry + ROW_H + ROW_GAP
   end
   local y1 = ry + 2
@@ -674,6 +726,12 @@ local function row_card(c, rec, sec, S, mx, my)
     stat = string_format(S.casts, rec.n, c.fmt_val(rec.total / math_max(rec.n, 1)))
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.total, c.fmt_val(rec.total), pc
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or "", kind(c, "neutral")
+    if rec.dmg > 0 then
+      nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.eff, rec.eff_text, kind(c, "damage")
+      nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.dmg_share, PCT_TEXT[math_floor(rec.dmg / math_max(dmg_total, 1) * 100 + 0.5)] or "", kind(c, "neutral")
+    else
+      nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.eff, S.eff_none, kind(c, "neutral")
+    end
   else
     if rec.id == 0 then
       local R = Vermilion.Restores
