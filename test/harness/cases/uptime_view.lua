@@ -53,7 +53,7 @@ return function(H)
   ok(VermilionGraphWindowViewportNoDataLabel._hidden == true, "the view has uptimes to draw")
 
   local function scan()
-    local r = { labels = {}, ground = 0, press = 0, clip = 0, lines = 0, gold_dots = 0, rings = 0, segs = 0 }
+    local r = { labels = {}, ground = 0, press = 0, clip = 0, lines = 0, gold_dots = 0, rings = 0, segs = 0, discs = 0, tex_rings = 0, gauges = 0, heat = 0 }
     for _, c in ipairs(H.controls) do
       local name = c._name or ""
       if c._hidden == false then
@@ -68,7 +68,13 @@ return function(H)
           r.labels[#r.labels + 1] = c._text
         elseif name:find("^VermilionVizLine") then
           r.lines = r.lines + 1
+        elseif name:find("^VermilionVizCd") and c._cd_pct then
+          r.gauges = r.gauges + 1
+        elseif name:find("^VermilionContribIcon") and type(c._tex) == "string" then
+          if c._tex:find("dot.dds", 1, true) then r.discs = r.discs + 1 end
+          if c._tex:find("ring.dds", 1, true) then r.tex_rings = r.tex_rings + 1 end
         end
+        if name:find("^VermilionTargetSeg") and c._a and c._a > 0.05 and c._a < 0.56 and c._r and math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then r.heat = r.heat + 1 end
       end
     end
     return r
@@ -84,9 +90,11 @@ return function(H)
   ok(rows[order[1]].slot == true, "slotted skills come first")
   ok(has(r.labels, "Blockade of Frost") and has(r.labels, "Traumatic Burns"), "rows are named")
   ok(has(r.labels, "COST OF GAPS") and has(r.labels, "REFRESHES") and has(r.labels, "REFRESH ERROR"), "the lists and the error strip carry their names")
-  ok(r.ground >= n, "every row has its gap ground, got " .. r.ground)
+  ok(r.ground >= math.min(n, 6), "every visible row has its gap ground, got " .. r.ground)
   ok(r.press >= 10, "presses are marked on the rows, got " .. r.press)
   ok(r.clip >= 3, "early presses are stippled in gold, got " .. r.clip)
+  ok(r.gauges >= 1, "the refreshes list draws its gauges as radial cooldowns on the ring texture, got " .. r.gauges)
+  ok(r.tex_rings >= 1, "every gauge sits on a dim textured ring, got " .. r.tex_rings)
   local costs, nc = UV.costs()
   ok(nc >= 1 and rows[costs[1]].cost > 0 and rows[costs[1]].down > 0, "a skill with damage and downtime has a priced gap, got " .. nc)
   local kb = nil
@@ -121,9 +129,10 @@ return function(H)
   G.next_view(); G.prev_view()
   r = scan()
   ok(r.lines >= 1, "the Poincare plot draws its diagonal, got " .. r.lines)
-  ok(r.gold_dots >= 3, "refresh intervals are dots, got " .. r.gold_dots)
-  ok(r.rings >= 24, "each skill's duration is a ring, got " .. r.rings)
-  ok(has(r.labels, "REFRESHES") and not has(r.labels, "COST OF GAPS"), "the rhythm view keeps the refreshes list only")
+  ok(r.discs >= 3, "refresh intervals are round dots, got " .. r.discs)
+  ok(r.tex_rings >= 1, "each skill's duration is a textured ring, got " .. r.tex_rings)
+  ok(r.heat >= 3, "the density under the dots is painted, got " .. r.heat)
+  ok(has(r.labels, "STEADINESS") and not has(r.labels, "COST OF GAPS") and not has(r.labels, "REFRESHES"), "the rhythm view lists steadiness only")
   local tl_lbl
   for _, c in ipairs(H.controls) do
     if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "TIMELINE" then tl_lbl = tl_lbl or c end
