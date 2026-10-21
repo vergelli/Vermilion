@@ -58,6 +58,8 @@ function ST.plot(c, scale, y, h, xs, vs, n, vmin, vmax, band_lo, band_hi, col_up
       if v > vmax or v < vmin then
         clamped = clamped + 1
         S.frame(c, x - HALF, yv - HALF, x - HALF + HEAD, yv - HALF + HEAD, col, 1, 5)
+      elseif v >= band_lo and v <= band_hi then
+        S.disc(c, x, yv, HEAD + 2, col, 1, 5)
       else
         S.box(c, x - HALF, x - HALF + HEAD, yv - HALF, HEAD, col, 1, 5)
       end
