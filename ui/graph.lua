@@ -3437,9 +3437,11 @@ function M.init()
     hit_reset = function() hit_begin(0) end,
     rerender = function() render_current_view() end,
   })
+  controls.pool_viz_line = make_line_pool("VermilionVizLine")
   Vermilion.ResourcesView.attach({
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
+    line = controls.pool_viz_line,
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val,
     mag = VIS.mag, sta = VIS.sta, low = VIS.low, kinds = M.KIND, kill_icon = VIS.kill_icon,
     icon = controls.pool_c_icon,

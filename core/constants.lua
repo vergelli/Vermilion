@@ -70,6 +70,10 @@ Vermilion.Constants = {
     ["pipeline.combat_event.processing"]  = 3.0,
     ["pipeline.render_tick"]              = 10.0,
     ["graph.sample_tick"]                 = 15.0,
+    ["viz.spans"]                         = 2.0,
+    ["viz.stems"]                         = 1.0,
+    ["viz.scatter"]                       = 1.0,
+    ["viz.ring"]                          = 0.5,
   },
 }
 

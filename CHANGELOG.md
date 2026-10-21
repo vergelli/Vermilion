@@ -9,6 +9,7 @@ All notable changes to Vermilion are documented here. This project follows
 - RESOURCES: dying no longer draws a spend spike and reviving no longer draws a gain spike. The tracker treats a drop to zero of at least half the pool as a death whatever the event order, and ignores gains for three seconds after a death drop or a revive.
 
 ### Changed
+- Internal: a shared drawing library, `lib/viz`, with status rows, stems, scatter with rings and ring gauges, measured and zero-alloc, for the views to come.
 - RESOURCES: every SPENT BY SKILL row shows damage per point spent under its spend, a multiplier built by joining the damage you dealt to the skill by name; the hover adds the share of your damage among the skills you cast. Rows with no damage behind them show a dash. Heals and buffs are not inefficient, they are utility.
 - RESOURCES: the flow lane is gone. The level lane grows and carries two annotations with no scale of their own: a sustainability ribbon, vermilion where you outspent your regen and the pool colour where you banked, grey while dead, and a cast rug, one tick per cast in the skill's colour with restores drawn upward. Under them, COST vs CONTRIBUTION: one dumbbell per skill from its share of spend to its share of damage, vermilion when the skill returns less than it costs, gold when more, utility skills grouped at the bottom. The wheel scrolls it like the lists; hover a row for both shares and the multiplier.
 - A debug build says so: the graph title and the version in Settings carry a debug tag. `/vermilion castprobe` works in every build.

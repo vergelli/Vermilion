@@ -33,6 +33,11 @@ lib/plot/style.lua
 lib/plot/primitives.lua
 lib/plot/pool.lua
 lib/plot/plot_stacked_bar.lua
+lib/viz/surface.lua
+lib/viz/spans.lua
+lib/viz/stems.lua
+lib/viz/scatter.lua
+lib/viz/ring.lua
 observability/copybox.lua
 observability/encounter_log.lua
 observability/devtools.lua

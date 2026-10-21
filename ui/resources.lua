@@ -752,6 +752,7 @@ function M.render()
   c.rim:ReleaseAllObjects()
   c.lbl:ReleaseAllObjects()
   if c.icon then c.icon:ReleaseAllObjects() end
+  if c.line then c.line:ReleaseAllObjects() end
   c.hit_reset()
   row_hit.n = 0
   lane.span = 0
