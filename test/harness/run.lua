@@ -16,6 +16,7 @@ local CASES = {
   "trace_flow",
   "vsf_codec",
   "viz_primitives",
+  "uptime",
   "session_store",
   "content_kind",
   "auto_record",
