@@ -13,7 +13,7 @@ local math_sin = math.sin
 local TWO_PI = 2 * math.pi
 local HALF_PI = math.pi / 2
 
-local STEPS = 36
+local STEPS = 48
 
 local function prof_enter(name)
   local P = Vermilion.Profiler

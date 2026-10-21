@@ -61,11 +61,9 @@ return function(H)
           r.segs = r.segs + 1
           if math.abs(c._r - 0.86) < 0.01 and math.abs(c._g - 0.28) < 0.01 then r.ground = r.ground + 1 end
           if math.abs(c._r - 0.94) < 0.01 and math.abs(c._g - 0.88) < 0.01 then r.press = r.press + 1 end
-          if math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then
-            r.clip = r.clip + 1
-            if c._w == 5 and c._h == 5 then r.gold_dots = r.gold_dots + 1 end
-            if c._w == 2 and c._h == 2 then r.rings = r.rings + 1 end
-          end
+          if math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then r.clip = r.clip + 1 end
+          if c._w == 5 and c._h == 5 then r.gold_dots = r.gold_dots + 1 end
+          if c._w == 2 and c._h == 2 then r.rings = r.rings + 1 end
         elseif name:find("^VermilionTargetLbl") and type(c._text) == "string" then
           r.labels[#r.labels + 1] = c._text
         elseif name:find("^VermilionVizLine") then

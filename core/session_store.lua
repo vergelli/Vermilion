@@ -296,9 +296,9 @@ function M.capture(cooperative)
     if rel < 0 then rel = 0 end
     press_recs[i] = { t = rel, key = upk[i] or 0, unit = upu[i] or 0, e = (upe[i] or 0) + E_LIMIT, kind = upkind[i] or 1 }
   end
-  local ukn, uks, uknn = Vermilion.Uptime.keys()
-  local uptime_meta = { names = {}, slotted = {} }
-  for k = 1, uknn do uptime_meta.names[k] = ukn[k]; uptime_meta.slotted[k] = uks[k] and 1 or 0 end
+  local ukn, uks, uknn, uki = Vermilion.Uptime.keys()
+  local uptime_meta = { names = {}, slotted = {}, ids = {} }
+  for k = 1, uknn do uptime_meta.names[k] = ukn[k]; uptime_meta.slotted[k] = uks[k] and 1 or 0; uptime_meta.ids[k] = uki[k] or 0 end
   local ctt, cti, ctp, ctc, ctn = Vermilion.Casts.records()
   local cast_recs = {}
   for i = 1, ctn do
