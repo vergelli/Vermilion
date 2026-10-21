@@ -449,12 +449,17 @@ end
 
 local function by_steady(a, b) return rows[a].steady > rows[b].steady end
 
+local lab_y = {}
+local lab_i = {}
+local function by_lab_y(a, b) return lab_y[a] < lab_y[b] end
+
 local function draw_rhythm(c, canvas, x, y, w, h, S)
   local SF, SC, HT = Vermilion.lib.viz.surface, Vermilion.lib.viz.scatter, Vermilion.lib.viz.heat
-  local marg_h = 18
-  local side = math_min(w - 60, h - 48 - marg_h)
+  local marg = 20
+  local lab_w = 150
+  local side = math_min(w - marg - 44 - lab_w - 12, h - 48 - marg)
   if side < 40 then return end
-  local px0 = x + math_floor((w - side) / 2)
+  local px0 = x + 44 + marg
   local py0 = y + 20
   local U = Vermilion.Uptime
   local pk, pu, pt, _, _, pn = U.presses()
@@ -464,7 +469,7 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
     local k = order[oi]
     local r = rows[k]
     local d = r.dur / 1000
-    if r.pn >= STEADY_MIN and d > 0 and d <= RING_MAX_S then
+    if r.slot and r.pn >= STEADY_MIN and d > 0 and d <= RING_MAX_S then
       rings.n = rings.n + 1
       ring_x[rings.n], ring_y[rings.n], ring_r[rings.n], ring_c[rings.n], ring_k[rings.n] = d, d, math_max(0.6, d * 0.08), r.col, k
       if d > mx then mx = d end
@@ -475,7 +480,7 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
   for i = 1, pn do
     local k = pk[i]
     local r = rows[k]
-    if r and r.n > 0 and r.dur >= MIN_ROW_DUR then
+    if r and r.slot and r.n > 0 and r.dur >= MIN_ROW_DUR then
       local prev, prev2 = nil, nil
       local j = i - 1
       while j >= 1 and (prev == nil or prev2 == nil) do
@@ -502,7 +507,7 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
   steady_order.n = 0
   for oi = 1, order.n do
     local r = rows[order[oi]]
-    if r.iv_n >= STEADY_MIN then
+    if r.slot and r.iv_n >= STEADY_MIN then
       local mean = r.iv_sum / r.iv_n
       local var = r.iv_sq / r.iv_n - mean * mean
       if var < 0 then var = 0 end
@@ -516,18 +521,31 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
   end
   for i = steady_order.n + 1, #steady_order do steady_order[i] = nil end
   if steady_order.n > 1 then table_sort(steady_order, by_steady) end
-  HT.grid(c, px0, py0, side, mx, sx, sy, n, 24, C_GOLD, nil)
   local outside = SC.plot(c, px0, py0, side, mx, sx, sy, n, C_GOLD, scatter_opts)
+  HT.marginal(c, px0, py0 + side + 16, side, marg, sx, n, mx, 40, C_GOLD, nil)
+  HT.marginal_v(c, px0 - marg - 4, py0, marg, side, sy, n, mx, 40, C_GOLD, nil)
   for i = 1, rings.n do
+    local _, ry = SC.point(px0, py0, side, mx, ring_x[i], ring_y[i])
+    lab_y[i], lab_i[i] = ry, i
+  end
+  for i = rings.n + 1, #lab_i do lab_i[i] = nil end
+  if rings.n > 1 then table_sort(lab_i, by_lab_y) end
+  local lx = px0 + side + 12
+  local last = -1000
+  for oi = 1, rings.n do
+    local i = lab_i[oi]
     local rx, ry = SC.point(px0, py0, side, mx, ring_x[i], ring_y[i])
     local rr = math_floor(ring_r[i] / mx * side + 0.5)
-    SF.label(c, rows[ring_k[i]].name, rx + rr + 5, ry - 6, 130, 12, TEXT_ALIGN_LEFT, ring_c[i], 0.9)
+    local ly = lab_y[i] - 6
+    if ly < last + 13 then ly = last + 13 end
+    last = ly
+    SF.box(c, rx + rr + 2, lx - 3, ly + 6, 1, ring_c[i], 0.35, 3)
+    SF.label(c, string_format("%s  ·  %ds", rows[ring_k[i]].name, math_floor(ring_x[i] + 0.5)), lx, ly, lab_w, 12, TEXT_ALIGN_LEFT, ring_c[i], 0.9)
   end
-  HT.marginal(c, px0, py0 + side + 16, side, marg_h, sx, n, mx, 40, C_GOLD, nil)
   SF.label(c, S.rh_y, x + 4, y + 4, 120, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
   SF.label(c, S.rh_x, px0, py0 + side + 2, side, 12, TEXT_ALIGN_CENTER, C_DIM, 0.8)
-  SF.label(c, "0", px0 - 14, py0 + side - 6, 12, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 - 30, py0 - 2, 28, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
+  SF.label(c, "0", px0 - marg - 18, py0 + side - 6, 12, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
+  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 - marg - 34, py0 - 2, 28, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
   SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 + side - 30, py0 + side + 2, 30, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
   if outside > 0 then SF.label(c, string_format(S.beyond, outside), px0 + side - 120, py0 + 2, 118, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.75) end
   SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)

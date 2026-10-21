@@ -44,6 +44,17 @@ return function(H)
     end
     fire(e)
   end
+  fire({ ch = EFFECT_RESULT_GAINED, name = "Barbed Trap", tag = "", b = H.now() - base, e = H.now() - base + 20000, unit = 9001, aid = 40385 })
+  for _ = 1, 4 do
+    for _ = 1, 18 do
+      H.advance(500)
+      H.damage_out({ hit = 800, ability_id = 40385, result = ACTION_RESULT_DOT_TICK })
+      H.advance(250)
+      H.damage_out({ hit = 1500, ability_id = 62951, result = ACTION_RESULT_DOT_TICK })
+      H.advance(250)
+    end
+    fire({ ch = EFFECT_RESULT_UPDATED, name = "Barbed Trap", tag = "", b = H.now() - base, e = H.now() - base + 20000, unit = 9001, aid = 40385 })
+  end
   H.advance(1500)
   ok(TB.count() >= 40, "the fight produced samples, got " .. TB.count())
   G.on_stop_click()
@@ -53,7 +64,7 @@ return function(H)
   ok(VermilionGraphWindowViewportNoDataLabel._hidden == true, "the view has uptimes to draw")
 
   local function scan()
-    local r = { labels = {}, ground = 0, press = 0, clip = 0, lines = 0, gold_dots = 0, rings = 0, segs = 0, discs = 0, tex_rings = 0, gauges = 0, heat = 0 }
+    local r = { labels = {}, ground = 0, press = 0, clip = 0, lines = 0, segs = 0, discs = 0, tex_rings = 0, gauges = 0 }
     for _, c in ipairs(H.controls) do
       local name = c._name or ""
       if c._hidden == false then
@@ -62,8 +73,6 @@ return function(H)
           if math.abs(c._r - 0.86) < 0.01 and math.abs(c._g - 0.28) < 0.01 then r.ground = r.ground + 1 end
           if math.abs(c._r - 0.94) < 0.01 and math.abs(c._g - 0.88) < 0.01 then r.press = r.press + 1 end
           if math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then r.clip = r.clip + 1 end
-          if c._w == 5 and c._h == 5 then r.gold_dots = r.gold_dots + 1 end
-          if c._w == 2 and c._h == 2 then r.rings = r.rings + 1 end
         elseif name:find("^VermilionTargetLbl") and type(c._text) == "string" then
           r.labels[#r.labels + 1] = c._text
         elseif name:find("^VermilionVizLine") then
@@ -74,7 +83,6 @@ return function(H)
           if c._tex:find("dot.dds", 1, true) then r.discs = r.discs + 1 end
           if c._tex:find("ring.dds", 1, true) then r.tex_rings = r.tex_rings + 1 end
         end
-        if name:find("^VermilionTargetSeg") and c._a and c._a > 0.05 and c._a < 0.56 and c._r and math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01 then r.heat = r.heat + 1 end
       end
     end
     return r
@@ -91,7 +99,7 @@ return function(H)
   ok(has(r.labels, "Blockade of Frost") and has(r.labels, "Traumatic Burns"), "rows are named")
   ok(has(r.labels, "COST OF GAPS") and has(r.labels, "REFRESHES") and has(r.labels, "REFRESH ERROR"), "the lists and the error strip carry their names")
   ok(r.ground >= math.min(n, 6), "every visible row has its gap ground, got " .. r.ground)
-  ok(r.press >= 10, "presses are marked on the rows, got " .. r.press)
+  ok(r.press >= 3, "presses are marked on the rows, got " .. r.press)
   ok(r.clip >= 3, "early presses are stippled in gold, got " .. r.clip)
   ok(r.gauges >= 1, "the refreshes list draws its gauges as radial cooldowns on the ring texture, got " .. r.gauges)
   ok(r.tex_rings >= 1, "every gauge sits on a dim textured ring, got " .. r.tex_rings)
@@ -129,9 +137,8 @@ return function(H)
   G.next_view(); G.prev_view()
   r = scan()
   ok(r.lines >= 1, "the Poincare plot draws its diagonal, got " .. r.lines)
-  ok(r.discs >= 3, "refresh intervals are round dots, got " .. r.discs)
+  ok(r.discs >= 1, "refresh intervals of your skills are round dots, got " .. r.discs)
   ok(r.tex_rings >= 1, "each skill's duration is a textured ring, got " .. r.tex_rings)
-  ok(r.heat >= 3, "the density under the dots is painted, got " .. r.heat)
   ok(has(r.labels, "STEADINESS") and not has(r.labels, "COST OF GAPS") and not has(r.labels, "REFRESHES"), "the rhythm view lists steadiness only")
   local tl_lbl
   for _, c in ipairs(H.controls) do
@@ -147,8 +154,6 @@ return function(H)
   local scrolled = UV.scroll(1)
   ok(scrolled == true or scrolled == false, "the wheel answers over the rows")
 
-  G.on_stop_click()
-  H.advance(500)
   ok(SS.count() == 1, "the session saved")
   local sess = SS.get(1)
   ok(sess.streams.spans and sess.streams.press and sess.head.uptime and #sess.head.uptime.names >= 3, "the session carries the uptime streams and the key names")

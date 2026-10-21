@@ -72,6 +72,42 @@ function HT.grid(c, px0, py0, side, max, xs, ys, n, cells, col, opts)
   return top
 end
 
+function HT.marginal_v(c, x0, y0, w, h, ys, n, max, nbins, col, opts)
+  prof_enter("viz.heat")
+  local before = c.drawn or 0
+  if nbins > 128 then nbins = 128 end
+  if max <= 0 then max = 1 end
+  for i = 1, nbins do bins[i] = 0 end
+  local top = 0
+  for i = 1, n do
+    local y = ys[i]
+    if y >= 0 and y <= max then
+      local b = math_floor(y / max * nbins) + 1
+      if b > nbins then b = nbins end
+      bins[b] = bins[b] + 1
+      if bins[b] > top then top = bins[b] end
+    end
+  end
+  if top > 0 then
+    local bh = h / nbins
+    for b = 1, nbins do
+      local v = bins[b]
+      if v > 0 then
+        local ww = math_floor(v / top * w + 0.5)
+        if ww < 1 then ww = 1 end
+        local by1 = y0 + h - math_floor((b - 1) * bh + 0.5)
+        local by0 = y0 + h - math_floor(b * bh + 0.5)
+        if by1 - by0 > 2 then by0 = by0 + 1 end
+        S.box(c, x0 + w - ww, x0 + w, by0, by1 - by0, col, (opts and opts.alpha) or 0.7, (opts and opts.level) or 3)
+      end
+    end
+  end
+  bump("viz.heat.renders")
+  bump("viz.heat.controls", (c.drawn or 0) - before)
+  prof_exit("viz.heat")
+  return top
+end
+
 function HT.marginal(c, x0, y0, w, h, xs, n, max, nbins, col, opts)
   prof_enter("viz.heat")
   local before = c.drawn or 0
