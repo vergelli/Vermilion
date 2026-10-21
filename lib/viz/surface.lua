@@ -96,6 +96,46 @@ function S.icon(c, tex, x, y, size, a)
   c.drawn = (c.drawn or 0) + 1
 end
 
+function S.disc(c, x, y, size, col, a, lvl)
+  if not c.dot_tex then
+    S.box(c, x - math_floor(size / 2), x - math_floor(size / 2) + size, y - math_floor(size / 2), size, col, a, lvl or 5)
+    return
+  end
+  local ic = c.icon and c.icon:AcquireObject()
+  if not ic then
+    c.dropped = (c.dropped or 0) + 1
+    bump("viz.surface.dropped")
+    return
+  end
+  ic:ClearAnchors()
+  ic:SetTexture(c.dot_tex)
+  ic:SetDimensions(size, size)
+  ic:SetColor(col.r, col.g, col.b, a == nil and 1 or a)
+  if ic.SetDrawLevel then ic:SetDrawLevel(lvl or 5) end
+  ic:SetAnchor(CENTER, c.canvas, TOPLEFT, x, y)
+  ic:SetHidden(false)
+  c.drawn = (c.drawn or 0) + 1
+end
+
+function S.tex_ring(c, cx, cy, r, col, a, lvl)
+  if not c.ring_tex then return false end
+  local ic = c.icon and c.icon:AcquireObject()
+  if not ic then
+    c.dropped = (c.dropped or 0) + 1
+    bump("viz.surface.dropped")
+    return false
+  end
+  ic:ClearAnchors()
+  ic:SetTexture(c.ring_tex)
+  ic:SetDimensions(r * 2, r * 2)
+  ic:SetColor(col.r, col.g, col.b, a == nil and 1 or a)
+  if ic.SetDrawLevel then ic:SetDrawLevel(lvl or 4) end
+  ic:SetAnchor(CENTER, c.canvas, TOPLEFT, cx, cy)
+  ic:SetHidden(false)
+  c.drawn = (c.drawn or 0) + 1
+  return true
+end
+
 function S.x_of(scale, t)
   return scale.x0 + math_floor((t - scale.t0) / scale.span * scale.w + 0.5)
 end

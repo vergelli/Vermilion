@@ -3474,6 +3474,9 @@ function M.init()
     rerender = function() render_current_view() end,
   })
   controls.pool_viz_line = make_line_pool("VermilionVizLine")
+  controls.pool_viz_cd = Pool.new("VermilionVizCd", controls.canvas, zc.CT_COOLDOWN or CT_COOLDOWN,
+    function(cd) cd:SetDrawLevel(5) end,
+    function(cd) cd:SetHidden(true); cd:ClearAnchors() end)
   Vermilion.ResourcesView.attach({
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
@@ -3498,6 +3501,7 @@ function M.init()
   Vermilion.UptimeView.attach({
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, lbl = controls.pool_t_lbl, icon = controls.pool_c_icon, line = controls.pool_viz_line,
+    cd = controls.pool_viz_cd, ring_tex = "Vermilion/assets/ring.dds", dot_tex = "Vermilion/assets/dot.dds",
     layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val, kinds = M.KIND,
     hide_grid = hide_grid,
     now = GetGameTimeMilliseconds,

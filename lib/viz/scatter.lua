@@ -69,7 +69,10 @@ function SC.plot(c, px0, py0, side, max, xs, ys, n, col, opts)
     local rcol = opts.rings.col or col
     local rcols = opts.rings.cols
     for i = 1, rn do
-      SC.ring(c, px(px0, side, max, rx[i]), py(py0, side, max, ry[i]), math_floor(rr[i] / max * side + 0.5), (rcols and rcols[i]) or rcol, (opts.rings.alpha) or 0.7, 4)
+      local cxp, cyp, rp = px(px0, side, max, rx[i]), py(py0, side, max, ry[i]), math_floor(rr[i] / max * side + 0.5)
+      if not S.tex_ring(c, cxp, cyp, rp, (rcols and rcols[i]) or rcol, (opts.rings.alpha) or 0.7, 4) then
+        SC.ring(c, cxp, cyp, rp, (rcols and rcols[i]) or rcol, (opts.rings.alpha) or 0.7, 4)
+      end
     end
   end
   local outside = 0
@@ -78,7 +81,7 @@ function SC.plot(c, px0, py0, side, max, xs, ys, n, col, opts)
     local x, y = xs[i], ys[i]
     if x > max or y > max then outside = outside + 1 end
     local sx, sy = px(px0, side, max, x), py(py0, side, max, y)
-    S.box(c, sx - DOT_HALF, sx - DOT_HALF + DOT, sy - DOT_HALF, DOT, (cols and cols[i]) or col, (opts and opts.alpha) or 0.85, 5)
+    S.disc(c, sx, sy, (opts and opts.dot) or DOT, (cols and cols[i]) or col, (opts and opts.alpha) or 0.85, 5)
   end
   bump("viz.scatter.renders")
   bump("viz.scatter.controls", (c.drawn or 0) - before)

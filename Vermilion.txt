@@ -38,6 +38,7 @@ lib/viz/spans.lua
 lib/viz/stems.lua
 lib/viz/scatter.lua
 lib/viz/ring.lua
+lib/viz/heat.lua
 observability/copybox.lua
 observability/encounter_log.lua
 observability/devtools.lua

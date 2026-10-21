@@ -100,6 +100,26 @@ return function(H)
   ok(c.drawn == 6, "a label, an icon and a frame of four boxes count six controls, got " .. tostring(c.drawn))
   release()
 
+  local tex = { canvas = canvas, seg = c.seg, lbl = c.lbl, icon = c.icon, line = c.line,
+                cd = Pool.new("VizTestCd", canvas, CT_COOLDOWN, function(x) x:SetDrawLevel(5) end, function(x) x:SetHidden(true) end),
+                ring_tex = "Vermilion/assets/ring.dds", dot_tex = "Vermilion/assets/dot.dds" }
+  S.begin(tex)
+  RG.gauge(tex, 300, 300, 30, 0.75, col, 3, nil)
+  local cdn, cdp, trings = 0, nil, 0
+  for _, ctl in ipairs(H.controls) do
+    if ctl._hidden == false and (ctl._name or ""):find("^VizTestCd") then cdn = cdn + 1; cdp = ctl._cd_pct end
+    if ctl._hidden == false and (ctl._name or ""):find("^VizTestIcon") and ctl._tex == "Vermilion/assets/ring.dds" then trings = trings + 1 end
+  end
+  ok(cdn == 1 and math.abs(cdp - 0.75) < 0.001 and trings == 1, "with a cooldown pool and a ring texture the gauge is one radial fill over one dim ring, got " .. cdn .. " " .. tostring(cdp) .. " " .. trings)
+  S.disc(tex, 50, 50, 7, col, 1)
+  local discs = 0
+  for _, ctl in ipairs(H.controls) do
+    if ctl._hidden == false and (ctl._name or ""):find("^VizTestIcon") and ctl._tex == "Vermilion/assets/dot.dds" then discs = discs + 1 end
+  end
+  ok(discs == 1, "a disc is the dot texture tinted, got " .. discs)
+  tex.cd:ReleaseAllObjects()
+  release()
+
   local nolines = { canvas = canvas, seg = c.seg, lbl = c.lbl, icon = c.icon }
   S.begin(nolines)
   ok(S.line(nolines, 0, 0, 10, 10, col, 1, 1) == false and nolines.dropped == 1, "a surface without a line pool drops the line and counts it")
