@@ -115,11 +115,12 @@ local VIEW_BY_CRIT    = 4
 local VIEW_BY_CONTRIB = 5
 local VIEW_BY_DEBUFFS = 6
 local VIEW_BY_RES     = 7
-local VIEW_LABELS     = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS", "RESOURCES" }
+local VIEW_BY_UPTIME  = 8
+local VIEW_LABELS     = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS", "RESOURCES", "UPTIME" }
 
 local function view_tips()
   if not VIEW_TIPS then
-    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_TARGETS, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB, VERMILION_VIEWTIP_DEBUFFS, VERMILION_VIEWTIP_RES }
+    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_TARGETS, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB, VERMILION_VIEWTIP_DEBUFFS, VERMILION_VIEWTIP_RES, VERMILION_VIEWTIP_UPTIME }
   end
   return VIEW_TIPS
 end
@@ -1320,7 +1321,7 @@ local function hover_poll()
   local mx, my = GetUIMousePosition()
   local U = Vermilion.Ultimate
   if U and U.has_data() and VIS.ult.span and VIS.ult.span > 0
-     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES then
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES and current_view ~= VIEW_BY_UPTIME then
     local rel_x = mx - canvas:GetLeft()
     local cw = canvas:GetWidth()
     local rel_y = my - canvas:GetTop() - CHIP.H
@@ -1346,7 +1347,7 @@ local function hover_poll()
 
   if VIS.res.on and VIS.res.span > 0 and VIS.res.bw > 0
      and Vermilion.TemporalBuffer.count() > 0
-     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES then
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES and current_view ~= VIEW_BY_UPTIME then
     local R = VIS.res
     local rel_x = mx - canvas:GetLeft()
     local rel_y = my - canvas:GetTop() - RES.y0()
@@ -1377,7 +1378,7 @@ local function hover_poll()
 
   if VIS.shield.on and VIS.shield.span > 0 and VIS.shield.bw > 0 and VIS.shield.max > 0
      and Vermilion.TemporalBuffer.count() > 0
-     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES then
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_RES and current_view ~= VIEW_BY_UPTIME then
     local S = VIS.shield
     local rel_x = mx - canvas:GetLeft()
     local rel_y = my - canvas:GetTop() - CHIP.H - ult_inset()
@@ -1404,7 +1405,7 @@ local function hover_poll()
   local K = Vermilion.Kills
   if K and K.count() > 0 and VIS.kills_span and VIS.kills_span > 0
      and (not Vermilion.Settings.kill_markers or Vermilion.Settings.kill_markers())
-     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_TARGETS and current_view ~= VIEW_BY_RES then
+     and current_view ~= VIEW_BY_CONTRIB and current_view ~= VIEW_BY_DEBUFFS and current_view ~= VIEW_BY_TARGETS and current_view ~= VIEW_BY_RES and current_view ~= VIEW_BY_UPTIME then
     local rel_x = mx - canvas:GetLeft()
     local rel_y = my - canvas:GetTop()
     if rel_y >= VIS.kills_y and rel_y <= VIS.kills_y + VIS.kill_size then
@@ -1420,6 +1421,10 @@ local function hover_poll()
         end
       end
     end
+  end
+  if current_view == VIEW_BY_UPTIME then
+    Vermilion.UptimeView.hover(mx, my)
+    return
   end
   if current_view == VIEW_BY_RES then
     Vermilion.ResourcesView.hover(mx, my)
@@ -2176,6 +2181,11 @@ local function render_by_crit()
 end
 
 function render_current_view()
+  if current_view == VIEW_BY_UPTIME then
+    release_all_pools()
+    Vermilion.UptimeView.render()
+    return
+  end
   if current_view == VIEW_BY_RES then
     release_all_pools()
     Vermilion.ResourcesView.render()
@@ -2363,6 +2373,8 @@ local function set_view(v)
   Vermilion.DebuffsView.clear_hover()
   Vermilion.ResourcesView.reset_scroll()
   Vermilion.ResourcesView.clear_hover()
+  Vermilion.UptimeView.reset_scroll()
+  Vermilion.UptimeView.clear_hover()
   controls.no_data:SetText(GetString((v == VIEW_BY_DEBUFFS) and VERMILION_GRAPH_NO_DEBUFFS or VERMILION_GRAPH_NO_DATA))
   if Vermilion.TemporalBuffer.count() == 0 then
     controls.no_data:SetHidden(false)
@@ -2654,7 +2666,7 @@ function M.is_light_active() return light.active end
 
 function M.prev_view()
   local v = current_view - 1
-  if v < VIEW_BY_SKILL then v = VIEW_BY_RES end
+  if v < VIEW_BY_SKILL then v = VIEW_BY_UPTIME end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -2662,7 +2674,7 @@ end
 
 function M.next_view()
   local v = current_view + 1
-  if v > VIEW_BY_RES then v = VIEW_BY_SKILL end
+  if v > VIEW_BY_UPTIME then v = VIEW_BY_SKILL end
   Sound.play("page")
   release_all_pools()
   set_view(v)
@@ -3369,11 +3381,25 @@ function M.init()
         hide_hover_ui()
         render_current_view()
       end
+    elseif current_view == VIEW_BY_UPTIME then
+      if Vermilion.UptimeView.scroll(dir) then
+        hide_hover_ui()
+        render_current_view()
+      end
     end
   end)
   hit_layer:SetHandler("OnMouseUp", function(_, _, upInside)
     if upInside == false then return end
     local mx, my = GetUIMousePosition()
+    if current_view == VIEW_BY_UPTIME then
+      if Vermilion.UptimeView.click(mx, my) then
+        Sound.play("page")
+        hide_hover_ui()
+        release_all_pools()
+        render_current_view()
+      end
+      return
+    end
     if current_view == VIEW_BY_RES then
       if Vermilion.ResourcesView.click(mx, my) then
         Sound.play("page")
@@ -3466,6 +3492,17 @@ function M.init()
       controls.crosshair:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, cx, 0)
       fade_in(crosshair_fader)
     end,
+    hit_reset = function() hit_begin(0) end,
+    rerender = function() render_current_view() end,
+  })
+  Vermilion.UptimeView.attach({
+    canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
+    seg = controls.pool_t_seg, lbl = controls.pool_t_lbl, icon = controls.pool_c_icon, line = controls.pool_viz_line,
+    layout = CHIP, time_strip = TIME_STRIP_H, fmt_secs = fmt_secs, fmt_val = fmt_val, kinds = M.KIND,
+    hide_grid = hide_grid,
+    now = GetGameTimeMilliseconds,
+    show_card = show_rows_card,
+    hide_card = function() hide_hover_ui() end,
     hit_reset = function() hit_begin(0) end,
     rerender = function() render_current_view() end,
   })

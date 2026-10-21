@@ -17,6 +17,7 @@ local CASES = {
   "vsf_codec",
   "viz_primitives",
   "uptime",
+  "uptime_view",
   "session_store",
   "content_kind",
   "auto_record",

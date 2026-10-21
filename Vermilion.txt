@@ -65,6 +65,7 @@ core/resources.lua
 core/casts.lua
 core/restores.lua
 core/uptime.lua
+core/damage_names.lua
 core/kills.lua
 core/heat.lua
 core/auto_record.lua
@@ -75,6 +76,7 @@ ui/contrib.lua
 ui/debuffs.lua
 ui/targets.lua
 ui/resources.lua
+ui/uptime.lua
 ui/graph.xml
 ui/graph.lua
 ui/assign.xml
