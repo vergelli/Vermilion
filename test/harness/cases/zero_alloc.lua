@@ -31,9 +31,9 @@ return function(H)
   local baseline = H.addon_alloc(ticks) / 10
   Vermilion.Visibility.set("graph", true)
   local label = VermilionGraphWindowViewLabel
-  for _, view in ipairs({ "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS" }) do
+  for _, view in ipairs({ "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS", "RESOURCES" }) do
     local guard = 0
-    while label._text ~= view and guard < 6 do G.next_view(); guard = guard + 1 end
+    while label._text ~= view and guard < 8 do G.next_view(); guard = guard + 1 end
     H.advance(1000)
     local bytes = H.addon_alloc(ticks) / 10 - baseline
     ok(bytes < 400, string.format("%s render tick allocates %.0f addon-side bytes over the hidden baseline (budget 400)", view, bytes))

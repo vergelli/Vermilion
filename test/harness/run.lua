@@ -15,6 +15,7 @@ local CASES = {
   "silence",
   "trace_flow",
   "vsf_codec",
+  "viz_primitives",
   "session_store",
   "content_kind",
   "auto_record",
