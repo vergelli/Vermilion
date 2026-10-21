@@ -60,9 +60,7 @@ local dmg_joined = 0
 local ROWS = { {}, {}, {}, {}, {} }
 local col_cache = {}
 local rate_in, rate_out = {}, {}
-local dmg_by_name = {}
-local dmg_key = { n = -1, t0 = 0, t1 = 0 }
-local dmg_total = 0
+local dmg_by_name, dmg_total = nil, 0
 local p_of_rates = 0
 local gdead = false
 local str = nil
@@ -167,41 +165,9 @@ local function finish(sec)
   if o.n > 1 then table_sort(o, by_total_desc) end
 end
 
-local function damage_by_name(TB)
-  local n = TB.count()
-  local first, last = TB.at(1), TB.at(n)
-  local t0, t1 = first and first.t or 0, last and last.t or 0
-  if dmg_key.n == n and dmg_key.t0 == t0 and dmg_key.t1 == t1 then return end
-  dmg_key.n, dmg_key.t0, dmg_key.t1 = n, t0, t1
-  for k in pairs(dmg_by_name) do dmg_by_name[k] = nil end
-  dmg_total = 0
-  local SC = Vermilion.SkillColors
-  local t_prev = nil
-  for k = 1, n do
-    local s = TB.at(k)
-    local dt = t_prev and (s.t - t_prev) / 1000 or 1
-    if dt <= 0 then dt = 1 end
-    t_prev = s.t
-    local eos = ((s.eDPS or 0) + (s.ShDPS or 0)) * dt
-    if eos > 0 then
-      dmg_total = dmg_total + eos
-      local ab = s.eos_abilities
-      local cnt = ab and ab.count or 0
-      for i = 1, cnt do
-        local e = ab[i]
-        local id, sh = e.id or 0, e.share or 0
-        if id > 0 and sh > 0 then
-          local nm = SC.ability_name(id)
-          if nm and nm ~= "" then dmg_by_name[nm] = (dmg_by_name[nm] or 0) + sh * eos end
-        end
-      end
-    end
-  end
-end
-
 local function aggregate()
   gen = gen + 1
-  damage_by_name(Vermilion.TemporalBuffer)
+  dmg_by_name, dmg_total = Vermilion.DamageNames.by_name(Vermilion.TemporalBuffer)
   order[SEC_SPENT].n, order[SEC_REC].n = 0, 0
   totals.spend, totals.casts, totals.regained, totals.energized = 0, 0, 0, 0
   local _, cid, cpool, ccost, n = Vermilion.Casts.records()

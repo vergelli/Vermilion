@@ -32,7 +32,9 @@ return function(H)
   ok(#H.sounds == 0, "clicking the active tab stays silent")
 
   VermilionGraphTab7._onOnMouseUp(VermilionGraphTab7, nil, true)
-  ok(view_label._text == "RESOURCES", "the last tab reaches RESOURCES")
+  ok(view_label._text == "RESOURCES", "the seventh tab reaches RESOURCES")
+  VermilionGraphTab8._onOnMouseUp(VermilionGraphTab8, nil, true)
+  ok(view_label._text == "UPTIME", "the last tab reaches UPTIME")
   G.next_view()
   ok(view_label._text == "SKILL" and VermilionGraphTab1Line._hidden == false, "arrow navigation still updates the tabs")
   ok(G.step_view(1) == true and view_label._text == "TYPE", "the keybind steps forward")
@@ -41,8 +43,8 @@ return function(H)
   local strip = VermilionGraphWindowTabs
   local w = strip:GetWidth()
   ok(w > 0, "the strip must have a width")
-  local tw = math.floor(w / 7)
-  ok(VermilionGraphTab1._w == tw and VermilionGraphTab7._w == tw, "tabs share the strip evenly")
+  local tw = math.floor(w / 8)
+  ok(VermilionGraphTab1._w == tw and VermilionGraphTab8._w == tw, "tabs share the strip evenly")
   ok(VermilionGraphWindowPrevViewBtn._hidden ~= false, "the old arrows are not part of the chrome anymore")
 
   Vermilion.SavedVars.settings.light_mode = true
