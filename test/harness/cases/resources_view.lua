@@ -116,7 +116,7 @@ return function(H)
   ok(r.mag_bar >= 1, "the recovered list colours its bars by pool, got " .. r.mag_bar)
   ok(r.pool_icons >= 2, "a missing ability icon and the recovery row fall back to the pool's icon, got " .. r.pool_icons)
   ok(r.skulls == 1, "the death wears a skull on the midline, got " .. r.skulls)
-  ok(r.out == 0, "the mirrored layout draws levels, not flow bars")
+  ok(has(r.labels, "COST vs CONTRIBUTION") and has(r.labels, "share of spend") and has(r.labels, "share of damage"), "the cost against contribution block sits under the mirrored lane with its legend")
   ok(has(r.labels, "MAGICKA") and has(r.labels, "STAMINA") and has(r.labels, "BOTH"), "the picker offers magicka, stamina and both")
   ok(has(r.labels, "SPENT BY SKILL") and has(r.labels, "RECOVERED BY"), "the two lists have their headers")
   ok(has(r.labels, "0s"), "the lane carries its own time axis")
@@ -145,15 +145,19 @@ return function(H)
   G.next_view(); G.prev_view()
   ok(view_label._text == "RESOURCES", "back on the view")
   r = scan()
-  ok(r.sta == 0 and r.mag > 0 and r.out > 0, "a single pool draws its level lane and the burn line of the flow lane, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out)
-  ok(r.grey > 0, "the dead stretch of the flow lane is greyed, got " .. r.grey)
-  local fills = 0
+  ok(r.sta == 0 and r.mag > 0 and r.out > 0, "a single pool draws its level lane and a vermilion ribbon where it drained, got mag " .. r.mag .. " sta " .. r.sta .. " out " .. r.out)
+  ok(r.grey > 0, "the dead stretch of the ribbon is greyed, got " .. r.grey)
+  local ticks, ribbon = 0, 0
   for _, c in ipairs(H.controls) do
-    if c._hidden == false and (c._name or ""):find("^VermilionTargetSeg") and c._a and math.abs(c._a - 0.28) < 0.001 then fills = fills + 1 end
+    if c._hidden == false and (c._name or ""):find("^VermilionTargetSeg") and c._a then
+      if c._w == 1 and (c._h or 0) >= 3 then ticks = ticks + 1 end
+      if c._h == 12 and c._a > 0.1 and c._a < 0.95 then ribbon = ribbon + 1 end
+    end
   end
-  ok(fills > 0, "the gap between burn and income is filled, got " .. fills)
+  ok(ticks >= 10, "the rug draws one tick per cast and per restore, got " .. ticks)
+  ok(ribbon >= 2, "the ribbon is a run of twelve-pixel strips, got " .. ribbon)
   ok(r.band >= 1 and r.ticks >= 1, "the band and the starvation mark stay in the single layout")
-  ok(has(r.labels, "LEVEL") and has(r.labels, "REGAINED") and has(r.labels, "SPENT"), "the two lanes name what they show")
+  ok(has(r.labels, "LEVEL") and not has(r.labels, "REGAINED") and not has(r.labels, "SPENT"), "the level lane keeps its name and the flow lane is gone")
   local order2, n2 = RV.rows()
   ok(n2 == 1 and order2[1].id == 501, "the spend list follows the pick, got " .. n2)
   ok(order2[1].dmg > 0 and order2[1].eff_text:find("×", 1, true) == 1, "a skill whose casts dealt damage shows its damage per point spent, got " .. tostring(order2[1].eff_text))
@@ -177,6 +181,33 @@ return function(H)
     ok(RV.click(L.x + 2, L.y + 2) == true, "back to MAGICKA")
     G.next_view(); G.prev_view()
   end
+  do
+    local o, n, rect, joined = RV.dumbbells()
+    ok(n >= 1 and o[1].id == 501 and joined > 0, "the dumbbell block ranks the skills by spend and knows the damage joined to casts, got " .. tostring(n))
+    local canvas = VermilionGraphWindowViewportCanvas
+    H.state.mouse_x = canvas:GetLeft() + 30
+    H.state.mouse_y = canvas:GetTop() + rect.y0 + 16 + 4 + 11
+    VermilionGraphHit._onOnMouseEnter(VermilionGraphHit)
+    H.advance(200)
+    ok((VermilionHoverCardName._text or ""):find("Crushing Shock", 1, true) ~= nil, "hovering a dumbbell row names the skill, got " .. tostring(VermilionHoverCardName._text) .. " rect " .. tostring(rect.y0) .. "-" .. tostring(rect.y1) .. " lane " .. tostring(RV.lane().y) .. "+" .. tostring(RV.lane().h) .. " canvas " .. tostring(canvas:GetHeight()))
+    local seen = {}
+    for _, c in ipairs(H.controls) do if c._hidden == false and type(c._text) == "string" then seen[c._text] = true end end
+    ok(seen["Share of spend"] and seen["Share of your damage"] and seen["Damage per point spent"], "the row card gives both shares and the multiplier")
+    local both_lbl
+    for _, c in ipairs(H.controls) do
+      if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "BOTH" then both_lbl = both_lbl or c end
+    end
+    local LB = H.layout(both_lbl)
+    ok(RV.click(LB.x + 2, LB.y + 2) == true, "clicking BOTH picks it")
+    G.next_view(); G.prev_view()
+    local segs = 0
+    for _, c in ipairs(H.controls) do
+      if c._hidden == false and (c._name or ""):find("^VermilionTargetSeg") and c._h == 3 and c._a and c._a > 0.3 and c._r and ((math.abs(c._r - 0.86) < 0.01 and math.abs(c._g - 0.50) < 0.01) or (math.abs(c._r - 0.80) < 0.01 and math.abs(c._g - 0.68) < 0.01)) then segs = segs + 1 end
+    end
+    ok(segs >= 1, "the segment between the two shares is drawn in vermilion or gold, got " .. segs)
+    ok(RV.click(L.x + 2, L.y + 2) == true, "back to MAGICKA again")
+    G.next_view(); G.prev_view()
+  end
   ok(RV.click(L.x + 2, L.y + 2) == false, "clicking the active pick changes nothing")
 
   local lane = RV.lane()
@@ -190,7 +221,6 @@ return function(H)
   local rows_seen = {}
   for _, c in ipairs(H.controls) do if c._hidden == false and type(c._text) == "string" then rows_seen[c._text] = true end end
   ok(rows_seen["Top spender · 10 s"], "the card names the top spender of the last ten seconds")
-  ok(rows_seen["Burn vs income · 5 s"], "the card reads the smoothed burn and income rates of the flow lane")
   ok(rows_seen["Recovery"], "the card names the recovery per tick")
   ok(math.abs((VermilionHoverCardTime._r or 0) - 0.80) < 0.01, "the time line reads in gold")
   ok(VermilionHoverCardEdgeT and math.abs(VermilionHoverCardEdgeT._r - 0.80) < 0.01, "the card wears a gold edge")
