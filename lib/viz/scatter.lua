@@ -43,6 +43,10 @@ local function py(py0, side, max, v)
   return py0 + side - math_floor(v / max * side + 0.5)
 end
 
+function SC.point(px0, py0, side, max, x, y)
+  return px(px0, side, max, x), py(py0, side, max, y)
+end
+
 function SC.ring(c, cx, cy, r, col, a, lvl)
   for k = 0, RING_STEPS - 1 do
     local ang = k / RING_STEPS * TWO_PI
@@ -63,16 +67,18 @@ function SC.plot(c, px0, py0, side, max, xs, ys, n, col, opts)
   if opts and opts.rings then
     local rx, ry, rr, rn = opts.rings.x, opts.rings.y, opts.rings.r, opts.rings.n
     local rcol = opts.rings.col or col
+    local rcols = opts.rings.cols
     for i = 1, rn do
-      SC.ring(c, px(px0, side, max, rx[i]), py(py0, side, max, ry[i]), math_floor(rr[i] / max * side + 0.5), rcol, (opts.rings.alpha) or 0.7, 4)
+      SC.ring(c, px(px0, side, max, rx[i]), py(py0, side, max, ry[i]), math_floor(rr[i] / max * side + 0.5), (rcols and rcols[i]) or rcol, (opts.rings.alpha) or 0.7, 4)
     end
   end
   local outside = 0
+  local cols = opts and opts.cols
   for i = 1, n do
     local x, y = xs[i], ys[i]
     if x > max or y > max then outside = outside + 1 end
     local sx, sy = px(px0, side, max, x), py(py0, side, max, y)
-    S.box(c, sx - DOT_HALF, sx - DOT_HALF + DOT, sy - DOT_HALF, DOT, col, (opts and opts.alpha) or 0.85, 5)
+    S.box(c, sx - DOT_HALF, sx - DOT_HALF + DOT, sy - DOT_HALF, DOT, (cols and cols[i]) or col, (opts and opts.alpha) or 0.85, 5)
   end
   bump("viz.scatter.renders")
   bump("viz.scatter.controls", (c.drawn or 0) - before)

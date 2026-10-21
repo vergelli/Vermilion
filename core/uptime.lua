@@ -25,6 +25,7 @@ local t_start = 0
 local key_of = {}
 local key_name = {}
 local key_slot = {}
+local key_id = {}
 local nk = 0
 
 local o_key, o_unit, o_t0, o_end, o_press = {}, {}, {}, {}, {}
@@ -67,7 +68,7 @@ local function scan_slotted()
   end
 end
 
-local function key_for(name)
+local function key_for(name, abilityId)
   local k = key_of[name]
   if k then return k end
   if nk >= KEY_CAP then bump("uptime.keys_full") return nil end
@@ -75,6 +76,7 @@ local function key_for(name)
   key_of[name] = nk
   key_name[nk] = name
   key_slot[nk] = slotted_names[name] == true
+  key_id[nk] = abilityId or 0
   return nk
 end
 
@@ -154,7 +156,7 @@ function M.on_effect(changeType, abilityId, unitId, beginTime, endTime, now_ms, 
     bump("uptime.short")
     return
   end
-  local k = key_for(name)
+  local k = key_for(name, abilityId)
   if not k then return end
   local i = find_open(k, unitId)
   if changeType == zc.EFFECT_RESULT_UPDATED then
@@ -238,7 +240,7 @@ function M.reset()
 end
 
 function M.is_recording() return recording end
-function M.keys() return key_name, key_slot, nk end
+function M.keys() return key_name, key_slot, nk, key_id end
 function M.spans() return s_key, s_unit, s_t0, s_t1, sn end
 function M.open_spans() return o_key, o_unit, o_t0, o_end, on end
 function M.presses() return p_key, p_unit, p_t, p_e, p_kind, pn end
@@ -247,10 +249,10 @@ function M.key_of(name) return key_of[name] end
 function M.load_session(span_recs, press_recs, meta)
   M.reset()
   meta = meta or {}
-  local names, slots = meta.names or {}, meta.slotted or {}
+  local names, slots, ids = meta.names or {}, meta.slotted or {}, meta.ids or {}
   for i = 1, #names do
     nk = nk + 1
-    key_name[nk], key_slot[nk] = names[i], slots[i] == true or slots[i] == 1
+    key_name[nk], key_slot[nk], key_id[nk] = names[i], slots[i] == true or slots[i] == 1, ids[i] or 0
     key_of[names[i]] = nk
   end
   span_recs = span_recs or {}

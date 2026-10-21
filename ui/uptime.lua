@@ -22,7 +22,7 @@ local ROW_GAP   = 3
 local NAME_W    = 96
 local PCT_W     = 40
 local ICON      = 14
-local LIST_ROW  = 24
+local LIST_ROW  = 28
 local LIST_GAP  = 2
 local VAL_W     = 52
 local ERR_H     = 64
@@ -57,10 +57,11 @@ local ROWS = { {}, {}, {}, {}, {}, {}, {} }
 local str = nil
 local cur_t0 = nil
 local scale = { x0 = 0, w = 0, t0 = 0, span = 1 }
-local sx, sy = {}, {}
-local ring_x, ring_y, ring_r = {}, {}, {}
-local rings = { x = ring_x, y = ring_y, r = ring_r, n = 0, col = C_GOLD, alpha = 0.6 }
-local scatter_opts = { diagonal = true, rings = rings, alpha = 0.85 }
+local sx, sy, scol = {}, {}, {}
+local ring_x, ring_y, ring_r, ring_c, ring_k = {}, {}, {}, {}, {}
+local rings = { x = ring_x, y = ring_y, r = ring_r, cols = ring_c, n = 0, col = C_GOLD, alpha = 0.7 }
+local scatter_opts = { diagonal = true, rings = rings, alpha = 0.85, cols = scol }
+local RING_MAX_S = 45
 local gen = 0
 
 local function strings()
@@ -88,7 +89,18 @@ local function strings()
     axis_y    = GetString(VERMILION_UPT_AXIS_Y),
     skill     = GetString(VERMILION_UPT_SKILL),
     other     = GetString(VERMILION_UPT_OTHER),
-    more      = GetString(VERMILION_RESH_MORE),
+    more      = GetString(VERMILION_UPT_MORE),
+    leg_skill = GetString(VERMILION_UPT_LEG_SKILL),
+    leg_other = GetString(VERMILION_UPT_LEG_OTHER),
+    leg_pct   = GetString(VERMILION_UPT_LEG_PCT),
+    err_title = GetString(VERMILION_UPT_ERR_TITLE),
+    on_time_l = GetString(VERMILION_UPT_ON_TIME_LABEL),
+    beyond    = GetString(VERMILION_UPT_BEYOND),
+    rh_x      = GetString(VERMILION_UPT_RH_X),
+    rh_y      = GetString(VERMILION_UPT_RH_Y),
+    rh_leg1   = GetString(VERMILION_UPT_RH_LEG1),
+    rh_leg2   = GetString(VERMILION_UPT_RH_LEG2),
+    rh_leg3   = GetString(VERMILION_UPT_RH_LEG3),
   }
   return str
 end
@@ -145,7 +157,7 @@ local function dress(r)
     local SC = Vermilion.SkillColors
     local icon = SC.ability_icon(r.id) or ""
     r.icon = (icon ~= "" and not icon:lower():find("icon_missing", 1, true)) and icon or false
-    r.col = SC.group_color(SC.group_of(r.id)) or C_OTHER
+    r.col = r.slot and (SC.group_color(SC.group_of(r.id)) or C_OTHER) or C_OTHER
   elseif r.icon == nil then
     r.icon = false
     r.col = C_OTHER
@@ -163,7 +175,7 @@ local function by_cost(a, b) return rows[a].cost > rows[b].cost end
 local function build(TB, t_hi)
   gen = gen + 1
   local U = Vermilion.Uptime
-  local names, slots, nk = U.keys()
+  local names, slots, nk, ids = U.keys()
   for k = 1, nk do
     local r = row_for(k)
     r.n, r.mn, r.pn, r.covered, r.early, r.late, r.mean_e, r.n_err, r.first, r.apps, r.dur = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -206,6 +218,7 @@ local function build(TB, t_hi)
   scan_bar_ids(nk, names)
   for k = 1, nk do
     local r = rows[k]
+    if r.id == 0 and ids and (ids[k] or 0) > 0 then r.id = ids[k] end
     r.apps = r.n
     if r.n > 0 then r.dur = r.dur / r.n end
     for i = 1, r.n do r.idx[i] = i end
@@ -324,6 +337,13 @@ local function draw_rows(c, canvas, x, y, w, h, S)
   end
   local rest = n - slots - off
   if rest > 0 then SF.label(c, string_format(S.more, rest), x + w - 90, y + h - 14, 86, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.8) end
+  local ly = y + h - 15
+  local lx = x + 6
+  SF.box(c, lx, lx + 10, ly + 3, 6, C_GOLD, 0.9, 5)
+  SF.label(c, S.leg_skill, lx + 14, ly, 170, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
+  SF.box(c, lx + 190, lx + 200, ly + 3, 6, C_OTHER, 0.9, 5)
+  SF.label(c, S.leg_other, lx + 204, ly, 170, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
+  SF.label(c, S.leg_pct, lx + 380, ly, w - 390, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
   sec_rect[SEC_ROWS].y0, sec_rect[SEC_ROWS].y1 = y, y + h
   SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)
 end
@@ -334,14 +354,18 @@ local function draw_errors(c, canvas, x, y, w, h, S)
   if not k then return end
   local r = rows[k]
   SF.label(c, S.error, x + 4, y, 120, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
-  SF.label(c, r.name, x + 110, y, w - 160, HDR_H, TEXT_ALIGN_LEFT, r.col, 0.95)
-  SF.label(c, err_text(c, S, r), x + w - 130, y, 126, HDR_H, TEXT_ALIGN_RIGHT, C_DIM, 0.9)
+  SF.label(c, r.name, x + 110, y, 170, HDR_H, TEXT_ALIGN_LEFT, r.col, 0.95)
+  SF.label(c, string_format(S.err_title, r.pn, r.early, r.late), x + 290, y, w - 440, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.85)
+  SF.label(c, err_text(c, S, r), x + w - 150, y, 146, HDR_H, TEXT_ALIGN_RIGHT, (r.mean_e > TOL_S * 1000) and C_GOLD or (r.mean_e < -TOL_S * 1000) and C_OUT or C_IN, 0.95)
   SF.box(c, x, x + w, y + HDR_H - 1, 1, C_GOLD, 0.25, 2)
   local ph = h - HDR_H - 6
   if ph < 20 then return end
   ST.plot(c, scale, y + HDR_H + 3, ph, r.pt, r.pe, r.pn, -ERR_LIMIT * 1000, ERR_LIMIT * 1000, -TOL_S * 1000, TOL_S * 1000, C_GOLD, C_OUT, C_IN, nil)
   SF.label(c, "+" .. ERR_LIMIT .. "s", scale.x0 + scale.w + 4, y + HDR_H + 2, 30, 12, TEXT_ALIGN_LEFT, C_GOLD, 0.8)
+  SF.label(c, S.on_time_l, scale.x0 + scale.w + 4, y + HDR_H + 3 + math_floor(ph / 2) - 6, 60, 12, TEXT_ALIGN_LEFT, C_IN, 0.8)
   SF.label(c, "-" .. ERR_LIMIT .. "s", scale.x0 + scale.w + 4, y + h - 14, 30, 12, TEXT_ALIGN_LEFT, C_OUT, 0.8)
+  SF.label(c, S.early, scale.x0 - 44, y + HDR_H + 2, 40, 12, TEXT_ALIGN_RIGHT, C_GOLD, 0.7)
+  SF.label(c, S.late, scale.x0 - 44, y + h - 14, 40, 12, TEXT_ALIGN_RIGHT, C_OUT, 0.7)
   SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)
 end
 
@@ -358,8 +382,8 @@ local function draw_list(c, canvas, x, y, w, sec, title, S, src, rows_max)
   if rest > 0 then SF.label(c, string_format(S.more, rest), x + w - 74, y, 70, HDR_H, TEXT_ALIGN_RIGHT, C_DIM, 0.8) end
   local ry = y + HDR_H + 2
   local top = (n > 0) and rows[src[1]].cost or 0
-  local x_name = x + 4 + ICON + 6
-  local name_w = w - 4 - ICON - 6 - VAL_W - 6
+  local x_name = x + 4 + ((sec == SEC_REF) and 24 or ICON) + 6
+  local name_w = w - 4 - ((sec == SEC_REF) and 24 or ICON) - 6 - VAL_W - 6
   for i = 1, rows_max do
     local k = src[i + off]
     local r = rows[k]
@@ -381,7 +405,7 @@ local function draw_list(c, canvas, x, y, w, sec, title, S, src, rows_max)
       SF.label(c, r.cost_text, x + w - VAL_W - 4, ry, VAL_W, 12, TEXT_ALIGN_RIGHT, C_OUT, a)
       SF.label(c, r.sub_text, x + w - VAL_W - 4, ry + 12, VAL_W, 12, TEXT_ALIGN_RIGHT, C_DIM, a * 0.85)
     else
-      RG.gauge(c, x + 4 + 7, ry + math_floor(LIST_ROW / 2), 7, r.uptime, r.col, 2, nil)
+      RG.gauge(c, x + 4 + 10, ry + math_floor(LIST_ROW / 2), 9, r.uptime, r.col, 3, nil)
       SF.label(c, r.name, x_name, ry + 1, name_w, 14, TEXT_ALIGN_LEFT, C_TEXT, a)
       r.sub_text = string_format(S.sub_ref, r.early, r.late)
       SF.label(c, r.sub_text, x_name, ry + 13, name_w, 11, TEXT_ALIGN_LEFT, C_DIM, a * 0.85)
@@ -418,27 +442,26 @@ end
 
 local function draw_rhythm(c, canvas, x, y, w, h, S)
   local SF, SC = Vermilion.lib.viz.surface, Vermilion.lib.viz.scatter
-  local side = math_min(w - 60, h - 30)
+  local leg_h = 44
+  local side = math_min(w - 70, h - 34 - leg_h)
   if side < 40 then return end
-  local px0, py0 = x + 40, y + 8
+  local px0, py0 = x + 44, y + 18
   local U = Vermilion.Uptime
   local pk, pu, pt, _, _, pn = U.presses()
-  local mx = 0
   rings.n = 0
-  local n = 0
+  local mx = 0
   for oi = 1, order.n do
     local k = order[oi]
     local r = rows[k]
-    if r.slot or oi <= 6 then
-      local d = r.dur / 1000
-      if d > 0 then
-        rings.n = rings.n + 1
-        ring_x[rings.n], ring_y[rings.n], ring_r[rings.n] = d, d, math_max(0.6, d * 0.08)
-        if d * 1.5 > mx then mx = d * 1.5 end
-      end
+    local d = r.dur / 1000
+    if r.pn >= 3 and d > 0 and d <= RING_MAX_S then
+      rings.n = rings.n + 1
+      ring_x[rings.n], ring_y[rings.n], ring_r[rings.n], ring_c[rings.n], ring_k[rings.n] = d, d, math_max(0.6, d * 0.08), r.col, k
+      if d > mx then mx = d end
     end
   end
-  if mx <= 0 then mx = 30 end
+  mx = (mx > 0) and math_min(60, math_max(10, mx * 1.6)) or 30
+  local n = 0
   for i = 1, pn do
     local k = pk[i]
     local r = rows[k]
@@ -456,15 +479,26 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
         n = n + 1
         sx[n] = (pt[prev] - pt[prev2]) / 1000
         sy[n] = (pt[i] - pt[prev]) / 1000
+        scol[n] = r.col
       end
     end
   end
   local outside = SC.plot(c, px0, py0, side, mx, sx, sy, n, C_GOLD, scatter_opts)
-  SF.label(c, S.axis_x, px0, py0 + side + 4, side, 12, TEXT_ALIGN_CENTER, C_DIM, 0.8)
-  SF.label(c, S.axis_y, x + 2, py0, 36, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
+  for i = 1, rings.n do
+    local rx, ry = SC.point(px0, py0, side, mx, ring_x[i], ring_y[i])
+    local rr = math_floor(ring_r[i] / mx * side + 0.5)
+    SF.label(c, rows[ring_k[i]].name, rx + rr + 5, ry - 6, 120, 12, TEXT_ALIGN_LEFT, ring_c[i], 0.9)
+  end
+  SF.label(c, S.rh_y, x + 2, y + 2, w - 4, 12, TEXT_ALIGN_LEFT, C_DIM, 0.85)
+  SF.label(c, S.rh_x, px0, py0 + side + 4, side, 12, TEXT_ALIGN_CENTER, C_DIM, 0.85)
   SF.label(c, "0", px0 - 14, py0 + side - 6, 12, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 - 28, py0, 26, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  if outside > 0 then SF.label(c, "+" .. outside, px0 + side - 30, py0 + 2, 28, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7) end
+  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 - 30, py0 - 2, 28, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
+  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 + side - 30, py0 + side + 4, 30, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
+  if outside > 0 then SF.label(c, string_format(S.beyond, outside), px0 + side - 120, py0 + 2, 118, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.75) end
+  local ly = py0 + side + 20
+  SF.label(c, S.rh_leg1, x + 6, ly, w - 12, 12, TEXT_ALIGN_LEFT, C_DIM, 0.85)
+  SF.label(c, S.rh_leg2, x + 6, ly + 13, w - 12, 12, TEXT_ALIGN_LEFT, C_DIM, 0.85)
+  SF.label(c, S.rh_leg3, x + 6, ly + 26, w - 12, 12, TEXT_ALIGN_LEFT, C_DIM, 0.85)
   SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)
   return n
 end

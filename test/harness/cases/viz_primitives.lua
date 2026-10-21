@@ -81,16 +81,16 @@ return function(H)
 
   S.begin(c)
   local lit = RG.gauge(c, 300, 300, 30, 0.75, col, 3, nil)
-  ok(lit == 27, "three quarters of thirty-six boxes are lit, got " .. tostring(lit))
+  ok(lit == 36, "three quarters of forty-eight boxes are lit, got " .. tostring(lit))
   r = scan("VizTestSeg")
-  ok(r.n == 36, "a gauge is thirty-six boxes, got " .. r.n)
+  ok(r.n == 48, "a gauge is forty-eight boxes, got " .. r.n)
   local lit_boxes, dim_boxes = 0, 0
   for _, ctl in ipairs(H.controls) do
     if ctl._hidden == false and (ctl._name or ""):find("^VizTestSeg") then
       if ctl._a and ctl._a > 0.9 then lit_boxes = lit_boxes + 1 elseif ctl._a and ctl._a < 0.2 then dim_boxes = dim_boxes + 1 end
     end
   end
-  ok(lit_boxes == 27 and dim_boxes == 9, "lit and dim boxes split by the fraction, got " .. lit_boxes .. " and " .. dim_boxes)
+  ok(lit_boxes == 36 and dim_boxes == 12, "lit and dim boxes split by the fraction, got " .. lit_boxes .. " and " .. dim_boxes)
   release()
 
   S.begin(c)
