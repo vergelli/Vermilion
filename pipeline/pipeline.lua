@@ -174,11 +174,13 @@ function M.dispatch_shield_out(result, isError, _name, _g, _slot,
   prof_exit("pipeline.combat_event")
 end
 
-function M.dispatch_effect_player_src(changeType, _slot, _name, unitTag, _bt, endTime,
+function M.dispatch_effect_player_src(changeType, _slot, name, unitTag, beginTime, endTime,
                                        _stack, _icon, _depBuff, effectType, _abilityType,
                                        _stat, _uname, unitId, abilityId)
   bump("engine.effect.in_player_src")
-  Vermilion.DebuffTracker.on_effect(changeType, abilityId, unitId, endTime, now(), unitTag, effectType)
+  local t = now()
+  Vermilion.DebuffTracker.on_effect(changeType, abilityId, unitId, endTime, t, unitTag, effectType)
+  Vermilion.Uptime.on_effect(changeType, abilityId, unitId, beginTime, endTime, t, unitTag, effectType, name)
 end
 
 function M.init()
@@ -211,7 +213,9 @@ function M.init()
     REGISTER_FILTER_IS_ERROR, false)
 
   local function on_kill_event(_r, _err, _name, _g, _slot, _src, _st, tgt, _tt, _hit, _pt, _dt, _log, _suid, targetUnitId, abilityId)
-    Vermilion.Kills.on_kill(now(), targetUnitId, tgt, abilityId)
+    local t = now()
+    Vermilion.Kills.on_kill(t, targetUnitId, tgt, abilityId)
+    Vermilion.Uptime.on_unit_dead(targetUnitId, t)
   end
   local kill_results = { C.ACTION_RESULT_DIED_XP or 2262, C.ACTION_RESULT_KILLING_BLOW or 2265 }
   for i = 1, #kill_results do

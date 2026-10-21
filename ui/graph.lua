@@ -2402,6 +2402,7 @@ local function on_sample_update()
   Vermilion.Resources.sample_into(Vermilion.TemporalBuffer.at(Vermilion.TemporalBuffer.count()))
   if not VIS.res.on and Vermilion.Resources.saw() then VIS.res.on = true end
   Vermilion.DebuffTracker.expire_stale(now)
+  Vermilion.Uptime.expire_stale(now)
 
   update_header(edps + shdps)
   update_crit(now)
@@ -2446,6 +2447,7 @@ function M.on_record_click()
   Vermilion.Ultimate.start_session(recording_start_ms)
   Vermilion.Resources.start_session()
   Vermilion.Casts.start_session()
+  Vermilion.Uptime.start_session()
   Vermilion.Restores.start_session()
   VIS.res.on = false
   Vermilion.Kills.start_session()
@@ -2475,6 +2477,7 @@ function M.on_stop_click()
   Vermilion.Ultimate.finalize(GetGameTimeMilliseconds())
   Vermilion.Resources.finalize()
   Vermilion.Casts.finalize()
+  Vermilion.Uptime.finalize()
   Vermilion.Restores.finalize()
   Vermilion.Kills.finalize()
   Vermilion.SessionStore.on_session_stop()
@@ -2503,6 +2506,7 @@ function M.on_flush_click()
   Vermilion.Ultimate.reset()
   Vermilion.Resources.reset()
   Vermilion.Casts.reset()
+  Vermilion.Uptime.reset()
   Vermilion.Restores.reset()
   VIS.res.on = false
   Vermilion.Kills.reset()
@@ -2967,6 +2971,12 @@ function M.load_session(sess)
     Vermilion.Casts.load_session(vsf.unpack(sess.streams.casts, sess.desc.casts) or {})
   else
     Vermilion.Casts.reset()
+  end
+  if sess.streams.spans and sess.desc.spans then
+    Vermilion.Uptime.load_session(vsf.unpack(sess.streams.spans, sess.desc.spans) or {},
+      (sess.streams.press and sess.desc.press) and vsf.unpack(sess.streams.press, sess.desc.press) or {}, sess.head.uptime)
+  else
+    Vermilion.Uptime.reset()
   end
   if sess.streams.restores and sess.desc.restores then
     Vermilion.Restores.load_session(vsf.unpack(sess.streams.restores, sess.desc.restores) or {}, sess.head.regen)

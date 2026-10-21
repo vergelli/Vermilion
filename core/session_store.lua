@@ -10,6 +10,19 @@ local table_remove = table.remove
 local CAP = 24
 
 local DESC = {
+  spans = {
+    { name = "t0",   width = 4 },
+    { name = "t1",   width = 4 },
+    { name = "key",  width = 1 },
+    { name = "unit", width = 4 },
+  },
+  press = {
+    { name = "t",    width = 4 },
+    { name = "key",  width = 1 },
+    { name = "unit", width = 4 },
+    { name = "e",    width = 3 },
+    { name = "kind", width = 1 },
+  },
   series = {
     { name = "t",       width = 4, delta = true },
     { name = "eDPS",    width = 4, scale = 10 },
@@ -267,6 +280,25 @@ function M.capture(cooperative)
     if cost > 65535 then cost = 65535 end
     ulta_recs[i] = { t = rel, bar = uab[i] or 1, id = uai[i], cost = cost }
   end
+  local usk, usu, ust0, ust1, usn = Vermilion.Uptime.spans()
+  local span_recs = {}
+  for i = 1, usn do
+    local a, b = ust0[i] - t0, ust1[i] - t0
+    if a < 0 then a = 0 end
+    if b < a then b = a end
+    span_recs[i] = { t0 = a, t1 = b, key = usk[i] or 0, unit = usu[i] or 0 }
+  end
+  local upk, upu, upt, upe, upkind, upn = Vermilion.Uptime.presses()
+  local press_recs = {}
+  local E_LIMIT = Vermilion.Uptime.E_LIMIT()
+  for i = 1, upn do
+    local rel = upt[i] - t0
+    if rel < 0 then rel = 0 end
+    press_recs[i] = { t = rel, key = upk[i] or 0, unit = upu[i] or 0, e = (upe[i] or 0) + E_LIMIT, kind = upkind[i] or 1 }
+  end
+  local ukn, uks, uknn = Vermilion.Uptime.keys()
+  local uptime_meta = { names = {}, slotted = {} }
+  for k = 1, uknn do uptime_meta.names[k] = ukn[k]; uptime_meta.slotted[k] = uks[k] and 1 or 0 end
   local ctt, cti, ctp, ctc, ctn = Vermilion.Casts.records()
   local cast_recs = {}
   for i = 1, ctn do
@@ -311,6 +343,7 @@ function M.capture(cooperative)
       difficulty = start_diff or 0,
       kind = start_kind,
       regen = { mag = Vermilion.Restores.regen(1), sta = Vermilion.Restores.regen(2) },
+      uptime = uptime_meta,
       sum = {
         avg = math_floor(sum_eos / n_series + 0.5),
         peak = math_floor(peak_eos + 0.5),
@@ -343,6 +376,8 @@ function M.capture(cooperative)
       ultu      = vsf.pack(ultu_recs, DESC.ultu, nil, ye),
       ulta      = vsf.pack(ulta_recs, DESC.ulta, nil, ye),
       casts     = vsf.pack(cast_recs, DESC.casts, nil, ye),
+      spans     = vsf.pack(span_recs, DESC.spans, nil, ye),
+      press     = vsf.pack(press_recs, DESC.press, nil, ye),
       restores  = vsf.pack(restore_recs, DESC.restores, nil, ye),
       deaths    = vsf.pack(death_recs, DESC.deaths, nil, ye),
     },
