@@ -1908,6 +1908,24 @@ local function draw_ult_band(span_ms, n)
   draw_bands_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, t_last)
 end
 
+function VIS.avg_line(with_shield, max_v, ch_plot)
+  local line = controls.avg_line
+  if not line or max_v <= 0 or not Vermilion.Settings.average_line() then return end
+  local TB = Vermilion.TemporalBuffer
+  local n = TB.count()
+  if n == 0 then return end
+  local sum = 0
+  for i = 1, n do
+    local s = TB.at(i)
+    sum = sum + s.eDPS + (with_shield and s.ShDPS or 0)
+  end
+  local h = math_floor(ch_plot * (sum / n) / max_v + 0.5) + TIME_STRIP_H
+  line:ClearAnchors()
+  line:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, 0, -h)
+  line:SetAnchor(BOTTOMRIGHT, controls.canvas, BOTTOMRIGHT, 0, -h)
+  line:SetHidden(false)
+end
+
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
@@ -1931,6 +1949,7 @@ local function render_by_skill()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  VIS.avg_line(true, max_eos, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -2008,6 +2027,7 @@ local function render_by_type()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  VIS.avg_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -2085,6 +2105,7 @@ local function render_by_crit()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  VIS.avg_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   if capture then hit_begin(m) end
@@ -2124,6 +2145,7 @@ local function render_by_crit()
 end
 
 function render_current_view()
+  if controls.avg_line then controls.avg_line:SetHidden(true) end
   if current_view == VIEW_BY_UPTIME then
     release_all_pools()
     Vermilion.UptimeView.render()
@@ -3288,6 +3310,13 @@ function M.init()
   crosshair:SetAlpha(0)
   crosshair:SetHidden(true)
   controls.crosshair = crosshair
+
+  local avg_line = WINDOW_MANAGER:CreateControl("VermilionGraphAvgLine", controls.canvas, CT_TEXTURE)
+  avg_line:SetHeight(1)
+  avg_line:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.75)
+  avg_line:SetDrawLevel(14)
+  avg_line:SetHidden(true)
+  controls.avg_line = avg_line
   crosshair_fader = make_fader(crosshair)
 
   local hit_layer = WINDOW_MANAGER:CreateControl("VermilionGraphHit", controls.canvas, zc.CT_CONTROL)
