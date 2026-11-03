@@ -83,6 +83,13 @@ local function on_slash(input)
 
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       Vermilion.Diagnostics.full_report(sub == "gc" or sub == "full") ; return
+    elseif cmd == "filmtest" then
+      local TB = Vermilion.TemporalBuffer
+      if TB.is_recording() or VermilionGraphWindow:IsHidden() then d("[filmtest] open the window and stop recording first") return end
+      local list = {}
+      for m in string.gmatch(input, "(%d+)") do list[#list + 1] = tonumber(m) end
+      if #list == 0 then list = { 8, 20, 30, 45, 60 } end
+      Vermilion.CopyBox.show("Vermilion film test", Vermilion.FilmTest.run(list, GetGameTimeMilliseconds)) ; return
     elseif cmd == "gcprobe" then
 
       local n = tonumber(string_match(input, "^%s*%S+%s+(%d+)")) or 1000
