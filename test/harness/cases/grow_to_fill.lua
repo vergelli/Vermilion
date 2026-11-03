@@ -50,9 +50,9 @@ return function(H)
     H.damage_out({ hit = 1000 })
     H.advance(1000)
   end
-  ok(Vermilion.TemporalBuffer.count() == 60, "buffer should be full")
+  ok(Vermilion.TemporalBuffer.count() == 65, "the buffer keeps more than the live window")
   left, right = fill_extents()
-  ok(left < 12 and right > cw * 0.96, string.format("full buffer must span the whole axis, left=%d right=%d cw=%d", left, right, cw))
+  ok(left < 12 and right > cw * 0.96, string.format("a full live window spans the whole axis, left=%d right=%d cw=%d", left, right, cw))
 
   G.on_stop_click()
   G.on_flush_click()
