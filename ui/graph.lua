@@ -420,11 +420,8 @@ end
 
 local function release_all_pools()
   controls.pool_eos_segments:ReleaseAllObjects()
-  controls.pool_eos_line:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
   controls.pool_shdps:ReleaseAllObjects()
-  controls.pool_line_edps:ReleaseAllObjects()
-  controls.pool_line_eos:ReleaseAllObjects()
   if controls.pool_shield then
     controls.pool_shield:ReleaseAllObjects()
     controls.pool_shield_icon:ReleaseAllObjects()
@@ -593,9 +590,6 @@ local function edps_extent(n)
   return max_edps, (t_last - t_first), max_sh
 end
 
-local rsk_xs, rsk_eos_hs                  = {}, {}
-local rty_xs, rty_edps_hs                 = {}, {}
-local rcr_xs, rcr_top_hs                  = {}, {}
 
 local function make_fader(control)
   return { anim = ZO_AlphaAnimation:New(control), control = control, visible = false }
@@ -1916,11 +1910,8 @@ end
 
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
-  controls.pool_eos_line:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
   controls.pool_shdps:ReleaseAllObjects()
-  controls.pool_line_edps:ReleaseAllObjects()
-  controls.pool_line_eos:ReleaseAllObjects()
   controls.pool_shield:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
@@ -1940,7 +1931,6 @@ local function render_by_skill()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
-  local xs, eos_hs = rsk_xs, rsk_eos_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -1953,8 +1943,6 @@ local function render_by_skill()
     local bw  = bwu
     local eos = s.eDPS + s.ShDPS
     local col_h = math_max(0, math_floor(ch_plot * (eos / max_eos) + 0.5))
-    xs[i]     = x + bw * 0.5
-    eos_hs[i] = col_h
 
     local col = capture and hit_col(i, left, right - left, s) or nil
 
@@ -1993,28 +1981,14 @@ local function render_by_skill()
     end
   end
 
-  if col_w >= 3 then
-    for i = 2, m do
-      local le = controls.pool_eos_line:AcquireObject()
-      le:ClearAnchors()
-      le:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(eos_hs[i-1] + TIME_STRIP_H))
-      le:SetAnchor(BOTTOMRIGHT, canvas, BOTTOMLEFT, xs[i],   -(eos_hs[i]   + TIME_STRIP_H))
-      le:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, C_LINE_EOS.a)
-      le:SetThickness(LINE_THICKNESS)
-      le:SetHidden(false)
-    end
-  end
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
 
 local function render_by_type()
   controls.pool_eos_segments:ReleaseAllObjects()
-  controls.pool_eos_line:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
   controls.pool_shdps:ReleaseAllObjects()
-  controls.pool_line_edps:ReleaseAllObjects()
-  controls.pool_line_eos:ReleaseAllObjects()
   controls.pool_shield:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
@@ -2034,7 +2008,6 @@ local function render_by_type()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
-  local xs, edps_hs = rty_xs, rty_edps_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -2047,8 +2020,6 @@ local function render_by_type()
     local bw   = bwu
     local edps = s.eos_peak or 0
     local col_h = math_max(0, math_floor(ch_plot * (edps / max_edps) + 0.5))
-    xs[i]      = x + bw * 0.5
-    edps_hs[i] = col_h
 
     local col = capture and hit_col(i, left, right - left, s) or nil
 
@@ -2087,28 +2058,14 @@ local function render_by_type()
     end
   end
 
-  if col_w >= 3 then
-    for i = 2, m do
-      local le = controls.pool_eos_line:AcquireObject()
-      le:ClearAnchors()
-      le:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(edps_hs[i-1] + TIME_STRIP_H))
-      le:SetAnchor(BOTTOMRIGHT, canvas, BOTTOMLEFT, xs[i],   -(edps_hs[i]   + TIME_STRIP_H))
-      le:SetColor(C_LINE_EDPS.r, C_LINE_EDPS.g, C_LINE_EDPS.b, C_LINE_EDPS.a)
-      le:SetThickness(LINE_THICKNESS)
-      le:SetHidden(false)
-    end
-  end
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
 
 local function render_by_crit()
   controls.pool_eos_segments:ReleaseAllObjects()
-  controls.pool_eos_line:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
   controls.pool_shdps:ReleaseAllObjects()
-  controls.pool_line_edps:ReleaseAllObjects()
-  controls.pool_line_eos:ReleaseAllObjects()
   controls.pool_shield:ReleaseAllObjects()
 
   local n = Vermilion.TemporalBuffer.count()
@@ -2128,7 +2085,6 @@ local function render_by_crit()
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
-  local xs, top_hs = rcr_xs, rcr_top_hs
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   if capture then hit_begin(m) end
@@ -2141,8 +2097,6 @@ local function render_by_crit()
     if capture then hit_col(i, left, right - left, s) end
     local noncrit_h = math_max(0, math_floor(ch_plot * (s.noncrit / max_edps) + 0.5))
     local crit_h    = math_max(0, math_floor(ch_plot * (s.crit    / max_edps) + 0.5))
-    xs[i]     = x + bw * 0.5
-    top_hs[i] = noncrit_h + crit_h
 
     if noncrit_h > 0 then
       local tn = controls.pool_edps:AcquireObject()
@@ -2165,17 +2119,6 @@ local function render_by_crit()
     end
   end
 
-  if col_w >= 3 then
-    for i = 2, m do
-      local lt = controls.pool_line_edps:AcquireObject()
-      lt:ClearAnchors()
-      lt:SetAnchor(BOTTOMLEFT,  canvas, BOTTOMLEFT, xs[i-1], -(top_hs[i-1] + TIME_STRIP_H))
-      lt:SetAnchor(BOTTOMRIGHT, canvas, BOTTOMLEFT, xs[i],   -(top_hs[i]   + TIME_STRIP_H))
-      lt:SetColor(C_LINE_EDPS.r, C_LINE_EDPS.g, C_LINE_EDPS.b, C_LINE_EDPS.a)
-      lt:SetThickness(LINE_THICKNESS)
-      lt:SetHidden(false)
-    end
-  end
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
 end
@@ -3122,11 +3065,8 @@ function M.init()
   controls.grid = create_grid("VermilionGrid", controls.canvas)
 
   controls.pool_eos_segments = make_fill_pool("VermilionEosSeg")
-  controls.pool_eos_line     = make_line_pool("VermilionEosLine")
   controls.pool_edps         = make_fill_pool("VermilionEdpsFill")
   controls.pool_shdps        = make_fill_pool("VermilionShdpsFill")
-  controls.pool_line_edps    = make_line_pool("VermilionLineEdps")
-  controls.pool_line_eos     = make_line_pool("VermilionLineEos")
   controls.pool_shield       = make_fill_pool("VermilionShieldHeat")
   controls.pool_shield_icon  = Pool.new("VermilionShieldIcon", controls.canvas, CT_TEXTURE,
     function(c) c:SetDrawLevel(5) end,

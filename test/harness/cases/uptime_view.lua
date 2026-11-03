@@ -180,6 +180,17 @@ return function(H)
   ok(shown("VermilionVizLine") == 0, "no viz line stays on screen after leaving UPTIME, got " .. shown("VermilionVizLine"))
   while view_label._text ~= "SKILL" do G.next_view() end
   ok(shown("VermilionVizCd") == 0, "no ring shows on the bar views")
+  local function line_marks()
+    local k = 0
+    for _, ctl in ipairs(H.controls) do
+      if ctl._hidden == false and (ctl._name or ""):find("Line%d+$") then k = k + 1 end
+    end
+    return k
+  end
+  for _, want in ipairs({ "SKILL", "TYPE", "CRIT" }) do
+    while view_label._text ~= want do G.next_view() end
+    ok(line_marks() == 0, "the " .. want .. " view draws bars with no line over them, got " .. line_marks())
+  end
 
   G.on_flush_click()
   H.slotted, H.state.active_bar = nil, nil
