@@ -82,6 +82,7 @@ ui/uptime.lua
 ui/film/window.lua
 ui/film/columns.lua
 ui/film/overview.lua
+ui/film/bands.lua
 ui/graph.xml
 ui/graph.lua
 ui/assign.xml
