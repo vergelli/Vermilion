@@ -22,6 +22,7 @@ local CASES = {
   "film_navigation",
   "skin",
   "xml_anchors",
+  "film_test",
   "session_store",
   "content_kind",
   "auto_record",

@@ -85,6 +85,7 @@ ui/widgets/hover_card.lua
 ui/film/columns.lua
 ui/film/overview.lua
 ui/film/bands.lua
+core/film_test.lua
 ui/graph.xml
 ui/graph.lua
 ui/assign.xml

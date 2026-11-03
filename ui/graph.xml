@@ -78,10 +78,6 @@
           <Dimensions x="256" y="32"/>
           <Anchor point="CENTER" relativePoint="TOP" offsetY="2"/>
         </Texture>
-        <Texture name="$(parent)OrnamentBottom" textureFile="Vermilion/assets/skin/ornament.dds" level="8">
-          <Dimensions x="256" y="32"/>
-          <Anchor point="CENTER" relativePoint="BOTTOM" offsetY="-2"/>
-        </Texture>
 
         <!-- Title -->
         <Label name="$(parent)TitleLabel"
