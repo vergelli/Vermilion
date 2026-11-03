@@ -1873,7 +1873,7 @@ function M.refresh_record_button()
   local recording = Vermilion.TemporalBuffer.is_recording()
   local mode = Vermilion.AutoRecord.get_mode()
   local word = recording and GetString(VERMILION_REC_RECORDING) or GetString(VERMILION_GRAPH_RECORD)
-  controls.btn_record:SetText("|t14:14:Vermilion/assets/rec.dds|t " .. word)
+  controls.btn_record:SetText("|t16:16:Vermilion/assets/rec.dds|t " .. word)
   if controls.rec_mode then
     local tag = REC.mode_tag(mode)
     local extra = ""
@@ -2697,7 +2697,7 @@ function M.init()
   if sv.graph.w then
     controls.window:SetDimensions(sv.graph.w, sv.graph.h)
   end
-  controls.window:SetDimensionConstraints(400, 240, 1000, 700)
+  controls.window:SetDimensionConstraints(440, 240, 1000, 700)
 
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
   local Skin = Vermilion.Skin
@@ -2791,10 +2791,10 @@ function M.init()
 
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE) .. (Vermilion.Constants.DEBUG and ("  ·  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
-  controls.btn_record:SetText("|t14:14:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
+  controls.btn_record:SetText("|t16:16:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
   controls.btn_record_menu:SetText("|t14:14:" .. Vermilion.Skin.CARET .. "|t")
   controls.rec_panel:ClearAnchors()
-  controls.rec_panel:SetAnchor(TOPLEFT, controls.btn_record_menu, BOTTOMLEFT, -42, 4)
+  controls.rec_panel:SetAnchor(TOPLEFT, controls.btn_record_menu, BOTTOMLEFT, -72, 4)
   controls.rec_panel:SetHidden(true)
   controls.rec_mode:SetColor(0.62, 0.62, 0.62, 1)
   if controls.rec_mode.SetWrapMode and TEXT_WRAP_MODE_ELLIPSIS then controls.rec_mode:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS) end
@@ -2810,6 +2810,9 @@ function M.init()
   Vermilion.Skin.button(controls.btn_record_menu, true)
   Vermilion.Skin.button(controls.btn_stop)
   Vermilion.Skin.button(controls.btn_flush)
+  Vermilion.Skin.button(VermilionGraphWindowSettingsBtn)
+  Vermilion.Skin.close(VermilionGraphWindowCloseBtn)
+  VermilionGraphWindowSettingsBtn:SetText(GetString(VERMILION_GRAPH_SETTINGS))
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.92, 0.46, 0.40)
   zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)

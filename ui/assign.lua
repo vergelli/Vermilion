@@ -289,6 +289,7 @@ end
 function M.init()
   Vermilion.Skin.panel(VermilionAssignPanelBg)
   Vermilion.Skin.panel(VermilionAssignConfirmBg)
+  Vermilion.Skin.close(VermilionAssignPanelCloseBtn)
   Vermilion.Skin.button(VermilionAssignPanelAssignBtn, true)
   Vermilion.Skin.button(VermilionAssignConfirmNoBtn)
   Vermilion.Skin.button(VermilionAssignConfirmYesBtn, true)

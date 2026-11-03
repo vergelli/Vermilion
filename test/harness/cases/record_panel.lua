@@ -56,7 +56,7 @@ return function(H)
   ok(dots("RadioButtonDisabled") == 2, "the stop row is greyed while the start is automatic, got " .. dots("RadioButtonDisabled"))
   ok(btn._text:find("Record", 1, true) and not btn._text:find("Armed", 1, true), "the main half still reads Record")
   ok(tag._text:find("any fight", 1, true) and not tag._text:find("stops with the fight", 1, true), "the tag names the mode and leaves the implied stop to the panel, got " .. tostring(tag._text))
-  ok(xml:find('StatusLabel.-<Anchor point="TOPLEFT"  offsetX="314"  offsetY="38"/>%s*<Dimensions y="14"/>') ~= nil, "the status label sizes to its text so the tag can follow it")
+  ok(xml:find('StatusLabel.-<Anchor point="TOPLEFT"  offsetX="350"  offsetY="38"/>%s*<Dimensions y="14"/>') ~= nil, "the status label sizes to its text so the tag can follow it")
 
   ok(click("By hand"), "back to a manual start")
   ok(AR.get_mode() == "off" and dots("RadioButtonDisabled") == 0, "the stop row comes back")
