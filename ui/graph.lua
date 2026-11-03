@@ -702,6 +702,8 @@ local function position_card(mx, my)
   zev.register_update("VermilionCardGuard", 100, card_guard)
 end
 
+local CARD_MAX_W = 360
+
 local function size_card(w)
   local card = controls.card
   if card.width == w then return end
@@ -713,20 +715,35 @@ local function size_card(w)
   end
 end
 
+local function measure_row(row)
+  local name_text, val_text = row.name:GetText(), row.val:GetText()
+  if row.name_text ~= name_text then
+    row.name_text = name_text
+    row.name:SetWidth(CARD_MAX_W)
+    row.name_w = row.name:GetTextWidth()
+  end
+  if row.val_text ~= val_text then
+    row.val_text = val_text
+    row.val:SetWidth(CARD_MAX_W)
+    row.val_w = row.val:GetTextWidth()
+  end
+end
+
 local function fit_card_rows(card, n, base_w)
   local w = base_w
   for i = 1, n do
     local row = card.rows[i]
-    local vw = row.val:GetTextWidth() + 6
+    measure_row(row)
+    local vw = row.val_w + 6
     if vw < 40 then vw = 40 end
-    local need = 30 + row.name:GetTextWidth() + 12 + vw + 8
+    local need = 30 + row.name_w + 12 + vw + 8
     if need > w then w = need end
   end
-  if w > 360 then w = 360 end
+  if w > CARD_MAX_W then w = CARD_MAX_W end
   size_card(w)
   for i = 1, n do
     local row = card.rows[i]
-    local vw = row.val:GetTextWidth() + 6
+    local vw = row.val_w + 6
     if vw < 40 then vw = 40 end
     local max_v = w - 30 - 8 - 40
     if vw > max_v then vw = max_v end
@@ -768,7 +785,6 @@ end
 local function show_card(band, col, mx, my, elapsed_ms)
   local card = controls.card
   if not card then return end
-  size_card(CARD_W)
   local total = band.eos or 0
   local ticon = (current_view == VIEW_BY_TYPE) and DTYPE_ICON[band.key] or nil
   if ticon then swatch_icon(card, ticon) else swatch_solid(card, band.r, band.g, band.b) end
@@ -855,7 +871,6 @@ end
 local function show_rows_card(color, name_text, stat_text, time_text, rows, n_rows, desc_text, mx, my)
   local card = controls.card
   if not card then return end
-  size_card(CARD_W)
   swatch_solid(card, color.r, color.g, color.b)
   card.name:SetColor(color.r, color.g, color.b, 1.0)
   card.name:SetText(name_text)
