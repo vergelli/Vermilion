@@ -164,6 +164,21 @@ return function(H)
   local order2, n2, rows2 = UV.rows()
   ok(n2 == n, "the loaded session draws the same rows, got " .. n2 .. " vs " .. n)
   ok(rows2[order2[1]].pn > 0 and rows2[order2[1]].uptime > 0, "presses and uptime survive the round trip")
+  local function shown(prefix)
+    local k, i = 0, 1
+    while rawget(_G, prefix .. i) do
+      if not rawget(_G, prefix .. i)._hidden then k = k + 1 end
+      i = i + 1
+    end
+    return k, i - 1
+  end
+  local cd_on, cd_made = shown("VermilionVizCd")
+  ok(cd_made > 0 and cd_on > 0, "UPTIME draws its rings, got " .. cd_on .. " of " .. cd_made)
+  G.next_view()
+  ok(shown("VermilionVizCd") == 0, "no ring stays on screen after leaving UPTIME, got " .. shown("VermilionVizCd"))
+  ok(shown("VermilionVizLine") == 0, "no viz line stays on screen after leaving UPTIME, got " .. shown("VermilionVizLine"))
+  while view_label._text ~= "SKILL" do G.next_view() end
+  ok(shown("VermilionVizCd") == 0, "no ring shows on the bar views")
 
   G.on_flush_click()
   H.slotted, H.state.active_bar = nil, nil

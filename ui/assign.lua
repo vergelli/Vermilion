@@ -105,6 +105,8 @@ local function build_flyout()
     e:SetAnchor(TOPLEFT, fly, TOPLEFT, FLYOUT_PAD + col * FLYOUT_COL_W, FLYOUT_PAD + r * FLYOUT_ENTRY_H)
     e:SetText(g.label)
     e:SetColor(g.r, g.g, g.b, 1)
+    e:SetDrawLayer(DL_OVERLAY)
+    e:SetDrawLevel(103)
     e:SetMouseEnabled(true)
 
     local key = g.key
