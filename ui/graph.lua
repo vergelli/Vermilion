@@ -298,8 +298,6 @@ local function create_grid(prefix, parent_ctrl)
 
   for i = 1, N_VGRID do
     local vl = WM:CreateControl(prefix .. "V" .. i, parent_ctrl, CT_TEXTURE)
-    vl:SetTexture(FILL_TEXTURE)
-    vl:SetTextureCoords(0, 0.05, 0, 1)
     vl:SetWidth(1)
     vl:SetColor(C_GRID_LINE.r, C_GRID_LINE.g, C_GRID_LINE.b, C_GRID_LINE.a)
     vl:SetHidden(true)
@@ -454,6 +452,8 @@ local function release_all_pools()
     controls.pool_t_lbl:ReleaseAllObjects()
     controls.pool_t_sub:ReleaseAllObjects()
   end
+  if controls.pool_viz_cd then controls.pool_viz_cd:ReleaseAllObjects() end
+  if controls.pool_viz_line then controls.pool_viz_line:ReleaseAllObjects() end
 end
 
 local MIN_COL_PX = 6
@@ -2208,6 +2208,8 @@ function render_current_view()
     Vermilion.TargetsView.render()
     return
   end
+  if controls.pool_viz_cd then controls.pool_viz_cd:ReleaseAllObjects() end
+  if controls.pool_viz_line then controls.pool_viz_line:ReleaseAllObjects() end
   if controls.pool_c_seg then
     controls.pool_c_seg:ReleaseAllObjects()
     controls.pool_c_rim:ReleaseAllObjects()
@@ -3335,8 +3337,6 @@ function M.init()
   controls.win_fader.visible = true
 
   local crosshair = WINDOW_MANAGER:CreateControl("VermilionGraphCrosshair", controls.canvas, CT_TEXTURE)
-  crosshair:SetTexture(FILL_TEXTURE)
-  crosshair:SetTextureCoords(0, 0.05, 0, 1)
   crosshair:SetWidth(1)
   crosshair:SetColor(C_CROSSHAIR.r, C_CROSSHAIR.g, C_CROSSHAIR.b, C_CROSSHAIR.a)
   crosshair:SetDrawLevel(15)
