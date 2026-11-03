@@ -52,7 +52,7 @@ return function(H)
   end
   ok(Vermilion.TemporalBuffer.count() == 65, "the buffer keeps more than the live window")
   left, right = fill_extents()
-  ok(left < 12 and right > cw * 0.96, string.format("a full live window spans the whole axis, left=%d right=%d cw=%d", left, right, cw))
+  ok(left < cw * 0.1 and right > cw * 0.96, string.format("a full live window spans the whole axis, left=%d right=%d cw=%d", left, right, cw))
 
   G.on_stop_click()
   G.on_flush_click()

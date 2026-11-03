@@ -131,6 +131,7 @@ ZO_CreateStringId("VERMILION_TIP_UNKNOWN",  "Give a colour to skills Vermilion d
 ZO_CreateStringId("VERMILION_TIP_LOGO",     "Show or hide the logo in the title bar")
 ZO_CreateStringId("VERMILION_SETTINGS_KILLS_ON",  "Kill markers: On")
 ZO_CreateStringId("VERMILION_SETTINGS_KILLS_OFF", "Kill markers: Off")
+ZO_CreateStringId("VERMILION_TIP_FILM_STRIP",    "The whole fight. Drag to move, wheel to zoom, right click to see it all")
 ZO_CreateStringId("VERMILION_SETTINGS_AVG_ON",   "Average line: On")
 ZO_CreateStringId("VERMILION_SETTINGS_AVG_OFF",  "Average line: Off")
 ZO_CreateStringId("VERMILION_TIP_AVG",           "Draw the average of the whole fight as a thin line across SKILL, TYPE and CRIT")

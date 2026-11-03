@@ -401,15 +401,17 @@ local function draw_grid(grid, canvas, max_val, span_ms, flip, lookback, top_ins
   if has_time then
     grid.time_l:ClearAnchors()
     grid.time_l:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, 2, 0)
-    grid.time_l:SetText(lookback and ("-" .. fmt_secs(span_ms)) or "0s")
+    local zoom_ms = (lookback and Vermilion.FilmWindow.is_zoomed()) and Vermilion.FilmColumns.view_start_ms() or nil
+    if zoom_ms then lookback = false end
+    grid.time_l:SetText(lookback and ("-" .. fmt_secs(span_ms)) or (zoom_ms and fmt_secs(zoom_ms)) or "0s")
     grid.time_l:SetHidden(false)
     grid.time_m:ClearAnchors()
     grid.time_m:SetAnchor(BOTTOM, canvas, BOTTOM, 0, 0)
-    grid.time_m:SetText(lookback and ("-" .. fmt_secs(span_ms / 2)) or fmt_secs(span_ms / 2))
+    grid.time_m:SetText(lookback and ("-" .. fmt_secs(span_ms / 2)) or fmt_secs((zoom_ms or 0) + span_ms / 2))
     grid.time_m:SetHidden(false)
     grid.time_r:ClearAnchors()
     grid.time_r:SetAnchor(BOTTOMRIGHT, canvas, BOTTOMRIGHT, -2, 0)
-    grid.time_r:SetText(lookback and GetString(VERMILION_GRAPH_NOW) or fmt_secs(span_ms))
+    grid.time_r:SetText(lookback and GetString(VERMILION_GRAPH_NOW) or fmt_secs((zoom_ms or 0) + span_ms))
     grid.time_r:SetHidden(false)
   else
     grid.time_l:SetHidden(true)
@@ -453,129 +455,9 @@ local function release_all_pools()
   if controls.pool_viz_line then controls.pool_viz_line:ReleaseAllObjects() end
 end
 
-local MIN_COL_PX = 6
-local dec_cols   = { denom = 1 }
-
-local function grid_geometry(cw, denom, sc, base)
-  local cw_p = math_floor(cw * sc)
-  local minp = math_floor(MIN_COL_PX * sc + 0.5)
-  if minp < 2 then minp = 2 end
-  local n = math_floor(cw_p / minp)
-  if n < 1 then n = 1 end
-  if n > denom then n = denom end
-  local P = math_floor(cw_p / n)
-  if P < 1 then P = 1 end
-  local x0 = cw_p - n * P
-  local gap = (P > 3) and 1 or 0
-  return n, P, x0, (P - gap) / sc, math_floor(base * sc + 0.5)
-end
-
-local function decimate(cw)
-  local TB       = Vermilion.TemporalBuffer
-  local capacity = TB.capacity()
-  local n        = TB.count()
-  local denom    = capacity
-  if n > 0 and not TB.is_recording() then
-    denom = n
-  else
-    local live = Vermilion.Constants.TEMPORAL.LIVE_WINDOW_S * math_floor(1000 / Vermilion.Settings.sample_ms())
-    if live < capacity then denom = live end
-  end
-  dec_cols.denom = denom
-  local first = (n > denom) and (n - denom + 1) or 1
-  dec_cols.first = first
-  local grid = dec_cols.grid
-  if grid == nil then grid = (Vermilion.Constants.PIXEL_GRID ~= false) end
-  local num_cols
-  if grid then
-    local sc = api.GetUIGlobalScale and api.GetUIGlobalScale() or 1
-    if not sc or sc <= 0 then sc = 1 end
-    local base = controls.canvas and controls.canvas:GetLeft() or 0
-    local nc, P, x0, bw, base_p = grid_geometry(cw, denom, sc, base)
-    num_cols = nc
-    dec_cols.pitch  = P
-    dec_cols.x0     = x0
-    dec_cols.scale  = sc
-    dec_cols.base   = base
-    dec_cols.base_p = base_p
-    dec_cols.bw     = bw
-  else
-    local max_cols = math_floor(cw / MIN_COL_PX)
-    if max_cols < 1 then max_cols = 1 end
-    local per = math.ceil(denom / max_cols)
-    if per < 1 then per = 1 end
-    num_cols = math.ceil(denom / per)
-    if num_cols < 1 then num_cols = 1 end
-    dec_cols.pitch = nil
-    dec_cols.bw    = nil
-  end
-  local offset   = denom - n
-  local m, cur_c = 0, -1
-  local col
-  for i = first, n do
-    local s   = TB.at(i)
-    local c   = math_floor((offset + i - 1) * num_cols / denom)
-    local eos = s.eDPS + s.ShDPS
-    if c ~= cur_c then
-      m = m + 1
-      col = dec_cols[m]
-      if not col then col = {}; dec_cols[m] = col end
-      col.c = c; col.t = s.t
-      col.eos_peak = eos;    col.eDPS = s.eDPS; col.ShDPS = s.ShDPS
-      col.eos_groups = s.eos_groups; col.eos_abilities = s.eos_abilities
-      col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
-      col.dtype_groups = s.dtype_groups; col.dtype_abilities = s.dtype_abilities
-      col.shield_abilities = s.shield_abilities
-      cur_c = c
-    else
-      if eos > col.eos_peak then
-        col.eos_peak = eos; col.eDPS = s.eDPS; col.ShDPS = s.ShDPS
-        col.eos_groups = s.eos_groups; col.eos_abilities = s.eos_abilities
-        col.shield_abilities = s.shield_abilities
-        col.dtype_groups = s.dtype_groups; col.dtype_abilities = s.dtype_abilities
-      end
-      if s.eDPS > col.edps_peak then
-        col.edps_peak = s.eDPS; col.noncrit = s.noncrit; col.crit = s.crit
-      end
-      col.t = s.t
-    end
-  end
-  local col_w   = dec_cols.pitch and (dec_cols.pitch / dec_cols.scale) or (cw / num_cols)
-  local bar_gap = (col_w > 3) and 1 or 0
-  return m, num_cols, col_w, bar_gap
-end
-
-local function dec_rect(c, num_cols, cw)
-  local P = dec_cols.pitch
-  if P then
-    local sc     = dec_cols.scale
-    local left_p = dec_cols.base_p + dec_cols.x0 + c * P
-    local left   = left_p / sc - dec_cols.base
-    return left, left + P / sc
-  end
-  local left  = math_floor(c       * cw / num_cols + 0.5)
-  local right = math_floor((c + 1) * cw / num_cols + 0.5)
-  return left, right
-end
-
-local function axis_span(span_ms, n)
-  if n < 2 or n == dec_cols.denom then return span_ms end
-  return span_ms * dec_cols.denom / (n - 1)
-end
-
-local function window_extent(n)
-  local TB = Vermilion.TemporalBuffer
-  local max_eos, max_sh, t_first, t_last = 0, 0, 0, 0
-  for i = 1, n do
-    local s = TB.at(i)
-    local eos = s.eDPS + s.ShDPS
-    if eos > max_eos then max_eos = eos end
-    if s.ShDPS > max_sh then max_sh = s.ShDPS end
-    if i == 1 then t_first = s.t end
-    t_last = s.t
-  end
-  return max_eos, (t_last - t_first), max_sh
-end
+local FC = Vermilion.FilmColumns
+local dec_cols, decimate, dec_rect = FC.cols, FC.decimate, FC.rect
+local axis_span, window_extent, grid_geometry = FC.axis_span, FC.window_extent, FC.grid_geometry
 
 local function edps_extent(n)
   local TB = Vermilion.TemporalBuffer
@@ -1658,13 +1540,16 @@ local function draw_shield_band_at(t0, span, x_left, bw)
   icon:SetHidden(false)
   if S.max <= 0 then return end
   local run_x0, run_x1, run_lv = nil, nil, -1
-  for k = dec_cols.first or 1, n do
+  local k0, k1 = FC.samples_in(t0, span, n)
+  local x_right = x_left + bw
+  for k = k0, k1 do
     local s = TB.at(k)
     local sh = s.ShDPS or 0
     local level = (sh > 0) and Heat.level(math.sqrt(sh / S.max)) or 0
     local x0 = x_left + math_floor((s.t - t0) / span * bw + 0.5)
     local nxt = TB.at(k + 1)
-    local x1 = nxt and (x_left + math_floor((nxt.t - t0) / span * bw + 0.5)) or (x_left + bw)
+    local x1 = nxt and (x_left + math_floor((nxt.t - t0) / span * bw + 0.5)) or x_right
+    if x1 > x_right then x1 = x_right end
     if x1 <= x0 then x1 = x0 + 1 end
     if level > 0 and run_x0 and level == run_lv and x0 <= run_x1 then
       run_x1 = x1
@@ -1814,8 +1699,8 @@ end
 
 local function draw_kills(span_ms, n)
   if n == 0 then controls.pool_kill:ReleaseAllObjects() return end
-  local t_last = Vermilion.TemporalBuffer.at(n).t
-  local span = axis_span(span_ms, n)
+  local t_last = FC.view_last_t()
+  local span = axis_span(span_ms)
   local x_left = VIS.ult.ICON + 4
   draw_kills_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, CHIP.H + top_inset() + 2)
 end
@@ -1855,12 +1740,15 @@ function RES.row(p, y, t0, span, x_left, bw, key, c, letter)
   local y_bottom = y + VIS.res.ROW_H
   local low = Vermilion.Resources.low()
   local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
-  for k = dec_cols.first or 1, n do
+  local k0, k1 = FC.samples_in(t0, span, n)
+  local x_right = x_left + bw
+  for k = k0, k1 do
     local s = TB.at(k)
     local level = s[key] or 0
     local x0 = x_left + math_floor((s.t - t0) / span * bw + 0.5)
     local nxt = TB.at(k + 1)
-    local x1 = nxt and (x_left + math_floor((nxt.t - t0) / span * bw + 0.5)) or (x_left + bw)
+    local x1 = nxt and (x_left + math_floor((nxt.t - t0) / span * bw + 0.5)) or x_right
+    if x1 > x_right then x1 = x_right end
     if x1 <= x0 then x1 = x0 + 1 end
     local h = math_floor(level * VIS.res.ROW_H + 0.5)
     local is_low = level > 0 and level < 0.30
@@ -1902,8 +1790,8 @@ local function draw_ult_band(span_ms, n)
     controls.pool_res_lbl:ReleaseAllObjects()
     return
   end
-  local t_last = Vermilion.TemporalBuffer.at(n).t
-  local span = axis_span(span_ms, n)
+  local t_last = FC.view_last_t()
+  local span = axis_span(span_ms)
   local x_left = VIS.ult.ICON + 4
   draw_bands_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, t_last)
 end
@@ -1948,7 +1836,7 @@ local function render_by_skill()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(true, max_eos, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -2026,7 +1914,7 @@ local function render_by_type()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -2104,7 +1992,7 @@ local function render_by_crit()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
-  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms, n), nil, true, CHIP.H + top_inset())
+  draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
@@ -2146,6 +2034,9 @@ end
 
 function render_current_view()
   if controls.avg_line then controls.avg_line:SetHidden(true) end
+  local TB_film = Vermilion.TemporalBuffer
+  Vermilion.FilmOverview.sync((current_view == VIEW_BY_SKILL or current_view == VIEW_BY_TYPE or current_view == VIEW_BY_CRIT)
+    and not TB_film.is_recording() and TB_film.count() >= 2)
   if current_view == VIEW_BY_UPTIME then
     release_all_pools()
     Vermilion.UptimeView.render()
@@ -2188,6 +2079,7 @@ function render_current_view()
   else
     render_by_crit()
   end
+  Vermilion.FilmOverview.draw()
 end
 
 function M.save_available()
@@ -2403,6 +2295,8 @@ function M.current_view() return current_view end
 
 function M.on_record_click()
   if Vermilion.TemporalBuffer.is_recording() then return end
+  Vermilion.FilmWindow.reset()
+  Vermilion.FilmOverview.sync(false)
   log:info("record click")
   Sound.play("record")
   if not Vermilion.AutoRecord.is_auto_active() then
@@ -2471,6 +2365,8 @@ function M.on_stop_click()
 end
 
 function M.on_flush_click()
+  Vermilion.FilmWindow.reset()
+  Vermilion.FilmOverview.sync(false)
   Sound.play("discard")
   Vermilion.SessionStore.finish_autosave()
   light.exit()
@@ -2922,6 +2818,7 @@ local function attach_shares(series, sess, vsf)
 end
 
 function M.load_session(sess)
+  Vermilion.FilmWindow.reset()
   if Vermilion.TemporalBuffer.is_recording() then
     d("[Vm] " .. GetString(VERMILION_LIB_BUSY))
     return false
@@ -3055,6 +2952,7 @@ function M.init()
   controls.btn_next_view = VermilionGraphWindowNextViewBtn
   controls.viewport      = VermilionGraphWindowViewport
   controls.canvas        = VermilionGraphWindowViewportCanvas
+  FC.bind(controls.canvas)
   controls.no_data       = VermilionGraphWindowViewportNoDataLabel
   controls.readout       = VermilionGraphWindowReadoutLabel
   controls.dps_icon      = VermilionGraphWindowDpsIcon
@@ -3317,6 +3215,11 @@ function M.init()
   avg_line:SetDrawLevel(14)
   avg_line:SetHidden(true)
   controls.avg_line = avg_line
+
+  Vermilion.FilmOverview.attach(controls.viewport, controls.canvas, function()
+    hide_hover_ui()
+    render_current_view()
+  end)
   crosshair_fader = make_fader(crosshair)
 
   local hit_layer = WINDOW_MANAGER:CreateControl("VermilionGraphHit", controls.canvas, zc.CT_CONTROL)
@@ -3355,6 +3258,21 @@ function M.init()
       end
     elseif current_view == VIEW_BY_UPTIME then
       if Vermilion.UptimeView.scroll(dir) then
+        hide_hover_ui()
+        render_current_view()
+      end
+    else
+      local W = Vermilion.FilmWindow
+      local n = Vermilion.TemporalBuffer.count()
+      local changed
+      if api.IsShiftKeyDown and api.IsShiftKeyDown() then
+        changed = W.pan(dir, n)
+      else
+        local mx = api.GetUIMousePosition()
+        local cw = controls.canvas:GetWidth()
+        changed = W.zoom(dir, (cw > 0) and ((mx - controls.canvas:GetLeft()) / cw) or 0.5, n)
+      end
+      if changed then
         hide_hover_ui()
         render_current_view()
       end
