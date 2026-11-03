@@ -18,6 +18,7 @@ local CASES = {
   "viz_primitives",
   "uptime",
   "uptime_view",
+  "live_window",
   "session_store",
   "content_kind",
   "auto_record",

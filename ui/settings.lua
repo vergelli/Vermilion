@@ -451,6 +451,8 @@ local function kills_label(on)
   return on and GetString(VERMILION_SETTINGS_KILLS_ON) or GetString(VERMILION_SETTINGS_KILLS_OFF)
 end
 
+function M.sample_ms() return current_sample end
+
 function M.kill_markers()
   local sv = Vermilion.SavedVars
   return not (sv and sv.settings and sv.settings.kill_markers == false)
