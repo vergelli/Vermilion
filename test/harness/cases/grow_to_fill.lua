@@ -32,9 +32,9 @@ return function(H)
 
   local left, right = fill_extents()
   ok(right > cw * 0.96, string.format("bars must stay pinned to the right edge, right=%d cw=%d", right, cw))
-  ok(left > cw * 0.28 and left < cw * 0.40,
-     string.format("10/60 samples on a 15-slot axis should leave the left third empty, left=%d cw=%d", left, cw))
-  ok(VermilionGridTL._text == "-15s", "growing axis must label the lookback span, got " .. tostring(VermilionGridTL._text))
+  ok(left > cw * 0.78 and left < cw * 0.88,
+     string.format("10 samples on the 60-slot live axis enter from the right, left=%d cw=%d", left, cw))
+  ok(VermilionGridTL._text == "-1:00", "the live axis labels its fixed lookback, got " .. tostring(VermilionGridTL._text))
   ok(VermilionGridTR._text == "now", "the right edge is now, got " .. tostring(VermilionGridTR._text))
 
   local widths = {}
@@ -63,7 +63,7 @@ return function(H)
     H.advance(1000)
   end
   left, right = fill_extents()
-  ok(left > cw * 0.22, string.format("while recording, 22/30 samples still leave the left quarter empty, left=%d cw=%d", left, cw))
+  ok(left > cw * 0.22, string.format("while recording, 22/60 samples still leave the left part empty, left=%d cw=%d", left, cw))
   G.on_stop_click()
   local sl, sr = fill_extents()
   ok(sr > cw * 0.96, string.format("frozen bars keep the right edge, right=%d cw=%d", sr, cw))

@@ -478,12 +478,12 @@ local function decimate(cw)
   if n > 0 and not TB.is_recording() then
     denom = n
   else
-    while true do
-      local h = math_floor(denom / 2)
-      if h >= n and h >= 15 then denom = h else break end
-    end
+    local live = Vermilion.Constants.TEMPORAL.LIVE_WINDOW_S * math_floor(1000 / Vermilion.Settings.sample_ms())
+    if live < capacity then denom = live end
   end
   dec_cols.denom = denom
+  local first = (n > denom) and (n - denom + 1) or 1
+  dec_cols.first = first
   local grid = dec_cols.grid
   if grid == nil then grid = (Vermilion.Constants.PIXEL_GRID ~= false) end
   local num_cols
@@ -512,7 +512,7 @@ local function decimate(cw)
   local offset   = denom - n
   local m, cur_c = 0, -1
   local col
-  for i = 1, n do
+  for i = first, n do
     local s   = TB.at(i)
     local c   = math_floor((offset + i - 1) * num_cols / denom)
     local eos = s.eDPS + s.ShDPS
@@ -559,7 +559,7 @@ local function dec_rect(c, num_cols, cw)
 end
 
 local function axis_span(span_ms, n)
-  if n < 2 or n >= dec_cols.denom then return span_ms end
+  if n < 2 or n == dec_cols.denom then return span_ms end
   return span_ms * dec_cols.denom / (n - 1)
 end
 
@@ -1658,7 +1658,7 @@ local function draw_shield_band_at(t0, span, x_left, bw)
   icon:SetHidden(false)
   if S.max <= 0 then return end
   local run_x0, run_x1, run_lv = nil, nil, -1
-  for k = 1, n do
+  for k = dec_cols.first or 1, n do
     local s = TB.at(k)
     local sh = s.ShDPS or 0
     local level = (sh > 0) and Heat.level(math.sqrt(sh / S.max)) or 0
@@ -1855,7 +1855,7 @@ function RES.row(p, y, t0, span, x_left, bw, key, c, letter)
   local y_bottom = y + VIS.res.ROW_H
   local low = Vermilion.Resources.low()
   local run_x0, run_x1, run_h, run_low = nil, nil, -1, false
-  for k = 1, n do
+  for k = dec_cols.first or 1, n do
     local s = TB.at(k)
     local level = s[key] or 0
     local x0 = x_left + math_floor((s.t - t0) / span * bw + 0.5)
@@ -2552,6 +2552,9 @@ function M.set_pixel_grid(on)
   dec_cols.grid = on and true or false
   M.on_resize_stop()
 end
+
+function M.window_denom() return dec_cols.denom end
+function M.column_pitch() return dec_cols.pitch end
 
 function M.column_geometry(cw, denom, sc, base)
   return grid_geometry(cw, denom, sc or 1, base or 0)
