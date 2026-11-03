@@ -94,6 +94,7 @@ local function strings()
     sigma     = GetString(VERMILION_RES_CARD_SIGMA),
     lane_lv   = GetString(VERMILION_RESH_LANE_LEVEL),
     costcon   = GetString(VERMILION_RESH_COSTCONTRIB),
+    best_return = GetString(VERMILION_RESH_BEST_RETURN),
     utility   = GetString(VERMILION_RESH_UTILITY),
     leg_spend = GetString(VERMILION_RESH_LEG_SPEND),
     leg_dmg   = GetString(VERMILION_RESH_LEG_DMG),
@@ -679,7 +680,84 @@ local function draw_section(c, canvas, x, y, sec, rows, title, S)
   return y1
 end
 
+local RET_ROW = 16
+local RET_ROWS = 4
+local RET_MIN_CASTS = 3
+local RET_MIN_SHARE = 0.02
+local ret_order = { n = 0 }
+local ret_totals = {}
+
+function M.return_score(dmg, spent, k, pool)
+  return (dmg + k * pool) / (spent + k)
+end
+
+local function by_return(a, b)
+  if a.ret == b.ret then return a.total > b.total end
+  return a.ret > b.ret
+end
+
+local function build_returns()
+  local o = order[SEC_SPENT]
+  local sum_d, sum_s = 0, 0
+  for i = 1, o.n do
+    sum_d = sum_d + o[i].dmg
+    sum_s = sum_s + o[i].total
+    ret_totals[i] = o[i].total
+  end
+  for i = o.n + 1, #ret_totals do ret_totals[i] = nil end
+  ret_order.n = 0
+  if o.n == 0 or sum_s <= 0 then return end
+  table_sort(ret_totals)
+  local k = ret_totals[math_ceil(o.n / 2)]
+  if k < 1 then k = 1 end
+  local pool = sum_d / sum_s
+  for i = 1, o.n do
+    local rec = o[i]
+    if rec.dmg > 0 and (rec.n >= RET_MIN_CASTS or rec.total >= RET_MIN_SHARE * sum_s) then
+      rec.ret = M.return_score(rec.dmg, rec.total, k, pool)
+      ret_order.n = ret_order.n + 1
+      ret_order[ret_order.n] = rec
+    end
+  end
+  for i = ret_order.n + 1, #ret_order do ret_order[i] = nil end
+  if ret_order.n > 1 then table_sort(ret_order, by_return) end
+end
+
+function M.returns() return ret_order end
+
+local function draw_returns(c, canvas, x, y, S)
+  local rows = math_min(RET_ROWS, ret_order.n)
+  if rows == 0 then return end
+  label(c, canvas, S.best_return, x + 4, y, RIGHT_W - 8, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
+  box(c, canvas, x, y + HDR_H - 1, x + RIGHT_W, 1, C_GOLD, 0.25, 2)
+  local ry = y + HDR_H + 2
+  for i = 1, rows do
+    local rec = ret_order[i]
+    dress(rec, S)
+    local k = row_hit.n + 1
+    row_hit.n = k
+    row_hit.x0[k], row_hit.x1[k], row_hit.y0[k], row_hit.y1[k], row_hit.rec[k], row_hit.sec[k] = x, x + RIGHT_W, ry, ry + RET_ROW, rec, SEC_SPENT
+    local a = (hover_row ~= nil and rec ~= hover_row) and 0.45 or 1
+    local ic = c.icon:AcquireObject()
+    ic:ClearAnchors()
+    ic:SetTexture(rec.icon or ICON_POOL[(rec.mag >= rec.sta) and MAG or STA])
+    ic:SetDimensions(RET_ROW - 2, RET_ROW - 2)
+    ic:SetColor(1, 1, 1, a)
+    ic:SetAnchor(TOPLEFT, canvas, TOPLEFT, x + 4, ry + 1)
+    ic:SetHidden(false)
+    label(c, canvas, rec.name, x + RET_ROW + 8, ry + 1, RIGHT_W - RET_ROW - VAL_W - 14, RET_ROW - 2, TEXT_ALIGN_LEFT, C_TEXT, a)
+    label(c, canvas, string_format("%s%.1f", S.times, rec.dmg / rec.total), x + RIGHT_W - VAL_W - 4, ry + 1, VAL_W, RET_ROW - 2, TEXT_ALIGN_RIGHT, kind(c, "damage"), a)
+    ry = ry + RET_ROW
+  end
+  frame(c, canvas, x, y, x + RIGHT_W, ry + 2)
+end
+
 local function draw_histogram(c, canvas, cw, y, h, S)
+  build_returns()
+  local ret_h = HDR_H + 4 + math_min(RET_ROWS, ret_order.n) * RET_ROW + SEC_GAP
+  if ret_order.n == 0 then ret_h = 0 end
+  local full_h = h
+  if math_floor((h - ret_h - 2 * (HDR_H + 4) - SEC_GAP) / (ROW_H + ROW_GAP)) >= 4 then h = h - ret_h else ret_h = 0 end
   local x = cw - RIGHT_W
   local na, nb = order[SEC_SPENT].n, order[SEC_REC].n
   local slots = math_floor((h - 2 * (HDR_H + 4) - SEC_GAP) / (ROW_H + ROW_GAP))
@@ -698,9 +776,12 @@ local function draw_histogram(c, canvas, cw, y, h, S)
   end
   local y1 = draw_section(c, canvas, x, y, SEC_SPENT, rows_a, S.spent, S)
   if nb > 0 then
-    draw_section(c, canvas, x, y1 + SEC_GAP, SEC_REC, rows_b, S.recovered, S)
+    y1 = draw_section(c, canvas, x, y1 + SEC_GAP, SEC_REC, rows_b, S.recovered, S)
   else
     sec_rect[SEC_REC].y0, sec_rect[SEC_REC].y1 = 0, 0
+  end
+  if ret_order.n > 0 and y1 + SEC_GAP + HDR_H + 4 + math_min(RET_ROWS, ret_order.n) * RET_ROW <= y + full_h then
+    draw_returns(c, canvas, x, y1 + SEC_GAP, S)
   end
 end
 
