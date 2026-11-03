@@ -36,7 +36,7 @@ return function(H)
 
   S.on_reset_click()
   eq(S.snapshot().sample_rate_ms, 1000, "reset restores the default rate")
-  eq(S.snapshot().time_window_s, 60, "reset restores the default window")
+  eq(S.snapshot().time_window_s, 480, "reset restores the default window")
   eq(S.snapshot().profile_id, "custom", "reset lands on Custom")
 
   S.on_profile_selected("user:Raid Night")

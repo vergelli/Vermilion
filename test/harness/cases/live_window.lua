@@ -3,6 +3,16 @@ return function(H)
   local TB, G = Vermilion.TemporalBuffer, Vermilion.Graph
   local old_cap = TB.capacity()
 
+  local mig = { time_window_s = 60 }
+  Vermilion.Settings.migrate_film_length(mig)
+  ok(mig.time_window_s == 480 and mig.film_length_migrated, "the old 60 second default moves to 8 minutes once")
+  mig.time_window_s = 60
+  Vermilion.Settings.migrate_film_length(mig)
+  ok(mig.time_window_s == 60, "a 60 second window chosen after the migration stays")
+  local mig2 = { time_window_s = 240 }
+  Vermilion.Settings.migrate_film_length(mig2)
+  ok(mig2.time_window_s == 240, "a window the user chose stays")
+
   Vermilion.Metrics.reset()
   Vermilion.Visibility.set("graph", true)
   G.on_flush_click()

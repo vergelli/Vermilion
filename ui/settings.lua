@@ -55,7 +55,7 @@ local function twindow_presets()
   return p, lbls
 end
 local TWINDOW_PRESETS, TWINDOW_LABELS = twindow_presets()
-local TWINDOW_DEFAULT = 60
+local TWINDOW_DEFAULT = 480
 
 local VPALPHA_PRESETS = {}
 local VPALPHA_LABELS  = {}
@@ -453,6 +453,12 @@ end
 
 function M.sample_ms() return current_sample end
 
+function M.migrate_film_length(temporal)
+  if temporal.film_length_migrated then return end
+  temporal.film_length_migrated = true
+  if temporal.time_window_s == 60 then temporal.time_window_s = TWINDOW_DEFAULT end
+end
+
 function M.kill_markers()
   local sv = Vermilion.SavedVars
   return not (sv and sv.settings and sv.settings.kill_markers == false)
@@ -704,6 +710,7 @@ function M.init()
   sv.settings = sv.settings or {}
   sv.graph    = sv.graph    or {}
 
+  M.migrate_film_length(sv.temporal)
   current_sample     = SAMPLE_PRESETS [nearest_idx(SAMPLE_PRESETS,  sv.temporal.sample_rate_ms     or SAMPLE_DEFAULT)]
   current_twindow    = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, sv.temporal.time_window_s      or TWINDOW_DEFAULT)]
   current_vpalpha    = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]

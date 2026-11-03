@@ -83,7 +83,7 @@ return function(H)
   S.on_reset_click()
   ok(not S.is_heavy_combo() and not heavy_tint(), "reset returns to the safe tint")
   eq(S.snapshot().sample_rate_ms, 1000, "reset restores the sample rate")
-  eq(S.snapshot().time_window_s, 60, "reset restores the window")
+  eq(S.snapshot().time_window_s, 480, "reset restores the window")
   eq(S.snapshot().crit_threshold_pct, 50, "reset restores the crit threshold")
   H.state.mouse_x = nil
 
