@@ -251,6 +251,23 @@ return function(H)
   ok(RV.hovered() ~= nil and RV.hovered().id == 701, "the hovered row is tracked")
   ok(math.abs((VermilionHoverCardRowVal1._r or 0) - 0.36) < 0.01 and math.abs((VermilionHoverCardRowVal1._b or 0) - 0.96) < 0.01, "the recovered amount is painted in the pool's colour")
   ok(math.abs((VermilionHoverCardRowVal2._r or 0) - 0.92) < 0.01, "the share stays neutral")
+  local card_root = VermilionHoverCard
+  local real_measure = {}
+  for i = 1, 2 do
+    local label = _G["VermilionHoverCardRowName" .. i]
+    real_measure[label] = label.GetTextWidth
+    label.GetTextWidth = function(s) return math.min(#tostring(s._text or "") * 30, s._w or 0) end
+  end
+  local real_width, widths = card_root.SetWidth, {}
+  card_root.SetWidth = function(s, w) widths[#widths + 1] = w; real_width(s, w) end
+  local hx, hy = H.state.mouse_x, H.state.mouse_y
+  RV.clear_hover()
+  RV.hover(hx, hy)
+  local settled = #widths
+  for _ = 1, 8 do RV.hover(hx, hy) end
+  ok(#widths == settled, "a held hover never resizes the card, got " .. table.concat(widths, " "))
+  card_root.SetWidth = real_width
+  for label, fn in pairs(real_measure) do label.GetTextWidth = fn end
   hit._onOnMouseExit(hit)
   RV.clear_hover()
   H.state.mouse_x, H.state.mouse_y = 400, 300
