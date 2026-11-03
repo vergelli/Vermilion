@@ -29,33 +29,8 @@ local GuiRoot     = zc.GuiRoot
 local FILL_TEXTURE = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
 
-local SAMPLE_MAX_HZ  = 5
-local SAMPLE_PRESETS = {}
-local SAMPLE_LABELS  = {}
-for hz = 1, SAMPLE_MAX_HZ do
-  local ms = math_floor(1000 / hz + 0.5)
-  SAMPLE_PRESETS[#SAMPLE_PRESETS + 1] = ms
-  SAMPLE_LABELS[ms] = hz .. " Hz"
-end
-local SAMPLE_DEFAULT = 1000
-
-local function twindow_presets()
-  local p, lbls = {}, {}
-  for s = 15, 600, 15 do p[#p + 1] = s end
-  for s = 660, 1200, 60 do p[#p + 1] = s end
-  for _, s in ipairs(p) do
-    if s % 60 == 0 then
-      lbls[s] = (s / 60) .. "m"
-    elseif s < 60 then
-      lbls[s] = s .. "s"
-    else
-      lbls[s] = string.format("%d:%02d", math_floor(s / 60), s % 60)
-    end
-  end
-  return p, lbls
-end
-local TWINDOW_PRESETS, TWINDOW_LABELS = twindow_presets()
-local TWINDOW_DEFAULT = 480
+local SAMPLE_1HZ, SAMPLE_2HZ = 1000, 500
+local SAMPLE_DEFAULT = SAMPLE_1HZ
 
 local VPALPHA_PRESETS = {}
 local VPALPHA_LABELS  = {}
@@ -81,62 +56,11 @@ for pct = 10, 90, 5 do
 end
 local LIGHTA_DEFAULT = 40
 
-local USER_PREFIX = "user:"
-
-local function is_user_profile(id)
-  return type(id) == "string" and id:sub(1, #USER_PREFIX) == USER_PREFIX
-end
-
-local function user_profile_name(id)
-  return id:sub(#USER_PREFIX + 1)
-end
-
-local function profile_label_for(id)
-  if is_user_profile(id) then return "* " .. user_profile_name(id) end
-  return GetString(VERMILION_PROFILE_CUSTOM)
-end
-
-local PROFILE_DEFAULT = "custom"
-
-local function user_profiles()
-  local sv = Vermilion.SavedVars
-  if not sv then return nil end
-  sv.settings = sv.settings or {}
-  sv.settings.user_profiles = sv.settings.user_profiles or {}
-  return sv.settings.user_profiles
-end
-
-local function user_profile_names_sorted()
-  local out = {}
-  local up = user_profiles()
-  if up then
-    for name in pairs(up) do out[#out + 1] = name end
-    table.sort(out)
-  end
-  return out
-end
-
-local function profile_by_id(id)
-  if id == PROFILE_DEFAULT then return { id = id } end
-  if is_user_profile(id) then
-    local up = user_profiles()
-    local vals = up and up[user_profile_name(id)]
-    if vals then
-      return { id = id, sample = vals.sample, twindow = vals.twindow,
-               vpalpha = vals.vpalpha, critthresh = vals.critthresh }
-    end
-  end
-  return nil
-end
-
 local controls           = {}
 local current_sample     = SAMPLE_DEFAULT
-local current_twindow    = TWINDOW_DEFAULT
 local current_vpalpha    = VPALPHA_DEFAULT
 local current_critthresh = CRITTHRESH_DEFAULT
-local current_profile    = PROFILE_DEFAULT
 local current_lighta     = LIGHTA_DEFAULT
-local profile_combo
 
 local function nearest_idx(presets, ms)
   local bi, bd = 1, math.huge
@@ -199,120 +123,15 @@ local function persist_graph(key, val)
   if sv then sv.graph = sv.graph or {} ; sv.graph[key] = val end
 end
 
-local function persist_profile(id)
-  local sv = Vermilion.SavedVars
-  if sv then sv.settings = sv.settings or {} ; sv.settings.profile = id end
-end
-
-local CAPACITY_WARN_THRESHOLD = 1500
-
-local function capacity_of(sample_ms, twindow_s)
-  return twindow_s * math_floor(1000 / sample_ms)
-end
-
-local function is_heavy(sample_ms, twindow_s)
-  return capacity_of(sample_ms, twindow_s) > CAPACITY_WARN_THRESHOLD
-end
-
-local function warn_if_heavy(capacity, twindow_s, hz)
-  if capacity <= CAPACITY_WARN_THRESHOLD then return end
-  local msg = string.format(GetString(VERMILION_WARN_HEAVY_BUFFER), twindow_s, hz, capacity)
-  d("|cFF4444[Vm] WARNING:|r " .. msg)
-  log:warn("heavy combo:", msg)
-end
-
-local function reinit_buffer()
-  local hz       = math_floor(1000 / current_sample)
-  local capacity = current_twindow * hz
-  Vermilion.TemporalBuffer.init(capacity)
-  warn_if_heavy(capacity, current_twindow, hz)
-end
-
-local C_FILL_OK     = { 0.88, 0.30, 0.26, 0.92 }
-local C_FILL_HEAVY  = { 1.00, 0.55, 0.10, 0.92 }
-local C_LABEL_OK    = { 0.95, 0.80, 0.20, 1 }
-local C_LABEL_HEAVY = { 1.00, 0.62, 0.25, 1 }
-
-local function tint_temporal()
-  local heavy = is_heavy(current_sample, current_twindow)
-  local f = heavy and C_FILL_HEAVY or C_FILL_OK
-  local l = heavy and C_LABEL_HEAVY or C_LABEL_OK
-  for _, k in ipairs({ "sample", "twindow" }) do
-    local fill, label = controls["fill_" .. k], controls["label_" .. k]
-    if fill then fill:SetColor(f[1], f[2], f[3], f[4]) end
-    if label then label:SetColor(l[1], l[2], l[3], l[4]) end
-  end
-end
-
-function M.is_heavy_combo() return is_heavy(current_sample, current_twindow) end
-
-local confirm = { kind = nil }
-
-local function show_confirm(kind, title, msg, yes, no)
-  confirm.kind = kind
-  controls.confirm_title:SetText(GetString(title))
-  controls.confirm_msg:SetText(msg)
-  controls.confirm_yes:SetText(GetString(yes))
-  controls.confirm_no:SetText(GetString(no))
-  controls.confirm:SetHidden(false)
-  Sound.play("deny")
-end
-
-local function ask_heavy(prev_sample, prev_twindow)
-  local was_heavy = is_heavy(prev_sample, prev_twindow)
-  local heavy = is_heavy(current_sample, current_twindow)
-  if not heavy then return end
-  if was_heavy and capacity_of(current_sample, current_twindow) <= capacity_of(prev_sample, prev_twindow) then return end
-  confirm.prev_sample  = prev_sample
-  confirm.prev_twindow = prev_twindow
-  local hz = math_floor(1000 / current_sample)
-  show_confirm("heavy", VERMILION_SETTINGS_HEAVY_TITLE,
-    string.format(GetString(VERMILION_SETTINGS_HEAVY_MSG), TWINDOW_LABELS[current_twindow] or (current_twindow .. "s"), hz,
-      capacity_of(current_sample, current_twindow)),
-    VERMILION_SETTINGS_HEAVY_YES, VERMILION_SETTINGS_HEAVY_NO)
-end
-
-local function mark_custom()
-  if current_profile == PROFILE_DEFAULT then return end
-  current_profile = PROFILE_DEFAULT
-  persist_profile(PROFILE_DEFAULT)
-  if profile_combo then
-    profile_combo:SetSelectedItemText(profile_label_for(PROFILE_DEFAULT))
-  end
-end
-
-local function apply_values(sample, twindow, vpalpha, critthresh)
-  current_sample     = SAMPLE_PRESETS[nearest_idx(SAMPLE_PRESETS, sample or SAMPLE_DEFAULT)]
-  current_twindow    = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, twindow or TWINDOW_DEFAULT)]
-  current_vpalpha    = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, vpalpha or VPALPHA_DEFAULT)]
-  current_critthresh = CRITTHRESH_PRESETS[nearest_idx(CRITTHRESH_PRESETS, critthresh or CRITTHRESH_DEFAULT)]
-  persist_temporal("sample_rate_ms", current_sample)
-  persist_temporal("time_window_s",  current_twindow)
-  persist_graph("viewport_alpha_pct", current_vpalpha)
-  persist_graph("crit_threshold_pct", current_critthresh)
-  reinit_buffer()
-  Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
-  Vermilion.Graph.set_crit_threshold(current_critthresh)
-end
-
-local function apply_profile(id)
-  local p = profile_by_id(id)
-  if not p or not p.sample then return false end
-  apply_values(p.sample, p.twindow, p.vpalpha, p.critthresh)
-  current_profile = id
-  persist_profile(id)
-  log:info("profile ->", profile_label_for(id))
-  return true
+local function sample_label(ms)
+  return string.format(GetString(VERMILION_SETTINGS_SAMPLE), math_floor(1000 / ms))
 end
 
 local function refresh_all_sliders()
   local c = controls
-  update_slider(c.track_sample,  c.fill_sample,  c.thumb_sample,  c.label_sample,  SAMPLE_PRESETS,  SAMPLE_LABELS,  current_sample)
-  update_slider(c.track_twindow, c.fill_twindow, c.thumb_twindow, c.label_twindow, TWINDOW_PRESETS, TWINDOW_LABELS, current_twindow)
   update_slider(c.track_vpalpha, c.fill_vpalpha, c.thumb_vpalpha, c.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
   update_slider(c.track_critthresh, c.fill_critthresh, c.thumb_critthresh, c.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
   update_slider(c.track_lighta, c.fill_lighta, c.thumb_lighta, c.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
-  tint_temporal()
 end
 
 function M.refresh_unknown_count()
@@ -356,8 +175,6 @@ function M.toggle()
     Sound.play("open")
   else
     Scene.hide_top_level(win)
-    controls.confirm:SetHidden(true)
-    confirm.kind = nil
     Sound.play("close")
   end
 end
@@ -393,32 +210,16 @@ local function track_pick(control, presets)
   return presets[idx]
 end
 
-function M.on_sample_track_click(control)
-  local v = track_pick(control, SAMPLE_PRESETS)
-  if not v then return end
-  local prev_sample, prev_twindow = current_sample, current_twindow
-  current_sample = v
+function M.on_sample_click()
+  if Vermilion.TemporalBuffer.is_recording() then
+    Sound.play("deny")
+    return
+  end
+  current_sample = (current_sample == SAMPLE_1HZ) and SAMPLE_2HZ or SAMPLE_1HZ
   log:info("sample_rate ->", current_sample, "ms")
   persist_temporal("sample_rate_ms", current_sample)
-  reinit_buffer()
-  mark_custom()
-  update_slider(controls.track_sample, controls.fill_sample, controls.thumb_sample, controls.label_sample, SAMPLE_PRESETS, SAMPLE_LABELS, current_sample)
-  tint_temporal()
-  ask_heavy(prev_sample, prev_twindow)
-end
-
-function M.on_twindow_track_click(control)
-  local v = track_pick(control, TWINDOW_PRESETS)
-  if not v then return end
-  local prev_sample, prev_twindow = current_sample, current_twindow
-  current_twindow = v
-  log:info("time_window ->", current_twindow, "s")
-  persist_temporal("time_window_s", current_twindow)
-  reinit_buffer()
-  mark_custom()
-  update_slider(controls.track_twindow, controls.fill_twindow, controls.thumb_twindow, controls.label_twindow, TWINDOW_PRESETS, TWINDOW_LABELS, current_twindow)
-  tint_temporal()
-  ask_heavy(prev_sample, prev_twindow)
+  controls.sample_btn:SetText(sample_label(current_sample))
+  Sound.play(current_sample == SAMPLE_2HZ and "on" or "off")
 end
 
 function M.on_vpalpha_track_click(control)
@@ -428,7 +229,6 @@ function M.on_vpalpha_track_click(control)
   log:info("viewport_alpha ->", current_vpalpha, "%")
   persist_graph("viewport_alpha_pct", current_vpalpha)
   Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
-  mark_custom()
   update_slider(controls.track_vpalpha, controls.fill_vpalpha, controls.thumb_vpalpha, controls.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
 end
 
@@ -439,7 +239,6 @@ function M.on_critthresh_track_click(control)
   log:info("crit_threshold ->", current_critthresh, "%")
   persist_graph("crit_threshold_pct", current_critthresh)
   Vermilion.Graph.set_crit_threshold(current_critthresh)
-  mark_custom()
   update_slider(controls.track_critthresh, controls.fill_critthresh, controls.thumb_critthresh, controls.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
 end
 
@@ -453,10 +252,13 @@ end
 
 function M.sample_ms() return current_sample end
 
-function M.migrate_film_length(temporal)
-  if temporal.film_length_migrated then return end
-  temporal.film_length_migrated = true
-  if temporal.time_window_s == 60 then temporal.time_window_s = TWINDOW_DEFAULT end
+function M.migrate_recording(temporal, settings)
+  temporal.time_window_s = nil
+  temporal.film_length_migrated = nil
+  settings.profile = nil
+  settings.user_profiles = nil
+  local ms = temporal.sample_rate_ms
+  if ms then temporal.sample_rate_ms = (ms < SAMPLE_1HZ) and SAMPLE_2HZ or SAMPLE_1HZ end
 end
 
 function M.kill_markers()
@@ -515,120 +317,6 @@ function M.on_lightalpha_track_click(control)
   update_slider(controls.track_lighta, controls.fill_lighta, controls.thumb_lighta, controls.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
 end
 
-function M.on_confirm_yes()
-  local kind = confirm.kind
-  confirm.kind = nil
-  controls.confirm:SetHidden(true)
-  Sound.play("confirm")
-  if kind == "pdelete" then M.delete_profile_now() end
-end
-
-function M.on_confirm_no()
-  local kind = confirm.kind
-  confirm.kind = nil
-  controls.confirm:SetHidden(true)
-  Sound.play("discard")
-  if kind == "heavy" then
-    current_sample  = confirm.prev_sample
-    current_twindow = confirm.prev_twindow
-    persist_temporal("sample_rate_ms", current_sample)
-    persist_temporal("time_window_s", current_twindow)
-    reinit_buffer()
-    refresh_all_sliders()
-  end
-end
-
-function M.on_pname_focus(on)
-  local box = VermilionSettingsPanelPNameBox
-  if on then
-    box:SetEdgeColor(1.00, 0.62, 0.58, 0.95)
-    if controls.pname_edit.SelectAll then controls.pname_edit:SelectAll() end
-  else
-    box:SetEdgeColor(1.00, 0.45, 0.40, 0.45)
-  end
-end
-
-function M.on_profile_selected(id)
-  if id == PROFILE_DEFAULT then
-    current_profile = PROFILE_DEFAULT
-    persist_profile(PROFILE_DEFAULT)
-    return
-  end
-  if apply_profile(id) then
-    Sound.play("page")
-    refresh_all_sliders()
-  end
-end
-
-local function rebuild_profile_combo()
-  if not profile_combo then return end
-  profile_combo:ClearItems()
-  local entry = profile_combo:CreateItemEntry(profile_label_for(PROFILE_DEFAULT),
-    function() M.on_profile_selected(PROFILE_DEFAULT) end)
-  profile_combo:AddItem(entry, ZO_COMBOBOX_SUPPRESS_UPDATE)
-  for _, name in ipairs(user_profile_names_sorted()) do
-    local id = USER_PREFIX .. name
-    local e = profile_combo:CreateItemEntry(profile_label_for(id),
-      function() M.on_profile_selected(id) end)
-    profile_combo:AddItem(e, ZO_COMBOBOX_SUPPRESS_UPDATE)
-  end
-  profile_combo:UpdateItems()
-  profile_combo:SetSelectedItemText(profile_label_for(current_profile))
-end
-
-function M.on_profile_save_click()
-  local up = user_profiles()
-  if not up then return end
-  local name = controls.pname_edit:GetText() or ""
-  name = name:match("^%s*(.-)%s*$")
-  if name == "" and is_user_profile(current_profile) then
-    name = user_profile_name(current_profile)
-  end
-  if name == "" then
-    Sound.play("deny")
-    d("[Vm] " .. GetString(VERMILION_PROFILE_NAME_HINT))
-    return
-  end
-  name = name:sub(1, 20)
-  up[name] = {
-    sample     = current_sample,
-    twindow    = current_twindow,
-    vpalpha    = current_vpalpha,
-    critthresh = current_critthresh,
-  }
-  current_profile = USER_PREFIX .. name
-  persist_profile(current_profile)
-  controls.pname_edit:SetText("")
-  rebuild_profile_combo()
-  Sound.play("confirm")
-  log:info("user profile saved:", name)
-  d("[Vm] " .. string.format(GetString(VERMILION_PROFILE_SAVED), name))
-end
-
-function M.on_profile_delete_click()
-  if not is_user_profile(current_profile) then
-    Sound.play("deny")
-    d("[Vm] " .. GetString(VERMILION_PROFILE_DELETE_HINT))
-    return
-  end
-  show_confirm("pdelete", VERMILION_SETTINGS_PDEL_TITLE,
-    string.format(GetString(VERMILION_SETTINGS_PDEL_MSG), user_profile_name(current_profile)),
-    VERMILION_SETTINGS_PDEL_YES, VERMILION_SETTINGS_PDEL_NO)
-end
-
-function M.delete_profile_now()
-  if not is_user_profile(current_profile) then return end
-  local up = user_profiles()
-  if not up then return end
-  local name = user_profile_name(current_profile)
-  up[name] = nil
-  current_profile = PROFILE_DEFAULT
-  persist_profile(PROFILE_DEFAULT)
-  rebuild_profile_combo()
-  log:info("user profile deleted:", name)
-  d("[Vm] " .. string.format(GetString(VERMILION_PROFILE_DELETED), name))
-end
-
 local function sounds_on()
   local sv = Vermilion.SavedVars
   return not (sv and sv.settings and sv.settings.sounds == false)
@@ -650,9 +338,15 @@ end
 function M.on_reset_click()
   log:info("reset to defaults")
   Sound.play("confirm")
-  apply_values(SAMPLE_DEFAULT, TWINDOW_DEFAULT, VPALPHA_DEFAULT, CRITTHRESH_DEFAULT)
-  current_profile = PROFILE_DEFAULT
-  persist_profile(PROFILE_DEFAULT)
+  current_sample     = SAMPLE_DEFAULT
+  current_vpalpha    = VPALPHA_DEFAULT
+  current_critthresh = CRITTHRESH_DEFAULT
+  persist_temporal("sample_rate_ms", current_sample)
+  persist_graph("viewport_alpha_pct", current_vpalpha)
+  persist_graph("crit_threshold_pct", current_critthresh)
+  Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
+  Vermilion.Graph.set_crit_threshold(current_critthresh)
+  controls.sample_btn:SetText(sample_label(current_sample))
   local sv = Vermilion.SavedVars
   if sv and sv.settings then
     Vermilion.AutoRecord.set_mode("off")
@@ -671,89 +365,59 @@ function M.on_reset_click()
     Vermilion.Graph.set_light_enabled(false)
   end
   current_lighta = LIGHTA_DEFAULT
-  if profile_combo then
-    profile_combo:SetSelectedItemText(profile_label_for(PROFILE_DEFAULT))
-  end
   refresh_all_sliders()
 end
 
 function M.snapshot()
-  local hz       = math_floor(1000 / current_sample)
-  local capacity = current_twindow * hz
+  local hz = math_floor(1000 / current_sample)
+  local capacity = Vermilion.Constants.TEMPORAL.CAPACITY
   return {
-    profile_id          = current_profile,
-    profile_label       = profile_label_for(current_profile),
     sample_rate_ms      = current_sample,
     sample_rate_hz      = hz,
-    time_window_s       = current_twindow,
+    time_window_s       = math_floor(capacity / hz),
     viewport_alpha_pct  = current_vpalpha,
     crit_threshold_pct  = current_critthresh,
     temporal_capacity   = capacity,
-    capacity_warn_above = CAPACITY_WARN_THRESHOLD,
   }
 end
 
 function M.report_lines()
   local s = M.snapshot()
-  local heavy = (s.temporal_capacity > s.capacity_warn_above) and "  [HEAVY]" or ""
   return {
-    string.format("[config] profile=%s", s.profile_label),
-    string.format("[config] graph: sample=%dms (%dHz) window=%ds capacity=%d%s",
-      s.sample_rate_ms, s.sample_rate_hz, s.time_window_s, s.temporal_capacity, heavy),
+    string.format("[config] graph: sample=%dms (%dHz) keeps=%ds capacity=%d",
+      s.sample_rate_ms, s.sample_rate_hz, s.time_window_s, s.temporal_capacity),
     string.format("[config] viewport_alpha=%d%%  crit_threshold=%d%%", s.viewport_alpha_pct, s.crit_threshold_pct),
   }
 end
 
 function M.init()
   Vermilion.Skin.panel(VermilionSettingsPanelBg)
-  Vermilion.Skin.panel(VermilionSettingsConfirmBg)
   Vermilion.Skin.buttons({
-    VermilionSettingsPanelPSaveBtn, VermilionSettingsPanelPDeleteBtn, VermilionSettingsPanelLogoBtn,
+    VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
     VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
-    VermilionSettingsConfirmNoBtn,
   })
   Vermilion.Skin.close(VermilionSettingsPanelCloseBtn)
-  Vermilion.Skin.button(VermilionSettingsConfirmYesBtn, true)
   local sv = Vermilion.SavedVars
   sv.temporal = sv.temporal or {}
   sv.settings = sv.settings or {}
   sv.graph    = sv.graph    or {}
 
-  M.migrate_film_length(sv.temporal)
-  current_sample     = SAMPLE_PRESETS [nearest_idx(SAMPLE_PRESETS,  sv.temporal.sample_rate_ms     or SAMPLE_DEFAULT)]
-  current_twindow    = TWINDOW_PRESETS[nearest_idx(TWINDOW_PRESETS, sv.temporal.time_window_s      or TWINDOW_DEFAULT)]
+  M.migrate_recording(sv.temporal, sv.settings)
+  current_sample     = sv.temporal.sample_rate_ms or SAMPLE_DEFAULT
   current_vpalpha    = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]
   current_critthresh = CRITTHRESH_PRESETS[nearest_idx(CRITTHRESH_PRESETS, sv.graph.crit_threshold_pct or CRITTHRESH_DEFAULT)]
-  current_profile    = profile_by_id(sv.settings.profile or PROFILE_DEFAULT) and (sv.settings.profile or PROFILE_DEFAULT) or PROFILE_DEFAULT
 
-  reinit_buffer()
+  Vermilion.TemporalBuffer.init(Vermilion.Constants.TEMPORAL.CAPACITY)
   Vermilion.Graph.set_crit_threshold(current_critthresh)
 
   controls.window         = VermilionSettingsPanel
   controls.window:SetHidden(true)
   Scene.register_top_level(controls.window)
   controls.window_title   = VermilionSettingsPanelWindowTitle
-  controls.confirm        = VermilionSettingsConfirm
-  controls.confirm_title  = VermilionSettingsConfirmTitle
-  controls.confirm_msg    = VermilionSettingsConfirmMsg
-  controls.confirm_yes    = VermilionSettingsConfirmYesBtn
-  controls.confirm_no     = VermilionSettingsConfirmNoBtn
-  controls.confirm:SetHidden(true)
-  controls.confirm:SetDrawTier(DT_HIGH)
-  VermilionSettingsConfirmBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
-  VermilionSettingsConfirmBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
-  controls.confirm_title:SetColor(0.95, 0.55, 0.50, 1)
-  controls.confirm_msg:SetColor(0.90, 0.90, 0.90, 1)
-
   VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
-  controls.title_sample   = VermilionSettingsPanelSampleTitle
-  controls.label_sample   = VermilionSettingsPanelSampleLabel
-  controls.track_sample   = VermilionSettingsPanelSliderTrackSample
-  controls.title_twindow  = VermilionSettingsPanelTWindowTitle
-  controls.label_twindow  = VermilionSettingsPanelTWindowLabel
-  controls.track_twindow  = VermilionSettingsPanelSliderTrackTWindow
+  controls.sample_btn     = VermilionSettingsPanelSampleBtn
   controls.title_vpalpha  = VermilionSettingsPanelVPAlphaTitle
   controls.label_vpalpha  = VermilionSettingsPanelVPAlphaLabel
   controls.track_vpalpha  = VermilionSettingsPanelSliderTrackVPAlpha
@@ -772,14 +436,7 @@ function M.init()
   controls.title_lighta   = VermilionSettingsPanelLightAlphaTitle
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
-  controls.profile_label  = VermilionSettingsPanelProfileLabel
-  controls.profile_combo  = VermilionSettingsPanelProfileDropdown
-  controls.pname_edit     = VermilionSettingsPanelPNameBoxEdit
-  controls.psave_btn      = VermilionSettingsPanelPSaveBtn
-  controls.pdelete_btn    = VermilionSettingsPanelPDeleteBtn
-
-  zui.tooltip(controls.psave_btn,    VERMILION_TIP_PSAVE)
-  zui.tooltip(controls.pdelete_btn,  VERMILION_TIP_PDELETE)
+  zui.tooltip(controls.sample_btn,   VERMILION_TIP_SAMPLE)
   zui.tooltip(controls.sounds_btn,   VERMILION_TIP_SOUNDS)
   zui.tooltip(controls.light_btn,    VERMILION_TIP_LIGHT)
   zui.tooltip(controls.kills_btn,    VERMILION_TIP_KILLS)
@@ -789,25 +446,16 @@ function M.init()
   zui.tooltip(controls.reset_btn,    VERMILION_TIP_RESET)
   zui.tooltip(VermilionSettingsPanelCloseBtn, VERMILION_TIP_CLOSE)
 
-  controls.psave_btn:SetText(GetString(VERMILION_SETTINGS_SAVE_PROFILE))
-  controls.pdelete_btn:SetText(GetString(VERMILION_SETTINGS_DELETE_PROFILE))
-  controls.pname_edit:SetDefaultText(GetString(VERMILION_PROFILE_NAME_DEFAULT))
-  controls.pname_edit:SetDefaultTextColor(0.70, 0.62, 0.62, 0.45)
-  VermilionSettingsPanelPNameBox:SetCenterColor(0, 0, 0, 0)
-  M.on_pname_focus(false)
-
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION .. (Vermilion.Constants.DEBUG and ("  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
   M.refresh_dev_button()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
-  controls.profile_label:SetText(GetString(VERMILION_SETTINGS_PROFILE))
-  controls.profile_label:SetColor(0.75, 0.75, 0.75, 1)
+  controls.sample_btn:SetText(sample_label(current_sample))
   M.refresh_unknown_count()
   controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)
 
   local SEC = {
-    { VermilionSettingsPanelSecProfile,   VermilionSettingsPanelSepProfile,   VERMILION_SETTINGS_SEC_PROFILE },
     { VermilionSettingsPanelSecGraph,     VermilionSettingsPanelSepGraph,     VERMILION_SETTINGS_SEC_GRAPH },
     { VermilionSettingsPanelSecRecording, VermilionSettingsPanelSepRecording, VERMILION_SETTINGS_SEC_RECORDING },
     { VermilionSettingsPanelSecGeneral,   VermilionSettingsPanelSepGeneral,   VERMILION_SETTINGS_SEC_GENERAL },
@@ -833,23 +481,15 @@ function M.init()
   controls.avg_btn:SetText(avg_label(M.average_line()))
   current_lighta = LIGHTA_PRESETS[nearest_idx(LIGHTA_PRESETS, sv.settings.light_alpha_pct or LIGHTA_DEFAULT)]
 
-  profile_combo = ZO_ComboBox_ObjectFromContainer(controls.profile_combo)
-  profile_combo:SetSortsItems(false)
-  rebuild_profile_combo()
-
-  for _, k in ipairs({ "sample", "twindow", "vpalpha", "critthresh", "lighta" }) do
+  for _, k in ipairs({ "vpalpha", "critthresh", "lighta" }) do
     controls["title_" .. k]:SetColor(0.75, 0.75, 0.75, 1)
     controls["label_" .. k]:SetColor(0.95, 0.80, 0.20, 1)
   end
-  controls.title_sample:SetText(GetString(VERMILION_SETTING_SAMPLE_RATE))
-  controls.title_twindow:SetText(GetString(VERMILION_SETTING_TIME_WINDOW))
   controls.title_vpalpha:SetText(GetString(VERMILION_SETTING_VIEWPORT_ALPHA))
   controls.title_critthresh:SetText(GetString(VERMILION_SETTING_CRIT_THRESHOLD))
   controls.title_lighta:SetText(GetString(VERMILION_SETTING_LIGHT_ALPHA))
 
   local c = controls
-  c.fill_sample,  c.thumb_sample  = setup_slider_visuals(c.track_sample,  "VermilionSettingsSample")
-  c.fill_twindow, c.thumb_twindow = setup_slider_visuals(c.track_twindow, "VermilionSettingsTWindow")
   c.fill_vpalpha, c.thumb_vpalpha = setup_slider_visuals(c.track_vpalpha, "VermilionSettingsVPAlpha")
   c.fill_critthresh, c.thumb_critthresh = setup_slider_visuals(c.track_critthresh, "VermilionSettingsCritThresh")
   c.fill_lighta, c.thumb_lighta = setup_slider_visuals(c.track_lighta, "VermilionSettingsLightA")

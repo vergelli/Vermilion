@@ -37,7 +37,7 @@ Vermilion.Constants = {
   TEMPORAL = {
     UPDATE_NAME          = "VermilionTemporalSample",
     SAMPLE_RATE_DEFAULT  = 1000,
-    TIME_WINDOW_DEFAULT  = 480,
+    CAPACITY             = 1800,
     LIVE_WINDOW_S        = 60,
   },
 

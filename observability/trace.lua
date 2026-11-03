@@ -170,7 +170,7 @@ function M.save(sv)
     build     = Vermilion.Constants.VERSION,
     settings  = {
       sample_rate_ms = temporal.sample_rate_ms or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT,
-      time_window_s  = temporal.time_window_s or Vermilion.Constants.TEMPORAL.TIME_WINDOW_DEFAULT,
+      time_window_s  = Vermilion.Settings and Vermilion.Settings.snapshot().time_window_s or Vermilion.Constants.TEMPORAL.CAPACITY,
     },
     world     = api.GetWorldName(),
     zone      = (api.GetUnitZone and api.GetUnitZone("player")) or "",

@@ -18,8 +18,6 @@ ZO_CreateStringId("VERMILION_LOADED",         "Vermilion v%s loaded. Type %s to 
 -- Settings panel
 ZO_CreateStringId("VERMILION_SETTINGS_TITLE",         "Vermilion Settings")
 ZO_CreateStringId("VERMILION_SETTINGS_RESET",         "Reset to Defaults")
-ZO_CreateStringId("VERMILION_SETTING_SAMPLE_RATE",    "Sampling Rate")
-ZO_CreateStringId("VERMILION_SETTING_TIME_WINDOW",    "Time Window")
 ZO_CreateStringId("VERMILION_SETTING_VIEWPORT_ALPHA", "Viewport Alpha")
 ZO_CreateStringId("VERMILION_SETTING_CRIT_THRESHOLD", "Crit-rate threshold")
 ZO_CreateStringId("VERMILION_SETTINGS_UNKNOWN",       "Unknown Contributions")
@@ -40,7 +38,6 @@ ZO_CreateStringId("VERMILION_ASSIGN_CONFIRM_NO",    "Cancel")
 
 -- Heavy buffer warning (in chat) — args: window_s, hz, capacity. This IS important but I'm working on a solution to decimate samples for long windows
 -- so I don't want to be too alarmist about it.
-ZO_CreateStringId("VERMILION_WARN_HEAVY_BUFFER", "%ds x %d Hz = %d samples may impact FPS. Consider a lower sample rate for long windows.")
 
 -- Help command output. I understand conventions but I will rip these next update
 ZO_CreateStringId("VERMILION_HELP_HEADER",  "Vermilion commands:")
@@ -51,6 +48,8 @@ ZO_CreateStringId("VERMILION_HELP_HELP",    "  /vermilion help    show this list
 ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analysis")
 ZO_CreateStringId("VERMILION_DEBUG_TAG",     "debug")
 ZO_CreateStringId("VERMILION_GRAPH_SETTINGS", "Settings")
+ZO_CreateStringId("VERMILION_SETTINGS_SAMPLE", "Sampling: %d Hz")
+ZO_CreateStringId("VERMILION_TIP_SAMPLE", "1 Hz keeps 30 minutes, 2 Hz keeps 15, applies to the next recording")
 ZO_CreateStringId("VERMILION_GRAPH_RECORD",  "Record")
 ZO_CreateStringId("VERMILION_GRAPH_STOP",    "Stop")
 ZO_CreateStringId("VERMILION_REC_RECORDING", "Recording")
@@ -139,29 +138,9 @@ ZO_CreateStringId("VERMILION_TIP_AVG",           "Draw the average of the whole 
 ZO_CreateStringId("VERMILION_TIP_KILLS",    "Mark every killing blow with a skull in SKILL, TYPE, CRIT and PRESSURE. Handy in PvP, noisy in a trash pull; the report counts them either way")
 ZO_CreateStringId("VERMILION_TIP_RESET",    "Put every setting back to its default")
 
-ZO_CreateStringId("VERMILION_SETTINGS_PROFILE",        "Profile")
-ZO_CreateStringId("VERMILION_SETTINGS_SEC_PROFILE",    "PROFILE")
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GRAPH",      "GRAPH")
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_RECORDING",  "RECORDING")
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GENERAL",    "GENERAL")
-ZO_CreateStringId("VERMILION_PROFILE_CUSTOM",          "Custom")
-ZO_CreateStringId("VERMILION_SETTINGS_SAVE_PROFILE",   "Save")
-ZO_CreateStringId("VERMILION_SETTINGS_DELETE_PROFILE", "Delete")
-ZO_CreateStringId("VERMILION_PROFILE_NAME_HINT",       "Type a name for the profile first.")
-ZO_CreateStringId("VERMILION_PROFILE_NAME_DEFAULT",    "save profile as...")
-ZO_CreateStringId("VERMILION_PROFILE_DELETE_HINT",     "Select one of your saved profiles first.")
-ZO_CreateStringId("VERMILION_PROFILE_SAVED",           "Profile '%s' saved.")
-ZO_CreateStringId("VERMILION_PROFILE_DELETED",         "Profile '%s' deleted.")
-ZO_CreateStringId("VERMILION_SETTINGS_PDEL_TITLE",     "Delete profile")
-ZO_CreateStringId("VERMILION_SETTINGS_PDEL_MSG",       "Delete the profile '%s'?\n\nYour current settings stay as they are until you pick another profile.")
-ZO_CreateStringId("VERMILION_SETTINGS_PDEL_YES",       "Delete")
-ZO_CreateStringId("VERMILION_SETTINGS_PDEL_NO",        "Keep")
-ZO_CreateStringId("VERMILION_SETTINGS_HEAVY_TITLE",    "Experimental combination")
-ZO_CreateStringId("VERMILION_SETTINGS_HEAVY_MSG",      "A %s window at %d Hz keeps %d samples in memory. Damage analysis does not need this much, and long fights may cost frames.\n\nRecommended: 1 Hz with a window between 1 and 10 minutes.")
-ZO_CreateStringId("VERMILION_SETTINGS_HEAVY_YES",      "Keep it anyway")
-ZO_CreateStringId("VERMILION_SETTINGS_HEAVY_NO",       "Go back")
-ZO_CreateStringId("VERMILION_TIP_PSAVE",               "Save the current settings under the name typed above")
-ZO_CreateStringId("VERMILION_TIP_PDELETE",             "Delete the selected saved profile")
 
 ZO_CreateStringId("VERMILION_GRAPH_NOW",        "now")
 ZO_CreateStringId("VERMILION_VIEWTIP_SKILL",    "Damage per second stacked by skill line")

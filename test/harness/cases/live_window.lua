@@ -3,15 +3,15 @@ return function(H)
   local TB, G = Vermilion.TemporalBuffer, Vermilion.Graph
   local old_cap = TB.capacity()
 
-  local mig = { time_window_s = 60 }
-  Vermilion.Settings.migrate_film_length(mig)
-  ok(mig.time_window_s == 480 and mig.film_length_migrated, "the old 60 second default moves to 8 minutes once")
-  mig.time_window_s = 60
-  Vermilion.Settings.migrate_film_length(mig)
-  ok(mig.time_window_s == 60, "a 60 second window chosen after the migration stays")
-  local mig2 = { time_window_s = 240 }
-  Vermilion.Settings.migrate_film_length(mig2)
-  ok(mig2.time_window_s == 240, "a window the user chose stays")
+  local temporal = { time_window_s = 60, film_length_migrated = true, sample_rate_ms = 200 }
+  local settings = { profile = "user:x", user_profiles = { x = {} } }
+  Vermilion.Settings.migrate_recording(temporal, settings)
+  ok(temporal.time_window_s == nil and temporal.film_length_migrated == nil, "the old window setting goes away")
+  ok(temporal.sample_rate_ms == 500, "faster rates fall to 2 Hz")
+  ok(settings.profile == nil and settings.user_profiles == nil, "saved profiles go away")
+  temporal.sample_rate_ms = 1000
+  Vermilion.Settings.migrate_recording(temporal, settings)
+  ok(temporal.sample_rate_ms == 1000, "1 Hz stays")
 
   Vermilion.Metrics.reset()
   Vermilion.Visibility.set("graph", true)

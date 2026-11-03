@@ -9,6 +9,7 @@ local log        = Vermilion.Log.for_module("temporal_buffer")
 local state = {
   data      = {},
   capacity  = 0,
+  base      = 0,
   write     = 1,
   count     = 0,
   recording = false,
@@ -19,6 +20,7 @@ function M.init(capacity)
   capacity       = math_floor(capacity)
   if capacity < 1 then capacity = 1 end
   state.capacity = capacity
+  state.base     = capacity
   state.write    = 1
   state.count    = 0
   state.data     = {}
@@ -119,6 +121,7 @@ function M.capacity()     return state.capacity  end
 function M.is_recording() return state.recording end
 
 function M.start_recording()
+  if state.capacity > state.base then M.init(state.base) end
   state.recording = true
   if Vermilion.Logo and Vermilion.Logo.set_recording then Vermilion.Logo.set_recording(true) end
   log:info("start_recording")
@@ -134,6 +137,11 @@ local EMPTY_SHARES = { count = 0 }
 
 function M.load_session(samples)
   M.clear()
+  if #samples > state.capacity then
+    local base = state.base
+    M.init(#samples)
+    state.base = base
+  end
   for i = 1, #samples do
     local s = samples[i]
     M.push(s.t, s.eDPS, s.ShDPS, s.crit, s.noncrit,
