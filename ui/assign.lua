@@ -287,6 +287,11 @@ function M.on_move_stop()
 end
 
 function M.init()
+  Vermilion.Skin.panel(VermilionAssignPanelBg)
+  Vermilion.Skin.panel(VermilionAssignConfirmBg)
+  Vermilion.Skin.button(VermilionAssignPanelAssignBtn, true)
+  Vermilion.Skin.button(VermilionAssignConfirmNoBtn)
+  Vermilion.Skin.button(VermilionAssignConfirmYesBtn, true)
   controls.window     = VermilionAssignPanel
   controls.title      = VermilionAssignPanelWindowTitle
   controls.help       = VermilionAssignPanelHelpLabel

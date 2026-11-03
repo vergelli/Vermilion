@@ -705,6 +705,15 @@ function M.report_lines()
 end
 
 function M.init()
+  Vermilion.Skin.panel(VermilionSettingsPanelBg)
+  Vermilion.Skin.panel(VermilionSettingsConfirmBg)
+  Vermilion.Skin.buttons({
+    VermilionSettingsPanelPSaveBtn, VermilionSettingsPanelPDeleteBtn, VermilionSettingsPanelLogoBtn,
+    VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
+    VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
+    VermilionSettingsConfirmNoBtn,
+  })
+  Vermilion.Skin.button(VermilionSettingsConfirmYesBtn, true)
   local sv = Vermilion.SavedVars
   sv.temporal = sv.temporal or {}
   sv.settings = sv.settings or {}

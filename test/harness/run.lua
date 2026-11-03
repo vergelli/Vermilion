@@ -20,6 +20,7 @@ local CASES = {
   "uptime_view",
   "live_window",
   "film_navigation",
+  "skin",
   "session_store",
   "content_kind",
   "auto_record",

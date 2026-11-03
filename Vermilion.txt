@@ -71,6 +71,7 @@ core/kills.lua
 core/heat.lua
 core/auto_record.lua
 core/visibility.lua
+ui/skin.lua
 ui/settings.xml
 ui/settings.lua
 ui/contrib.lua
