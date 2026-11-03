@@ -44,6 +44,18 @@ return function(H)
 
   ok(band_cells > 0, "the live view draws band cells to check")
 
+  local S, avg = Vermilion.Settings, VermilionGraphAvgLine
+  ok(S.average_line() == false and avg._hidden == true, "the average line is off by default")
+  S.on_avg_click()
+  ok(S.average_line() == true and avg._hidden == false, "one click draws the average line")
+  ok(VermilionSettingsPanelAvgBtn._text == "Average line: On", "the button names its state")
+  while view_label._text ~= "RESOURCES" do G.next_view() end
+  ok(avg._hidden == true, "the average line belongs to the bar views")
+  while view_label._text ~= "SKILL" do G.next_view() end
+  ok(avg._hidden == false, "the average line returns on the bar views")
+  S.on_avg_click()
+  ok(S.average_line() == false and avg._hidden == true, "a second click removes it")
+
   local n = TB.count()
   ok(n > live, "the buffer keeps more than the live window, got " .. n)
   G.on_stop_click()

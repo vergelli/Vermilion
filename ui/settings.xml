@@ -283,8 +283,17 @@
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
           <Anchor point="TOPLEFT" offsetX="314" offsetY="274"/>
-          <Dimensions x="272" y="22"/>
+          <Dimensions x="134" y="22"/>
           <OnClicked>Vermilion.Settings.on_kills_click()</OnClicked>
+        </Button>
+
+        <Button name="$(parent)AvgBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="452" offsetY="274"/>
+          <Dimensions x="134" y="22"/>
+          <OnClicked>Vermilion.Settings.on_avg_click()</OnClicked>
         </Button>
 
         <Label name="$(parent)LightAlphaTitle"
