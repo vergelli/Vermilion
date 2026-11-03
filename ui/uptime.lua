@@ -29,6 +29,8 @@ local TOL_S     = 0.5
 local MIN_ROW_DUR = 2000
 local COST_MIN_DUR = 6000
 local STEADY_MIN = 3
+local TOT_H = HDR_H + 2 * 14 + 8
+local totals = { clip = 0, late = 0, late_n = 0, shown = false }
 local C_DIM     = { r = 0.62, g = 0.58, b = 0.56 }
 local C_TEXT    = { r = 0.94, g = 0.88, b = 0.86 }
 local C_GOLD    = { r = 0.80, g = 0.68, b = 0.40 }
@@ -85,6 +87,9 @@ local function strings()
     err_title = GetString(VERMILION_UPT_ERR_TITLE),
     on_time_l = GetString(VERMILION_UPT_ON_TIME_LABEL),
     steady    = GetString(VERMILION_UPTH_STEADY),
+    totals    = GetString(VERMILION_UPTH_TOTALS),
+    clipped   = GetString(VERMILION_UPT_CLIPPED),
+    late_avg  = GetString(VERMILION_UPT_LATE_AVG),
   }
   return str
 end
@@ -378,8 +383,36 @@ local function draw_lists(c, canvas, cw, y, h, S)
   else
     sec_rect[SEC_COST].y0, sec_rect[SEC_COST].y1 = 0, 0
   end
-  draw_list(c, canvas, x, y1, RIGHT_W, SEC_REF, S.refreshes, S, order, rows_b)
+  local y2 = draw_list(c, canvas, x, y1, RIGHT_W, SEC_REF, S.refreshes, S, order, rows_b) + SEC_GAP
+  totals.clip, totals.late, totals.late_n, totals.shown = 0, 0, 0, false
+  for oi = 1, order.n do
+    local r = rows[order[oi]]
+    if r.slot then
+      for i = 1, r.pn do
+        local e = r.pe[i]
+        if e > TOL_S * 1000 then
+          totals.clip = totals.clip + e
+        elseif e < -TOL_S * 1000 then
+          totals.late = totals.late - e
+          totals.late_n = totals.late_n + 1
+        end
+      end
+    end
+  end
+  if y2 + TOT_H > y + h then return end
+  totals.shown = true
+  local SF = Vermilion.lib.viz.surface
+  SF.label(c, S.totals, x + 4, y2, RIGHT_W - 8, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
+  SF.box(c, x, x + RIGHT_W, y2 + HDR_H - 1, 1, C_GOLD, 0.25, 2)
+  local ty = y2 + HDR_H + 3
+  SF.label(c, S.clipped, x + 6, ty, RIGHT_W - VAL_W - 12, 14, TEXT_ALIGN_LEFT, C_TEXT, 0.9)
+  SF.label(c, c.fmt_secs(totals.clip), x + RIGHT_W - VAL_W - 4, ty, VAL_W, 14, TEXT_ALIGN_RIGHT, (totals.clip > 0) and C_GOLD or C_IN, 1)
+  SF.label(c, S.late_avg, x + 6, ty + 14, RIGHT_W - VAL_W - 12, 14, TEXT_ALIGN_LEFT, C_TEXT, 0.9)
+  SF.label(c, c.fmt_secs((totals.late_n > 0) and totals.late / totals.late_n or 0), x + RIGHT_W - VAL_W - 4, ty + 14, VAL_W, 14, TEXT_ALIGN_RIGHT, (totals.late_n > 0) and C_OUT or C_IN, 1)
+  SF.frame(c, x, y2, x + RIGHT_W, y2 + TOT_H, C_GOLD, 0.38, 6)
 end
+
+function M.totals() return totals end
 
 local function compute_steady()
   local pk, pu, pt, _, _, pn = Vermilion.Uptime.presses()
