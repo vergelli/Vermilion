@@ -135,6 +135,19 @@ return function(H)
     ok(seen["Steadiness"], "the row card carries the steadiness of a slotted skill")
   end
   ok(UV.click(1, 1) == false, "clicks on UPTIME change nothing")
+  local tot = UV.totals()
+  local clip, late, late_n = 0, 0, 0
+  for oi = 1, order.n do
+    local rr = rows[order[oi]]
+    if rr.slot then
+      for i = 1, rr.pn do
+        if rr.pe[i] > 500 then clip = clip + rr.pe[i] elseif rr.pe[i] < -500 then late = late - rr.pe[i]; late_n = late_n + 1 end
+      end
+    end
+  end
+  ok(math.abs(tot.clip - clip) < 1 and math.abs(tot.late - late) < 1 and tot.late_n == late_n, "the refresh totals add the early and late errors of slotted skills")
+  ok(clip > 0 or late_n > 0, "the recorded fixture has refresh errors to total")
+  if tot.shown then ok(labels["REFRESH TOTALS"], "the totals box is drawn when it fits") end
 
   local rects = UV.rects()
   H.state.mouse_x = canvas:GetLeft() + lane.x + 20
