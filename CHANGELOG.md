@@ -3,6 +3,8 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
 ### Closing pass (November 2026)
 
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
@@ -14,8 +16,6 @@ All notable changes to Vermilion are documented here. This project follows
 - Settings: optional average line across SKILL, TYPE and CRIT
 - Removed the line over the bars and the RHYTHM view
 - Fixed: UPTIME rings staying on screen, the empty category picker, grid and cursor fading halfway down
-
-## [Unreleased]
 
 ### Fixed
 - RESOURCES: dying no longer draws a spend spike and reviving no longer draws a gain spike. The tracker treats a drop to zero of at least half the pool as a death whatever the event order, and ignores gains for three seconds after a death drop or a revive.
