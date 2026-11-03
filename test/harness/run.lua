@@ -21,6 +21,7 @@ local CASES = {
   "live_window",
   "film_navigation",
   "skin",
+  "xml_anchors",
   "session_store",
   "content_kind",
   "auto_record",
