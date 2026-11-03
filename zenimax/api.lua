@@ -59,6 +59,7 @@ M.SetEncounterLogEnabled = SetEncounterLogEnabled
 M.IsEncounterLogEnabled  = IsEncounterLogEnabled
 M.GetEncounterLogVersion = GetEncounterLogVersion
 M.GetUIMousePosition = GetUIMousePosition
+M.IsShiftKeyDown     = IsShiftKeyDown
 M.GetUIGlobalScale   = GetUIGlobalScale
 M.MouseIsOver        = MouseIsOver
 

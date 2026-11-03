@@ -524,6 +524,7 @@ function GetGameTimeMilliseconds() return T end
 function GetAPIVersion() return 101050 end
 function GetWorldName() return H.state.world end
 function GetUIMousePosition() return H.state.mouse_x, H.state.mouse_y end
+function IsShiftKeyDown() return H.state.shift == true end
 function MouseIsOver(c)
   local mx, my = H.state.mouse_x, H.state.mouse_y
   if not mx or not my then return false end
