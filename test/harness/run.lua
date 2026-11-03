@@ -33,7 +33,6 @@ local CASES = {
   "button_manners",
   "settings_panel",
   "record_panel",
-  "user_profiles",
   "pixel_grid",
   "grow_to_fill",
   "view_tabs",
