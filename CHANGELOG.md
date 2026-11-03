@@ -3,6 +3,18 @@
 All notable changes to Vermilion are documented here. This project follows
 [semantic versioning](https://semver.org/).
 
+### Closing pass (November 2026)
+
+- New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
+- While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them
+- After stopping, navigate the fight: wheel zooms, shift plus wheel moves, the strip under the chart shows the whole fight (drag to move, right click to see it all)
+- Recordings keep up to 8 minutes by default; an existing 60 second setting moves to 8 minutes once
+- RESOURCES: Best Return list, ranked so a cheap lucky cast does not top it
+- UPTIME: one view, steadiness moved to the row card, refresh totals box
+- Settings: optional average line across SKILL, TYPE and CRIT
+- Removed the line over the bars and the RHYTHM view
+- Fixed: UPTIME rings staying on screen, the empty category picker, grid and cursor fading halfway down
+
 ## [Unreleased]
 
 ### Fixed
