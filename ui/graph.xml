@@ -23,7 +23,7 @@
                      mouseEnabled="true"
                      resizeHandleSize="8">
 
-      <Dimensions x="420" y="312"/>
+      <Dimensions x="440" y="312"/>
       <OnMouseDoubleClick>Vermilion.Graph.on_title_double_click()</OnMouseDoubleClick>
       <OnMoveStart>Vermilion.Graph.on_move_start()</OnMoveStart>
       <OnMoveStop>Vermilion.Graph.on_move_stop()</OnMoveStop>
@@ -92,16 +92,12 @@
           <Dimensions x="128" y="14"/>
         </Label>
 
-        <!-- Settings toggle — 28x28 gear. -->
         <Button name="$(parent)SettingsBtn"
                 mouseEnabled="true"
-                mouseOverBlendMode="ADD"
-                inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPRIGHT" offsetX="-30" offsetY="4"/>
-          <Dimensions x="28" y="28"/>
-          <Textures normal="EsoUI/Art/MenuBar/menuBar_mainMenu_over.dds"
-                    pressed="EsoUI/Art/MenuBar/menuBar_mainMenu_down.dds"
-                    mouseOver="EsoUI/Art/MenuBar/menuBar_mainMenu_over.dds"/>
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPRIGHT" offsetX="-34" offsetY="7"/>
+          <Dimensions x="64" y="22"/>
           <OnClicked>Vermilion.Settings.toggle()</OnClicked>
         </Button>
 
@@ -109,11 +105,8 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPRIGHT" offsetX="-8" offsetY="9"/>
-          <Dimensions x="18" y="18"/>
-          <Textures normal="EsoUI/Art/Buttons/decline_up.dds"
-                    pressed="EsoUI/Art/Buttons/decline_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/decline_over.dds"/>
+          <Anchor point="TOPRIGHT" offsetX="-8" offsetY="7"/>
+          <Dimensions x="22" y="22"/>
           <OnClicked>Vermilion.Graph.on_close_click()</OnClicked>
         </Button>
 
@@ -122,8 +115,8 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="34"/>
-          <Dimensions x="42" y="22"/>
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="33"/>
+          <Dimensions x="72" y="24"/>
           <OnClicked>Vermilion.Graph.on_record_main_click()</OnClicked>
         </Button>
 
@@ -131,8 +124,8 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="56" offsetY="34"/>
-          <Dimensions x="18" y="22"/>
+          <Anchor point="TOPLEFT" offsetX="86" offsetY="33"/>
+          <Dimensions x="20" y="24"/>
           <OnClicked>Vermilion.Graph.on_record_menu_click()</OnClicked>
         </Button>
 
@@ -141,7 +134,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="76" offsetY="34"/>
+          <Anchor point="TOPLEFT" offsetX="112" offsetY="34"/>
           <Dimensions x="56" y="22"/>
           <OnClicked>Vermilion.Graph.on_stop_click()</OnClicked>
         </Button>
@@ -150,7 +143,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="138" offsetY="34"/>
+          <Anchor point="TOPLEFT" offsetX="174" offsetY="34"/>
           <Dimensions x="56" y="22"/>
           <OnClicked>Vermilion.Graph.on_flush_click()</OnClicked>
         </Button>
@@ -159,7 +152,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPLEFT" offsetX="200" offsetY="31"/>
+          <Anchor point="TOPLEFT" offsetX="236" offsetY="31"/>
           <Dimensions x="28" y="28"/>
           <Textures normal="EsoUI/Art/Journal/journal_tabIcon_loreLibrary_up.dds"
                     pressed="EsoUI/Art/Journal/journal_tabIcon_loreLibrary_down.dds"
@@ -171,7 +164,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPLEFT" offsetX="232" offsetY="31"/>
+          <Anchor point="TOPLEFT" offsetX="268" offsetY="31"/>
           <Dimensions x="28" y="28"/>
           <Textures normal="EsoUI/Art/Buttons/edit_save_up.dds"
                     pressed="EsoUI/Art/Buttons/edit_save_down.dds"
@@ -184,7 +177,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPLEFT" offsetX="266" offsetY="35"/>
+          <Anchor point="TOPLEFT" offsetX="302" offsetY="35"/>
           <Dimensions x="20" y="20"/>
           <Textures normal="EsoUI/Art/Buttons/large_leftArrow_up.dds"
                     pressed="EsoUI/Art/Buttons/large_leftArrow_down.dds"
@@ -196,7 +189,7 @@
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
                 inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPLEFT" offsetX="288" offsetY="35"/>
+          <Anchor point="TOPLEFT" offsetX="324" offsetY="35"/>
           <Dimensions x="20" y="20"/>
           <Textures normal="EsoUI/Art/Buttons/large_rightArrow_up.dds"
                     pressed="EsoUI/Art/Buttons/large_rightArrow_down.dds"
@@ -208,7 +201,7 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT"  offsetX="314"  offsetY="38"/>
+          <Anchor point="TOPLEFT"  offsetX="350"  offsetY="38"/>
           <Dimensions y="14"/>
         </Label>
         <Label name="$(parent)RecModeLabel" font="ZoFontGameSmall"

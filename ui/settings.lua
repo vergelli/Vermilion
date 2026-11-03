@@ -713,6 +713,7 @@ function M.init()
     VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
     VermilionSettingsConfirmNoBtn,
   })
+  Vermilion.Skin.close(VermilionSettingsPanelCloseBtn)
   Vermilion.Skin.button(VermilionSettingsConfirmYesBtn, true)
   local sv = Vermilion.SavedVars
   sv.temporal = sv.temporal or {}

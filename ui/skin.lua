@@ -24,6 +24,7 @@ local LACQUER = {
   down = BASE .. "lacq_down.dds", disabled = BASE .. "lacq_disabled.dds",
 }
 M.PLAIN, M.LACQUER = PLAIN, LACQUER
+M.CLOSE = { up = BASE .. "close_up.dds", over = BASE .. "close_over.dds", down = BASE .. "close_down.dds" }
 
 function M.button(b, lacquer)
   if not b or not b.SetNormalTexture then return end
@@ -37,6 +38,14 @@ function M.button(b, lacquer)
   if b.SetNormalFontColor then b:SetNormalFontColor(M.TEXT.r, M.TEXT.g, M.TEXT.b, 1) end
   if b.SetMouseOverFontColor then b:SetMouseOverFontColor(1, 1, 1, 1) end
   if b.SetPressedFontColor then b:SetPressedFontColor(M.TEXT.r, M.TEXT.g, M.TEXT.b, 1) end
+end
+
+function M.close(b)
+  if not b or not b.SetNormalTexture then return end
+  b:SetNormalTexture(M.CLOSE.up)
+  b:SetMouseOverTexture(M.CLOSE.over)
+  b:SetPressedTexture(M.CLOSE.down)
+  if b.SetMouseOverBlendMode then b:SetMouseOverBlendMode(TEX_BLEND_MODE_ALPHA or 0) end
 end
 
 function M.buttons(list, lacquer)
