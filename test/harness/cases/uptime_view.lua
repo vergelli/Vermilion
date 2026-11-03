@@ -11,7 +11,6 @@ return function(H)
   G.on_flush_click()
   local view_label = VermilionGraphWindowViewLabel
   while view_label._text ~= "SKILL" do G.next_view() end
-  UV.set_pick(1)
 
   local tab = VermilionGraphTab8Label
   ok(tab and tab._text == "UPTIME", "the eighth tab reads UPTIME, got " .. tostring(tab and tab._text))
@@ -126,27 +125,16 @@ return function(H)
   hit._onOnMouseEnter(hit)
   H.advance(200)
 
-  local rh_lbl
+  local labels = {}
   for _, c in ipairs(H.controls) do
-    if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "RHYTHM" then rh_lbl = rh_lbl or c end
+    if c._hidden == false and type(c._text) == "string" then labels[c._text] = true end
   end
-  ok(rh_lbl ~= nil, "the RHYTHM pick is drawn")
-  local L = H.layout(rh_lbl)
-  ok(UV.click(L.x + 2, L.y + 2) == true, "clicking RHYTHM picks it")
-  ok(UV.pick() == 2 and sv.graph.upt_pick == 2, "the pick persists")
-  G.next_view(); G.prev_view()
-  r = scan()
-  ok(r.lines >= 1, "the Poincare plot draws its diagonal, got " .. r.lines)
-  ok(r.discs >= 1, "refresh intervals of your skills are round dots, got " .. r.discs)
-  ok(r.tex_rings >= 1, "each skill's duration is a textured ring, got " .. r.tex_rings)
-  ok(has(r.labels, "STEADINESS") and not has(r.labels, "COST OF GAPS") and not has(r.labels, "REFRESHES"), "the rhythm view lists steadiness only")
-  local tl_lbl
-  for _, c in ipairs(H.controls) do
-    if c._hidden == false and (c._name or ""):find("^VermilionTargetLbl") and c._text == "TIMELINE" then tl_lbl = tl_lbl or c end
+  ok(not labels["RHYTHM"] and not labels["TIMELINE"] and not labels["STEADINESS"], "UPTIME is one view with no picker")
+  local top = rows[order[1]]
+  if top.slot and top.iv_n >= 3 then
+    ok(seen["Steadiness"], "the row card carries the steadiness of a slotted skill")
   end
-  local LT = H.layout(tl_lbl)
-  ok(UV.click(LT.x + 2, LT.y + 2) == true, "back to TIMELINE")
-  G.next_view(); G.prev_view()
+  ok(UV.click(1, 1) == false, "clicks on UPTIME change nothing")
 
   local rects = UV.rects()
   H.state.mouse_x = canvas:GetLeft() + lane.x + 20

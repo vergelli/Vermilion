@@ -10,8 +10,6 @@ local math_min   = math.min
 local string_format = string.format
 local table_sort = table.sort
 
-local PICK_TL, PICK_RH = 1, 2
-local PICK_H    = 20
 local RIGHT_W   = 176
 local LANE_X    = 6
 local GAP_X     = 12
@@ -43,34 +41,25 @@ local PCT_TEXT = {}
 for i = 0, 100 do PCT_TEXT[i] = i .. "%" end
 
 local ctx = nil
-local pick = PICK_TL
 local scroll = { 0, 0, 0 }
 local max_scroll = { 0, 0, 0 }
 local SEC_ROWS, SEC_COST, SEC_REF = 1, 2, 3
 local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
 local hover_key = nil
 local lane = { x = 0, w = 0, y = 0, h = 0, t0 = 0, span = 0 }
-local pick_hit = { { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, y0 = 0, y1 = 0 }
 local row_hit = { n = 0, x0 = {}, x1 = {}, y0 = {}, y1 = {}, key = {} }
 local rows = {}
 local order = { n = 0 }
 local cost_order = { n = 0 }
-local steady_order = { n = 0 }
 local ROWS = { {}, {}, {}, {}, {}, {}, {} }
 local str = nil
 local cur_t0 = nil
 local scale = { x0 = 0, w = 0, t0 = 0, span = 1 }
-local sx, sy, scol = {}, {}, {}
-local ring_x, ring_y, ring_r, ring_c, ring_k = {}, {}, {}, {}, {}
-local rings = { x = ring_x, y = ring_y, r = ring_r, cols = ring_c, n = 0, col = C_GOLD, alpha = 0.7 }
-local scatter_opts = { diagonal = true, rings = rings, alpha = 0.85, cols = scol }
-local RING_MAX_S = 45
 local gen = 0
 
 local function strings()
   if str then return str end
   str = {
-    pick      = { GetString(VERMILION_UPT_PICK_TIMELINE), GetString(VERMILION_UPT_PICK_RHYTHM) },
     cost      = GetString(VERMILION_UPTH_COST),
     refreshes = GetString(VERMILION_UPTH_REFRESHES),
     error     = GetString(VERMILION_UPTH_ERROR),
@@ -95,29 +84,9 @@ local function strings()
     more      = GetString(VERMILION_UPT_MORE),
     err_title = GetString(VERMILION_UPT_ERR_TITLE),
     on_time_l = GetString(VERMILION_UPT_ON_TIME_LABEL),
-    beyond    = GetString(VERMILION_UPT_BEYOND),
-    rh_x      = GetString(VERMILION_UPT_RH_X),
-    rh_y      = GetString(VERMILION_UPT_RH_Y),
     steady    = GetString(VERMILION_UPTH_STEADY),
-    sub_steady = GetString(VERMILION_UPT_SUB_STEADY),
   }
   return str
-end
-
-local function sv_graph()
-  local sv = Vermilion.SavedVars
-  if not sv then return nil end
-  sv.graph = sv.graph or {}
-  return sv.graph
-end
-
-function M.pick() return pick end
-
-function M.set_pick(p)
-  if p ~= PICK_TL and p ~= PICK_RH then p = PICK_TL end
-  pick = p
-  local g = sv_graph()
-  if g then g.upt_pick = p end
 end
 
 local function kind(c, name) return c.kinds and c.kinds[name] or nil end
@@ -281,30 +250,6 @@ local function err_text(c, S, r)
   return S.on_time
 end
 
-local function draw_picker(c, canvas, top, S)
-  local SF = Vermilion.lib.viz.surface
-  local x = LANE_X + 4
-  pick_hit.y0, pick_hit.y1 = top, top + PICK_H
-  for i = 1, 2 do
-    local on = (pick == i)
-    local lbl = c.lbl:AcquireObject()
-    local w = lbl:GetStringWidth(S.pick[i]) + 12
-    lbl:ClearAnchors()
-    lbl:SetText(S.pick[i])
-    lbl:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
-    lbl:SetMaxLineCount(1)
-    lbl:SetDimensions(w, PICK_H)
-    lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, top)
-    if on then lbl:SetColor(C_GOLD.r, C_GOLD.g, C_GOLD.b, 1) else lbl:SetColor(C_DIM.r, C_DIM.g, C_DIM.b, 0.8) end
-    lbl:SetHidden(false)
-    c.drawn = (c.drawn or 0) + 1
-    if on then SF.box(c, x + 4, x + w - 4, top + PICK_H - 3, 1, C_GOLD, 0.9, 4) end
-    pick_hit[i].x0, pick_hit[i].x1 = x, x + w
-    x = x + w + 6
-  end
-  SF.frame(c, LANE_X, top, x - 2, top + PICK_H, C_GOLD, 0.38, 6)
-end
-
 local function draw_time(c, S, y)
   local SF = Vermilion.lib.viz.surface
   local h = c.time_strip - 2
@@ -366,7 +311,7 @@ local function draw_errors(c, canvas, x, y, w, h, S)
   SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)
 end
 
-local function draw_list(c, canvas, x, y, w, sec, title, S, src, rows_max, steady)
+local function draw_list(c, canvas, x, y, w, sec, title, S, src, rows_max)
   local SF, RG = Vermilion.lib.viz.surface, Vermilion.lib.viz.ring
   local n = src.n
   SF.label(c, title, x + 4, y, w - 64, HDR_H, TEXT_ALIGN_LEFT, C_DIM, 0.9)
@@ -401,12 +346,6 @@ local function draw_list(c, canvas, x, y, w, sec, title, S, src, rows_max, stead
       r.sub_text = string_format(S.sub_cost, c.fmt_secs(r.down))
       SF.label(c, r.cost_text, x + w - VAL_W - 4, ry, VAL_W, 12, TEXT_ALIGN_RIGHT, C_OUT, a)
       SF.label(c, r.sub_text, x + w - VAL_W - 4, ry + 12, VAL_W, 12, TEXT_ALIGN_RIGHT, C_DIM, a * 0.85)
-    elseif steady then
-      RG.gauge(c, x + 4 + 10, ry + math_floor(LIST_ROW / 2), 9, r.steady, r.col, 3, nil)
-      SF.label(c, r.name, x_name, ry + 1, name_w, 14, TEXT_ALIGN_LEFT, C_TEXT, a)
-      r.sub_text = string_format(S.sub_steady, r.iv_n, c.fmt_secs(r.sd * 1000))
-      SF.label(c, r.sub_text, x_name, ry + 13, name_w, 11, TEXT_ALIGN_LEFT, C_DIM, a * 0.85)
-      SF.label(c, PCT_TEXT[math_floor(r.steady * 100 + 0.5)] or "", x + w - VAL_W - 4, ry, VAL_W, LIST_ROW, TEXT_ALIGN_RIGHT, (r.steady >= 0.8) and C_IN or (r.steady >= 0.6) and C_GOLD or C_OUT, a)
     else
       RG.gauge(c, x + 4 + 10, ry + math_floor(LIST_ROW / 2), 9, r.uptime, r.col, 3, nil)
       SF.label(c, r.name, x_name, ry + 1, name_w, 14, TEXT_ALIGN_LEFT, C_TEXT, a)
@@ -433,78 +372,34 @@ local function draw_lists(c, canvas, cw, y, h, S)
   if rows_b > nb then rows_b = nb end
   rows_a = slots - rows_b
   if rows_a > na then rows_a = na end
-  if pick == PICK_RH then
-    sec_rect[SEC_COST].y0, sec_rect[SEC_COST].y1 = 0, 0
-    draw_list(c, canvas, x, y, RIGHT_W, SEC_REF, S.steady, S, steady_order, math_min(steady_order.n, slots), true)
-    return
-  end
   local y1 = y
   if rows_a > 0 or na > 0 then
     y1 = draw_list(c, canvas, x, y, RIGHT_W, SEC_COST, S.cost, S, cost_order, rows_a) + SEC_GAP
   else
     sec_rect[SEC_COST].y0, sec_rect[SEC_COST].y1 = 0, 0
   end
-  draw_list(c, canvas, x, y1, RIGHT_W, SEC_REF, S.refreshes, S, order, rows_b, false)
+  draw_list(c, canvas, x, y1, RIGHT_W, SEC_REF, S.refreshes, S, order, rows_b)
 end
 
-local function by_steady(a, b) return rows[a].steady > rows[b].steady end
-
-local lab_y = {}
-local lab_i = {}
-local function by_lab_y(a, b) return lab_y[a] < lab_y[b] end
-
-local function draw_rhythm(c, canvas, x, y, w, h, S)
-  local SF, SC, HT = Vermilion.lib.viz.surface, Vermilion.lib.viz.scatter, Vermilion.lib.viz.heat
-  local marg = 20
-  local lab_w = 150
-  local side = math_min(w - marg - 44 - lab_w - 12, h - 48 - marg)
-  if side < 40 then return end
-  local px0 = x + 44 + marg
-  local py0 = y + 20
-  local U = Vermilion.Uptime
-  local pk, pu, pt, _, _, pn = U.presses()
-  rings.n = 0
-  local mx = 0
-  for oi = 1, order.n do
-    local k = order[oi]
-    local r = rows[k]
-    local d = r.dur / 1000
-    if r.slot and r.pn >= STEADY_MIN and d > 0 and d <= RING_MAX_S then
-      rings.n = rings.n + 1
-      ring_x[rings.n], ring_y[rings.n], ring_r[rings.n], ring_c[rings.n], ring_k[rings.n] = d, d, math_max(0.6, d * 0.08), r.col, k
-      if d > mx then mx = d end
-    end
-  end
-  mx = (mx > 0) and math_min(60, math_max(10, mx * 1.6)) or 30
-  local n = 0
+local function compute_steady()
+  local pk, pu, pt, _, _, pn = Vermilion.Uptime.presses()
   for i = 1, pn do
     local k = pk[i]
     local r = rows[k]
     if r and r.slot and r.n > 0 and r.dur >= MIN_ROW_DUR then
-      local prev, prev2 = nil, nil
       local j = i - 1
-      while j >= 1 and (prev == nil or prev2 == nil) do
+      while j >= 1 and i - j <= 400 do
         if pk[j] == k and pu[j] == pu[i] then
-          if prev == nil then prev = j else prev2 = j end
+          local iv = (pt[i] - pt[j]) / 1000
+          r.iv_n = r.iv_n + 1
+          r.iv_sum = r.iv_sum + iv
+          r.iv_sq = r.iv_sq + iv * iv
+          break
         end
         j = j - 1
-        if i - j > 400 then break end
-      end
-      if prev then
-        local iv = (pt[i] - pt[prev]) / 1000
-        r.iv_n = r.iv_n + 1
-        r.iv_sum = r.iv_sum + iv
-        r.iv_sq = r.iv_sq + iv * iv
-      end
-      if prev and prev2 then
-        n = n + 1
-        sx[n] = (pt[prev] - pt[prev2]) / 1000
-        sy[n] = (pt[i] - pt[prev]) / 1000
-        scol[n] = r.col
       end
     end
   end
-  steady_order.n = 0
   for oi = 1, order.n do
     local r = rows[order[oi]]
     if r.slot and r.iv_n >= STEADY_MIN then
@@ -515,47 +410,12 @@ local function draw_rhythm(c, canvas, x, y, w, h, S)
       local cv = (mean > 0) and r.sd / mean or 1
       r.steady = 1 - cv
       if r.steady < 0 then r.steady = 0 end
-      steady_order.n = steady_order.n + 1
-      steady_order[steady_order.n] = order[oi]
     end
   end
-  for i = steady_order.n + 1, #steady_order do steady_order[i] = nil end
-  if steady_order.n > 1 then table_sort(steady_order, by_steady) end
-  local outside = SC.plot(c, px0, py0, side, mx, sx, sy, n, C_GOLD, scatter_opts)
-  HT.marginal(c, px0, py0 + side + 16, side, marg, sx, n, mx, 40, C_GOLD, nil)
-  HT.marginal_v(c, px0 - marg - 4, py0, marg, side, sy, n, mx, 40, C_GOLD, nil)
-  for i = 1, rings.n do
-    local _, ry = SC.point(px0, py0, side, mx, ring_x[i], ring_y[i])
-    lab_y[i], lab_i[i] = ry, i
-  end
-  for i = rings.n + 1, #lab_i do lab_i[i] = nil end
-  if rings.n > 1 then table_sort(lab_i, by_lab_y) end
-  local lx = px0 + side + 12
-  local last = -1000
-  for oi = 1, rings.n do
-    local i = lab_i[oi]
-    local rx, ry = SC.point(px0, py0, side, mx, ring_x[i], ring_y[i])
-    local rr = math_floor(ring_r[i] / mx * side + 0.5)
-    local ly = lab_y[i] - 6
-    if ly < last + 13 then ly = last + 13 end
-    last = ly
-    SF.box(c, rx + rr + 2, lx - 3, ly + 6, 1, ring_c[i], 0.35, 3)
-    SF.label(c, string_format("%s  ·  %ds", rows[ring_k[i]].name, math_floor(ring_x[i] + 0.5)), lx, ly, lab_w, 12, TEXT_ALIGN_LEFT, ring_c[i], 0.9)
-  end
-  SF.label(c, S.rh_y, x + 4, y + 4, 120, 12, TEXT_ALIGN_LEFT, C_DIM, 0.8)
-  SF.label(c, S.rh_x, px0, py0 + side + 2, side, 12, TEXT_ALIGN_CENTER, C_DIM, 0.8)
-  SF.label(c, "0", px0 - marg - 18, py0 + side - 6, 12, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 - marg - 34, py0 - 2, 28, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  SF.label(c, string_format("%ds", math_floor(mx + 0.5)), px0 + side - 30, py0 + side + 2, 30, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.7)
-  if outside > 0 then SF.label(c, string_format(S.beyond, outside), px0 + side - 120, py0 + 2, 118, 12, TEXT_ALIGN_RIGHT, C_DIM, 0.75) end
-  SF.frame(c, x, y, x + w, y + h, C_GOLD, 0.38, 6)
-  return n
 end
 
 function M.attach(t)
   ctx = t
-  local g = sv_graph()
-  if g and g.upt_pick then M.set_pick(g.upt_pick) end
 end
 
 function M.render()
@@ -595,21 +455,17 @@ function M.render()
   if cw <= RIGHT_W + 80 or ch <= 40 then return end
   local S = strings()
   local top = (c.layout.H or 0) + 2
-  draw_picker(c, canvas, top, S)
-  local y = top + PICK_H + 6
+  local y = top + 2
   local h = math_max(8, ch - c.time_strip - y - 2)
   local w = cw - RIGHT_W - LANE_X - GAP_X
   lane.x, lane.w, lane.y, lane.h, lane.t0, lane.span = LANE_X, w, y, h, t0, span
   scale.t0, scale.span = t0, span
-  if pick == PICK_TL then
-    local h_err = math_min(ERR_H + HDR_H + 50, math_floor(h * 0.38))
-    local h_rows = h - h_err - c.time_strip - 2
-    draw_rows(c, canvas, LANE_X, y, w, h_rows, S)
-    draw_time(c, S, y + h_rows + 1)
-    draw_errors(c, canvas, LANE_X, y + h_rows + c.time_strip + 2, w, h_err, S)
-  else
-    draw_rhythm(c, canvas, LANE_X, y, w, h, S)
-  end
+  compute_steady()
+  local h_err = math_min(ERR_H + HDR_H + 50, math_floor(h * 0.38))
+  local h_rows = h - h_err - c.time_strip - 2
+  draw_rows(c, canvas, LANE_X, y, w, h_rows, S)
+  draw_time(c, S, y + h_rows + 1)
+  draw_errors(c, canvas, LANE_X, y + h_rows + c.time_strip + 2, w, h_err, S)
   draw_lists(c, canvas, cw, y, h, S)
 end
 
@@ -620,6 +476,9 @@ local function row_card(c, r, S, mx, my)
   nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.presses, string_format("%d  ·  %d %s  ·  %d %s", r.pn, r.early, S.early, r.late, S.late), kind(c, "neutral")
   nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.mean, err_text(c, S, r), (r.mean_e > TOL_S * 1000) and C_GOLD or (r.mean_e < -TOL_S * 1000) and C_OUT or C_IN
   nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.down, c.fmt_secs(r.down), kind(c, "time")
+  if r.slot and r.iv_n >= STEADY_MIN then
+    nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.steady, string_format("%s  ·  ±%s", PCT_TEXT[math_floor(r.steady * 100 + 0.5)] or "", c.fmt_secs(r.sd * 1000)), (r.steady >= 0.8) and C_IN or (r.steady >= 0.6) and C_GOLD or C_OUT
+  end
   if r.cost > 0 then
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.lost, "-" .. c.fmt_val(r.cost), C_OUT
   end
@@ -644,22 +503,7 @@ function M.hover(mx, my)
   c.hide_card()
 end
 
-function M.click(mx, my)
-  local c = ctx
-  if not c then return false end
-  local rel_x, rel_y = mx - c.canvas:GetLeft(), my - c.canvas:GetTop()
-  if rel_y < pick_hit.y0 or rel_y > pick_hit.y1 then return false end
-  for i = 1, 2 do
-    if rel_x >= pick_hit[i].x0 and rel_x <= pick_hit[i].x1 then
-      if pick == i then return false end
-      M.set_pick(i)
-      scroll[1], scroll[2], scroll[3] = 0, 0, 0
-      hover_key = nil
-      return true
-    end
-  end
-  return false
-end
+function M.click() return false end
 
 function M.scroll(dir)
   local c = ctx
