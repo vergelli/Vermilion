@@ -15,7 +15,9 @@ All notable changes to Vermilion are documented here. This project follows
 - UPTIME: one view, steadiness moved to the row card, refresh totals box
 - Settings: optional average line across SKILL, TYPE and CRIT
 - Removed the line over the bars and the RHYTHM view
+- Header: wider Record button, Settings as a text button, own close button on every window
 - Fixed: UPTIME rings staying on screen, the empty category picker, grid and cursor fading halfway down
+- Fixed: the hover card flickering on some RESOURCES rows, a stray dash outside the window, the CRIT value and the recording mode tag not showing in the header
 
 ### Fixed
 - RESOURCES: dying no longer draws a spend spike and reviving no longer draws a gain spike. The tracker treats a drop to zero of at least half the pool as a death whatever the event order, and ignores gains for three seconds after a death drop or a revive.
