@@ -183,6 +183,17 @@ return function(H)
   end
   do
     local o, n, rect, joined = RV.dumbbells()
+  local rs = RV.return_score(2000, 10, 1000, 20)
+  ok(rs < 25 and rs > 20, "a cheap lucky skill is pulled toward the pool ratio, got " .. rs)
+  ok(math.abs(RV.return_score(1000000, 50000, 1000, 10) - 20) < 0.5, "a heavy spender keeps its own ratio")
+  G.next_view(); G.prev_view()
+  local ret = RV.returns()
+  ok(ret.n > 0, "the fight has skills to rank")
+  local drawn = false
+  for _, ctl in ipairs(H.controls) do if ctl._hidden == false and ctl._text == "BEST RETURN" then drawn = true end end
+  ok(drawn, "the best return box is drawn")
+  for i = 2, ret.n do ok(ret[i - 1].ret >= ret[i].ret, "best return is ranked by score") end
+  for i = 1, ret.n do ok(ret[i].dmg > 0, "only skills with attributed damage rank") end
     ok(n >= 1 and o[1].id == 501 and joined > 0, "the dumbbell block ranks the skills by spend and knows the damage joined to casts, got " .. tostring(n))
     local canvas = VermilionGraphWindowViewportCanvas
     H.state.mouse_x = canvas:GetLeft() + 30
