@@ -36,12 +36,11 @@ local C_EDPS      = { r = 0.88, g = 0.24, b = 0.18, a = 0.92 }  -- deep crimson 
 local C_SHDPS     = { r = 0.85, g = 0.40, b = 0.75, a = 0.90 }  -- pink-magenta (shield work)
 local C_LINE_EDPS = { r = 1.00, g = 0.42, b = 0.32, a = 1.00 }  -- brighter crimson frontier
 local C_LINE_EOS  = { r = 1.00, g = 0.92, b = 0.96, a = 1.00 }  -- bright EOS frontier
-local C_CHROME    = { r = 1.00, g = 0.62, b = 0.58, a = 0.82 }  -- pronounced crimson wash
 
 local C_NONCRIT   = { r = 0.55, g = 0.22, b = 0.18, a = 0.90 }  -- muted crimson base
 local C_CRIT      = { r = 1.00, g = 0.82, b = 0.28, a = 0.96 }  -- bright gold (crit pops)
 
-local C_VIEWPORT  = { r = 1.00, g = 0.78, b = 0.75 }
+local C_VIEWPORT  = { r = 0.06, g = 0.05, b = 0.05 }
 
 local FILL_TEXTURE   = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
 local FILL_T, FILL_B = 0, 0.53125
@@ -95,7 +94,7 @@ function RES.present()
   end
   return false
 end
-local C_GRID_LINE = { r = 0.55, g = 0.58, b = 0.70, a = 0.25 }
+local C_GRID_LINE = { r = 0.70, g = 0.62, b = 0.56, a = 0.14 }
 local C_GRID_LBL  = { r = 0.82, g = 0.85, b = 0.90, a = 0.92 }
 local C_TIME_LBL  = { r = 0.68, g = 0.70, b = 0.75, a = 0.85 }
 
@@ -164,7 +163,7 @@ local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }
 local C_CARD_STAT   = { r = 0.92, g = 0.84, b = 0.82, a = 1.0 }
 local C_CARD_NAME   = { r = 1.00, g = 0.90, b = 0.88, a = 1.0 }
 local C_CARD_TIME   = { r = 0.72, g = 0.64, b = 0.62, a = 1.0 }
-local C_CROSSHAIR   = { r = 1.00, g = 0.50, b = 0.42, a = 0.50 }
+local C_CROSSHAIR   = { r = 1.00, g = 0.38, b = 0.26, a = 0.85 }
 
 local C_CRIT_IDLE  = { r = 0.55, g = 0.55, b = 0.55, a = 0.85 }
 local C_CRIT_BELOW = { r = 0.90, g = 0.32, b = 0.28, a = 1.0 }
@@ -2191,7 +2190,7 @@ local function style_tabs()
     local on = (v == current_view)
     t.label:SetColor(on and 0.98 or 0.66, on and 0.90 or 0.58, on and 0.88 or 0.56, 1)
     t.line:SetHidden(not on)
-    t.line:SetColor(C_LINE_EDPS.r, C_LINE_EDPS.g, C_LINE_EDPS.b, 0.9)
+    t.line:SetColor(Vermilion.Skin.GOLD.r, Vermilion.Skin.GOLD.g, Vermilion.Skin.GOLD.b, 0.95)
     t.band:SetHidden(not on)
   end
 end
@@ -2627,7 +2626,7 @@ function M.toggle_autosave()
   return now
 end
 
-REC.T = { on = "EsoUI/Art/Buttons/RadioButtonDown.dds", off = "EsoUI/Art/Buttons/RadioButtonUp.dds", hot = "EsoUI/Art/Buttons/RadioButtonUpHighlight.dds",
+REC.T = { on = Vermilion.Skin.RADIO_ON, off = Vermilion.Skin.RADIO_OFF, hot = Vermilion.Skin.RADIO_ON,
           on_dis = "EsoUI/Art/Buttons/RadioButtonDisabledDown.dds", off_dis = "EsoUI/Art/Buttons/RadioButtonDisabledUp.dds" }
 
 function REC.radio(parent, x, y, w, text, on_click)
@@ -2977,11 +2976,13 @@ function M.init()
   controls.window:SetDimensionConstraints(400, 240, 1000, 700)
 
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
-  VermilionGraphWindowChromeTop   :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
-  VermilionGraphWindowChromeBottom:SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
-  VermilionGraphWindowChromeLeft  :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
-  VermilionGraphWindowChromeRight :SetColor(C_CHROME.r, C_CHROME.g, C_CHROME.b, C_CHROME.a)
-  VermilionGraphWindowBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
+  local Skin = Vermilion.Skin
+  Skin.chrome(VermilionGraphWindowChromeTop)
+  Skin.chrome(VermilionGraphWindowChromeBottom)
+  Skin.chrome(VermilionGraphWindowChromeLeft)
+  Skin.chrome(VermilionGraphWindowChromeRight)
+  Skin.frame(VermilionGraphWindowBg)
+  VermilionGraphWindowViewportBg:SetEdgeColor(Skin.GOLD.r, Skin.GOLD.g, Skin.GOLD.b, 0.35)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
 
@@ -3067,7 +3068,7 @@ function M.init()
   controls.title:SetText(GetString(VERMILION_GRAPH_TITLE) .. (Vermilion.Constants.DEBUG and ("  ·  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t10:10:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
-  controls.btn_record_menu:SetText("|t16:16:EsoUI/Art/Buttons/large_downArrow_up.dds|t")
+  controls.btn_record_menu:SetText("|t14:14:" .. Vermilion.Skin.CARET .. "|t")
   controls.rec_panel:ClearAnchors()
   controls.rec_panel:SetAnchor(TOPLEFT, controls.btn_record_menu, BOTTOMLEFT, -42, 4)
   controls.rec_panel:SetHidden(true)
@@ -3081,10 +3082,12 @@ function M.init()
     btn:SetMouseOverFontColor(math.min(1, r + 0.12), math.min(1, g + 0.12), math.min(1, b + 0.12), 1)
     btn:SetPressedFontColor(r * 0.85, g * 0.85, b * 0.85, 1)
   end
-  tint_btn(controls.btn_record, 0.95, 0.42, 0.34)
-  tint_btn(controls.btn_record_menu, 0.95, 0.42, 0.34)
+  Vermilion.Skin.button(controls.btn_record, true)
+  Vermilion.Skin.button(controls.btn_record_menu, true)
+  Vermilion.Skin.button(controls.btn_stop)
+  Vermilion.Skin.button(controls.btn_flush)
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
-  tint_btn(controls.btn_flush,  0.80, 0.30, 0.28)
+  tint_btn(controls.btn_flush,  0.92, 0.46, 0.40)
   zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
   zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
   zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
@@ -3116,10 +3119,9 @@ function M.init()
     line:SetTextureCoords(0, 1, 0, 0.05)
     line:SetDrawLevel(2)
     local band = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v .. "Band", strip, CT_TEXTURE)
-    band:SetTexture(FILL_TEXTURE)
-    band:SetTextureCoords(0, 1, 0, 0.05)
+    band:SetTexture(Vermilion.Skin.TAB_ON)
     band:SetDrawLevel(1)
-    band:SetColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, 0.10)
+    band:SetColor(1, 1, 1, 1)
     local view = v
     hit_c:SetHandler("OnMouseUp", function(_, _, upInside)
       if upInside == false or view == current_view then return end

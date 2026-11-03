@@ -14,7 +14,7 @@ return function(H)
 
   local btn, caret, tag, panel = VermilionGraphWindowRecordBtn, VermilionGraphWindowRecordMenuBtn, VermilionGraphWindowRecModeLabel, VermilionRecPanel
   ok(btn and caret and tag and panel, "the record button has a main half, an arrow and a panel")
-  ok(caret._text:find("|t16:16:EsoUI/Art/Buttons/large_downArrow_up.dds|t", 1, true), "the arrow is the game's own down arrow texture at 16 px, got " .. tostring(caret._text))
+  ok((caret._text or ""):find("skin/caret.dds", 1, true) ~= nil, "the arrow is the lacquer caret, got " .. tostring(caret._text))
   ok(not caret._onOnMouseEnter, "the arrow carries no tooltip")
   ok(H.xml_tags["VermilionRecPanel"] == "TopLevelControl", "the panel is its own top level control so it sits above the canvas and takes the mouse, got " .. tostring(H.xml_tags["VermilionRecPanel"]))
   ok(rawget(_G, "VermilionGraphWindowRecPanel") == nil, "no panel is left inside the graph window")
@@ -30,11 +30,11 @@ return function(H)
   ok(not panel:IsHidden(), "the arrow opens the panel")
   local rows = {}
   for _, c in ipairs(H.controls) do
-    if c._parent and c._parent._parent == panel and c._tex and c._tex:find("RadioButton", 1, true) then rows[#rows + 1] = c end
+    if c._parent and c._parent._parent == panel and c._tex and (c._tex:find("RadioButton", 1, true) or c._tex:find("skin/radio_", 1, true)) then rows[#rows + 1] = c end
   end
   ok(#rows == 7, "seven radio dots: three starts, two stops, two saves, got " .. #rows)
   local function dots(frag) local n = 0 for _, d in ipairs(rows) do if d._tex:find(frag, 1, true) then n = n + 1 end end return n end
-  ok(dots("RadioButtonDown.dds") == 3 and dots("RadioButtonUp.dds") >= 2, "one choice is lit per row, by hand everywhere, got " .. dots("RadioButtonDown.dds") .. " lit")
+  ok(dots("radio_on.dds") == 3 and dots("radio_off.dds") >= 2, "one choice is lit per row, by hand everywhere, got " .. dots("radio_on.dds") .. " lit")
   for _, c in ipairs(H.controls) do
     ok(not (c._parent == panel and type(c._text) == "string" and c._text:find("Starts ", 1, true)), "no sentence reads the choices back")
   end
