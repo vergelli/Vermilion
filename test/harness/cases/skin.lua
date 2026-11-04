@@ -6,6 +6,11 @@ return function(H)
   for _, set in ipairs({ Skin.PLAIN, Skin.LACQUER, Skin.CLOSE }) do
     for _, p in pairs(set) do paths[#paths + 1] = p end
   end
+  for _, rel in ipairs({ "ui/graph.xml", "ui/library.xml", "ui/settings.xml", "ui/assign.xml" }) do
+    local f = assert(io.open(HARNESS_ROOT .. "/" .. rel, "r"))
+    for path in f:read("*a"):gmatch("Vermilion/assets/skin/[%w_]+%.dds") do paths[#paths + 1] = path end
+    f:close()
+  end
   local function le32(s, at)
     local a, b, c, d = s:byte(at, at + 3)
     return a + b * 256 + c * 65536 + d * 16777216

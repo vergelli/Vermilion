@@ -150,9 +150,9 @@
                 inherits="ZO_ButtonBehaviorClickSound">
           <Anchor point="TOPLEFT" offsetX="236" offsetY="31"/>
           <Dimensions x="28" y="28"/>
-          <Textures normal="EsoUI/Art/Journal/journal_tabIcon_loreLibrary_up.dds"
-                    pressed="EsoUI/Art/Journal/journal_tabIcon_loreLibrary_down.dds"
-                    mouseOver="EsoUI/Art/Journal/journal_tabIcon_loreLibrary_over.dds"/>
+          <Textures normal="Vermilion/assets/skin/lib_up.dds"
+                    pressed="Vermilion/assets/skin/lib_down.dds"
+                    mouseOver="Vermilion/assets/skin/lib_over.dds"/>
           <OnClicked>Vermilion.Library.toggle()</OnClicked>
         </Button>
 
@@ -162,10 +162,10 @@
                 inherits="ZO_ButtonBehaviorClickSound">
           <Anchor point="TOPLEFT" offsetX="268" offsetY="31"/>
           <Dimensions x="28" y="28"/>
-          <Textures normal="EsoUI/Art/Buttons/edit_save_up.dds"
-                    pressed="EsoUI/Art/Buttons/edit_save_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/edit_save_over.dds"
-                    disabled="EsoUI/Art/Buttons/edit_save_disabled.dds"/>
+          <Textures normal="Vermilion/assets/skin/save_up.dds"
+                    pressed="Vermilion/assets/skin/save_down.dds"
+                    mouseOver="Vermilion/assets/skin/save_over.dds"
+                    disabled="Vermilion/assets/skin/save_disabled.dds"/>
           <OnClicked>Vermilion.Graph.on_save_click()</OnClicked>
         </Button>
 
@@ -175,9 +175,9 @@
                 inherits="ZO_ButtonBehaviorClickSound">
           <Anchor point="TOPLEFT" offsetX="302" offsetY="35"/>
           <Dimensions x="20" y="20"/>
-          <Textures normal="EsoUI/Art/Buttons/large_leftArrow_up.dds"
-                    pressed="EsoUI/Art/Buttons/large_leftArrow_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/large_leftArrow_over.dds"/>
+          <Textures normal="Vermilion/assets/skin/arrow_left_up.dds"
+                    pressed="Vermilion/assets/skin/arrow_left_down.dds"
+                    mouseOver="Vermilion/assets/skin/arrow_left_over.dds"/>
           <OnClicked>Vermilion.Graph.step_session(-1)</OnClicked>
         </Button>
 
@@ -187,9 +187,9 @@
                 inherits="ZO_ButtonBehaviorClickSound">
           <Anchor point="TOPLEFT" offsetX="324" offsetY="35"/>
           <Dimensions x="20" y="20"/>
-          <Textures normal="EsoUI/Art/Buttons/large_rightArrow_up.dds"
-                    pressed="EsoUI/Art/Buttons/large_rightArrow_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/large_rightArrow_over.dds"/>
+          <Textures normal="Vermilion/assets/skin/arrow_right_up.dds"
+                    pressed="Vermilion/assets/skin/arrow_right_down.dds"
+                    mouseOver="Vermilion/assets/skin/arrow_right_over.dds"/>
           <OnClicked>Vermilion.Graph.step_session(1)</OnClicked>
         </Button>
 

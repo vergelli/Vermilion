@@ -174,7 +174,7 @@ local function make_row(i)
            name = name, stats = stats, when = when, star = star }
 end
 
-local HAND_GLYPH  = "|t12:12:EsoUI/Art/Buttons/edit_save_up.dds|t "
+local HAND_GLYPH  = "|t14:14:Vermilion/assets/skin/save_up.dds|t "
 local ICON_LOCK   = "EsoUI/Art/Miscellaneous/locked_up.dds"
 local ICON_UNLOCK = "EsoUI/Art/Miscellaneous/unlocked_up.dds"
 
@@ -553,10 +553,7 @@ function M.init()
   VermilionLibraryListFill:SetColor(0.055, 0.046, 0.046, 0.92)
   controls.label_box:SetCenterColor(0, 0, 0, 0)
   controls.label_edit:SetDefaultTextColor(0.70, 0.62, 0.62, 0.45)
-  VermilionLibraryScrollTrackBg:SetTextureCoords(0, 1, 0, 0.05)
-  VermilionLibraryScrollTrackBg:SetColor(1.00, 0.45, 0.40, 0.12)
-  VermilionLibraryScrollTrackThumbTex:SetTextureCoords(0, 1, 0, 0.05)
-  VermilionLibraryScrollTrackThumbTex:SetColor(1.00, 0.62, 0.58, 0.55)
+  Vermilion.Skin.icons({ VermilionLibraryScrollUp, VermilionLibraryScrollDown })
   M.on_label_focus(false)
   set_buttons()
 end
