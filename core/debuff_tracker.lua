@@ -382,13 +382,15 @@ local function finalize_rec(rec, t)
   end
   rec.uptime_ms = uptime
   local longest = 0
-  local prev_end = t_start
+  local lo, hi = Vermilion.Metrics.fight_bounds()
+  if not lo then lo, hi = t_start, t end
+  local prev_end = lo
   for i = 1, rec.n_iv do
     local gap = rec.iv_t0[i] - prev_end
     if gap > longest then longest = gap end
-    prev_end = rec.iv_t1[i]
+    if rec.iv_t1[i] > prev_end then prev_end = rec.iv_t1[i] end
   end
-  local tail = t - prev_end
+  local tail = hi - prev_end
   if tail > longest then longest = tail end
   rec.longest_gap_ms = longest
 end

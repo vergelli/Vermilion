@@ -356,6 +356,10 @@ function M.capture(cooperative)
         hits = hits,
         crit_hits = crit_hits,
         fight_ms = Vermilion.Metrics.fight_ms(),
+        fight_t0 = (function()
+          local lo = Vermilion.Metrics.fight_bounds()
+          return lo and math.max(0, lo - t0) or nil
+        end)(),
       },
       cfg = {
         window_ms = math_floor(Vermilion.Metrics.window_seconds() * 1000 + 0.5),

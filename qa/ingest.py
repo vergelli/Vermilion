@@ -8,7 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, ".."))
 DEFAULT_SV = os.path.join(os.path.expanduser("~"), "Documents", "Elder Scrolls Online", "live",
                           "SavedVariables", "Vermilion.lua")
-DEFAULT_TRACES = os.path.abspath(os.path.join(ROOT, "..", "VermilionWorkingdir", "traces"))
+DEFAULT_TRACES = os.path.abspath(os.path.join(ROOT, "..", "traces"))
 
 
 def main(argv):

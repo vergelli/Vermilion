@@ -20,6 +20,14 @@ python -m pip install -r qa/robot/requirements.txt
 python -m robot --outputdir qa/robot/output qa/robot/gate.robot
 ```
 
+## Comparing a fight with the game's own log
+
+`/encounterlog` makes the game write `Logs/Encounter.log`, which is independent of the addon. With a
+trace of the same fight, `python qa/encounter_audit.py <Encounter.log> <trace.lua>` replays the trace
+through the current code and checks every number against the log. `--slice=<trace>.encounter.log`
+saves the part of the log for that fight next to the trace in the corpus, and from then on the gate
+checks it. A recording only has to be made once: a fix is verified by replaying it.
+
 ## Feeding the oracle with real fights
 
 The only data that validates the measurement is a trace: the game's raw events, captured in

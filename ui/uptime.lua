@@ -569,6 +569,10 @@ function M.reset_scroll() scroll[1], scroll[2], scroll[3] = 0, 0, 0 end
 function M.clear_hover() hover_key = nil end
 function M.hovered() return hover_key end
 function M.rows() return order, order.n, rows end
+function M.priced(r)
+  return r.cost > 0 and r.slot and not r.ult and r.dur >= COST_MIN_DUR
+end
+
 function M.compute()
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()

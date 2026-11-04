@@ -230,12 +230,15 @@ function M.init()
     Vermilion.Kills.on_kill(t, targetUnitId, tgt, abilityId)
     Vermilion.Uptime.on_unit_dead(targetUnitId, t)
   end
-  local kill_results = { C.ACTION_RESULT_DIED_XP or 2262, C.ACTION_RESULT_KILLING_BLOW or 2265 }
+  local kill_results = { C.ACTION_RESULT_DIED_XP or 2262, C.ACTION_RESULT_KILLING_BLOW or 2265, C.ACTION_RESULT_DIED or 2260 }
+  local kill_sources = { COMBAT_UNIT_TYPE_PLAYER, C.COMBAT_UNIT_TYPE_PLAYER_PET }
   for i = 1, #kill_results do
-    local name = "Vermilion_E_Kill" .. i
-    E.register(name, EVENT_COMBAT_EVENT, on_kill_event)
-    E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_COMBAT_RESULT, kill_results[i])
-    E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
+    for s = 1, #kill_sources do
+      local name = "Vermilion_E_Kill" .. i .. "_" .. s
+      E.register(name, EVENT_COMBAT_EVENT, on_kill_event)
+      E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_COMBAT_RESULT, kill_results[i])
+      E.add_filter(name, EVENT_COMBAT_EVENT, REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, kill_sources[s])
+    end
   end
 
   E.register("Vermilion_E_EffectPlayer", EVENT_EFFECT_CHANGED, M.dispatch_effect_player_src)

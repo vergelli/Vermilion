@@ -85,8 +85,12 @@ return function(H)
   H.ability_costs[61000] = { base = 3780, flags = MAGF, cost = { [MAGF] = 3553 } }
 
   for _ = 1, 600 do cast(3, POWERTYPE_MAGICKA, 2500) end
+  local warm_t = H.now()
   local alloc = H.addon_alloc(function()
-    for _ = 1, 200 do cast(3, POWERTYPE_MAGICKA, 2500) end
+    for i = 1, 200 do
+      Cst.stage(501, 1, 2500, warm_t + i * 2000, 0)
+      Cst.on_drop(1, 2500, warm_t + i * 2000)
+    end
   end)
   ok(alloc < (HARNESS_DEBUG and 40000 or 64), string.format("two hundred casts into warm arrays allocate %.0f addon-side bytes", alloc))
   ok(Cst.count() == 808, "every cast was kept, got " .. Cst.count())

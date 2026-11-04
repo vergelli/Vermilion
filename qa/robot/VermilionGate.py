@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
 
 class VermilionGate:
@@ -42,6 +43,30 @@ class VermilionGate:
             fails = [l for l in out.splitlines() if l.startswith("FAIL") or l.startswith("      ")]
             raise AssertionError("harness failed: " + last + "\n" + "\n".join(fails))
         return "%s cases passed (DEBUG=%s)" % (m.group(1), debug)
+
+    def fights_match_the_game_log(self, traces_dir=None):
+        traces = self._traces_dir(traces_dir)
+        if not os.path.isdir(traces):
+            return "no traces directory at %s, nothing audited" % traces
+        n = 0
+        failures = []
+        for f in sorted(os.listdir(traces)):
+            if not f.endswith(".encounter.log"):
+                continue
+            trace = os.path.join(traces, f[:-len(".encounter.log")] + ".lua")
+            if not os.path.isfile(trace):
+                failures.append("%s has no trace" % f)
+                continue
+            code, out = self._run([sys.executable, "qa/encounter_audit.py", os.path.join(traces, f), trace])
+            verdict = [l for l in out.splitlines() if l.startswith("AUDIT:")]
+            print("%s -> %s" % (f, verdict[0] if verdict else "no verdict"))
+            if code != 0:
+                failures.append("%s: %s" % (f, verdict[0] if verdict else out[-1500:]))
+                continue
+            n += 1
+        if failures:
+            raise AssertionError(chr(10).join(failures))
+        return "%d fights match the game log" % n
 
     def traces_match_their_events(self, traces_dir=None):
         traces = self._traces_dir(traces_dir)
