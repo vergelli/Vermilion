@@ -7,6 +7,7 @@ All notable changes to Vermilion are documented here. This project follows
 
 ### Closing pass (November 2026)
 
+- About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them
 - After stopping, navigate the fight: wheel zooms, shift plus wheel moves, the strip under the chart shows the whole fight (drag to move, right click to see it all)

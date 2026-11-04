@@ -97,6 +97,17 @@
           <OnClicked>Vermilion.Settings.toggle()</OnClicked>
         </Button>
 
+        <Button name="$(parent)AboutBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                horizontalAlignment="RIGHT"
+                verticalAlignment="CENTER"
+                inherits="ZO_ButtonBehaviorClickSound">
+          <Anchor point="TOPRIGHT" offsetX="-102" offsetY="7"/>
+          <Dimensions x="40" y="22"/>
+          <OnClicked>Vermilion.About.toggle()</OnClicked>
+        </Button>
+
         <Button name="$(parent)CloseBtn"
                 mouseEnabled="true"
                 mouseOverBlendMode="ADD"
