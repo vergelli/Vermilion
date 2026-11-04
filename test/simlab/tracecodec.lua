@@ -9,6 +9,7 @@ local SIG = {
   BO = "s",
   GR = "bnsn",
   PU = "snnnnn",
+  SU = "nnnn",
   EP = "n",
   MK = "sn",
 }
@@ -58,6 +59,8 @@ function M.fire(H, e)
     H.fire(EVENT_ACTIVE_WEAPON_PAIR_CHANGED)
   elseif e.tag == "PU" then
     H.fire(EVENT_POWER_UPDATE, unpack(a, 1, e.n))
+  elseif e.tag == "SU" then
+    H.fire(EVENT_ACTION_SLOT_ABILITY_USED, a[1])
   elseif e.tag == "BO" then
     local list = {}
     for nm in tostring(a[1] or ""):gmatch("([^|]+)") do
