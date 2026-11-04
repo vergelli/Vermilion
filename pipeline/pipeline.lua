@@ -189,7 +189,7 @@ function M.init()
   Vermilion.Diagnostics.init()
   Vermilion.Metrics.init()
 
-  E.register("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT, function(...)
+  local function on_damage_event(...)
     local r = ...
     if r == ACTION_RESULT_DAMAGE
        or r == ACTION_RESULT_DOT_TICK
@@ -198,10 +198,16 @@ function M.init()
        or r == ACTION_RESULT_BLOCKED_DAMAGE then
       M.dispatch_damage_out(...)
     end
-  end)
+  end
+  E.register("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT, on_damage_event)
   E.add_filter("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
   E.add_filter("Vermilion_E_DamageOut", EVENT_COMBAT_EVENT,
+    REGISTER_FILTER_IS_ERROR, false)
+  E.register("Vermilion_E_DamagePet", EVENT_COMBAT_EVENT, on_damage_event)
+  E.add_filter("Vermilion_E_DamagePet", EVENT_COMBAT_EVENT,
+    REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, C.COMBAT_UNIT_TYPE_PLAYER_PET)
+  E.add_filter("Vermilion_E_DamagePet", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
   E.register("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT, M.dispatch_shield_out)
@@ -210,6 +216,13 @@ function M.init()
   E.add_filter("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, COMBAT_UNIT_TYPE_PLAYER)
   E.add_filter("Vermilion_E_ShieldOut", EVENT_COMBAT_EVENT,
+    REGISTER_FILTER_IS_ERROR, false)
+  E.register("Vermilion_E_ShieldPet", EVENT_COMBAT_EVENT, M.dispatch_shield_out)
+  E.add_filter("Vermilion_E_ShieldPet", EVENT_COMBAT_EVENT,
+    REGISTER_FILTER_COMBAT_RESULT, ACTION_RESULT_DAMAGE_SHIELDED)
+  E.add_filter("Vermilion_E_ShieldPet", EVENT_COMBAT_EVENT,
+    REGISTER_FILTER_SOURCE_COMBAT_UNIT_TYPE, C.COMBAT_UNIT_TYPE_PLAYER_PET)
+  E.add_filter("Vermilion_E_ShieldPet", EVENT_COMBAT_EVENT,
     REGISTER_FILTER_IS_ERROR, false)
 
   local function on_kill_event(_r, _err, _name, _g, _slot, _src, _st, tgt, _tt, _hit, _pt, _dt, _log, _suid, targetUnitId, abilityId)

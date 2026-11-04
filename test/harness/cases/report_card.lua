@@ -21,6 +21,14 @@ return function(H)
   G.on_stop_click()
 
   local hit = VermilionGraphSummaryHit
+  local chip_label = VermilionGraphSummaryLabel
+  local real_measure = chip_label.GetTextWidth
+  chip_label.GetTextWidth = function(s) return math.min(#tostring(s._text or "") * 3, s._w or 0) end
+  chip_label:SetWidth(40)
+  G.on_resize_stop()
+  local measured = chip_label._w
+  chip_label.GetTextWidth = real_measure
+  ok(measured > 40, "a narrow chip left by a shorter fight does not clip the next one, got " .. tostring(measured))
   ok(hit._hidden == false, "the chip hit-box must show with the chip")
   ok(VermilionGraphSummaryHelp._hidden == false, "the chip must wear its help icon")
   local chip = VermilionGraphSummaryLabel._text or ""

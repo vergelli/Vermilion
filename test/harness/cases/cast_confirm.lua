@@ -53,6 +53,22 @@ return function(H)
   local r2, t2 = count_real()
   ok(r2 == r1 and t2 == t1, "a drain long after the channel is credited to nobody")
 
+  local r_before, t_before = count_real()
+  Cst.stage(70000, MAG, 1015, 46000, 3800)
+  Cst.on_drop(MAG, 1015, 46300)
+  for i = 1, 5 do
+    Cst.stage(70000, MAG, 1015, 46300 + i * 300, 3800)
+    Cst.on_drop(MAG, 1015, 46300 + i * 690)
+  end
+  local r_a, t_a = count_real()
+  ok(r_a == r_before + 1, "pressing a channeled skill while it channels is not another cast, got " .. (r_a - r_before))
+  ok(t_a == t_before + 5, "and every drain counts as spend, got " .. (t_a - t_before))
+  Cst.stage(70000, MAG, 1015, 50300, 3800)
+  Cst.on_drop(MAG, 1015, 50400)
+  local r_b = count_real()
+  ok(r_b == r_a + 1, "after the channel ends a press is a new cast")
+  r2, t2 = count_real()
+
   Cst.stage(503, 0, 0, 50000)
   local r3 = count_real()
   ok(r3 == r2 + 1, "a skill with no cost has no drop to wait for")

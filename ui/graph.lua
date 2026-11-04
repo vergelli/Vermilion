@@ -693,6 +693,7 @@ local function build_summary_text()
 end
 
 local function compose_summary(label, parts, avail)
+  label:SetWidth(avail + 200)
   local lines, widest = 1, 0
   local text = ""
   local line = ""

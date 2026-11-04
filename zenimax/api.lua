@@ -39,6 +39,7 @@ M.GetAbilityBaseCostInfo                 = GetAbilityBaseCostInfo
 M.GetSlotType                            = GetSlotType
 M.GetAbilityIdForCraftedAbilityId        = GetAbilityIdForCraftedAbilityId
 M.GetAbilityCost                         = GetAbilityCost
+M.GetAbilityCastInfo                     = GetAbilityCastInfo
 M.GetPlayerStat                          = GetPlayerStat
 M.GetActiveHotbarCategory                = GetActiveHotbarCategory
 M.GetUnitPower                           = GetUnitPower

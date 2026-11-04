@@ -966,7 +966,7 @@ function H.damage_out(opts)
   opts = opts or {}
   return H.fire(EVENT_COMBAT_EVENT,
     opts.result or ACTION_RESULT_DAMAGE, false, "MockStrike", 0, 0,
-    "Me", COMBAT_UNIT_TYPE_PLAYER,
+    "Me", opts.source_type or COMBAT_UNIT_TYPE_PLAYER,
     opts.target_name or "Enemy", opts.target_type or COMBAT_UNIT_TYPE_OTHER,
     opts.hit or 1500, 0, opts.damage_type or DAMAGE_TYPE_PHYSICAL, false,
     opts.source_unit_id or 500, opts.target_unit_id or 900,

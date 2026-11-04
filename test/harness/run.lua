@@ -28,6 +28,7 @@ local CASES = {
   "effect_events",
   "cast_confirm",
   "fight_time",
+  "pet_damage",
   "session_store",
   "content_kind",
   "auto_record",
