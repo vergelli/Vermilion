@@ -108,11 +108,11 @@ return function(H)
   H.advance(400)
 
   L.show()
+  H.last_tooltip = nil
   L.on_row_enter(1)
-  ok(H.last_tooltip and H.last_tooltip:find("2026-09-03", 1, true) and H.last_tooltip:find("Direfrost Keep", 1, true)
-     and H.last_tooltip:find("players", 1, true), "the row tooltip leads with date, place and group: " .. tostring(H.last_tooltip))
-  ok(H.last_tooltip and H.last_tooltip:find("damage", 1, true) and H.last_tooltip:find("crit", 1, true),
-     "row tooltip must explain the damage totals")
+  ok(H.last_tooltip == nil, "a row shows no tooltip")
+  ok(VermilionLibraryRow1Hov == nil or VermilionLibraryRow1Hov._hidden == false, "a row still lights up")
+  ok(VermilionLibraryRow1Stats._text:find("2026-09-03", 1, true), "the row carries the date: " .. tostring(VermilionLibraryRow1Stats._text))
   L.on_row_exit(1)
   L.on_row_click(1)
   L.on_lock_click()

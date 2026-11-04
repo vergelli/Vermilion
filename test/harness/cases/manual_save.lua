@@ -16,7 +16,6 @@ return function(H)
   H.state.zone = "Fungal Grotto"
 
   ok(btn ~= nil, "the save button must exist on the graph window")
-  ok(type(btn._onOnMouseEnter) == "function", "the save button must explain itself on hover")
   ok(btn._enabled == false, "nothing to save on an empty graph")
 
   H.chat = {}

@@ -104,7 +104,6 @@ local recording_start_ms = 0
 local summary_text       = nil
 local CHIP               = { H = 0, W = 0 }
 local SCR                = { hex = setmetatable({}, { __mode = "k" }) }
-local VIEW_TIPS
 local last_readout, last_crit_pct, last_elapsed = nil, nil, nil
 
 local VIEW_BY_SKILL   = 1
@@ -117,12 +116,6 @@ local VIEW_BY_RES     = 7
 local VIEW_BY_UPTIME  = 8
 local VIEW_LABELS     = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS", "RESOURCES", "UPTIME" }
 
-local function view_tips()
-  if not VIEW_TIPS then
-    VIEW_TIPS = { VERMILION_VIEWTIP_SKILL, VERMILION_VIEWTIP_TYPE, VERMILION_VIEWTIP_TARGETS, VERMILION_VIEWTIP_CRIT, VERMILION_VIEWTIP_CONTRIB, VERMILION_VIEWTIP_DEBUFFS, VERMILION_VIEWTIP_RES, VERMILION_VIEWTIP_UPTIME }
-  end
-  return VIEW_TIPS
-end
 local current_view    = VIEW_BY_SKILL
 
 local crit_threshold_pct = 50
@@ -2316,17 +2309,6 @@ function M.init()
   VermilionGraphWindowSettingsBtn:SetText(GetString(VERMILION_GRAPH_SETTINGS))
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.92, 0.46, 0.40)
-  zui.tooltip(controls.btn_record,    VERMILION_TIP_RECORD)
-  zui.tooltip(controls.btn_stop,      VERMILION_TIP_STOP)
-  zui.tooltip(controls.btn_flush,     VERMILION_TIP_FLUSH)
-  zui.tooltip(controls.btn_lib,       VERMILION_TIP_LIB)
-  zui.tooltip(controls.btn_prev_sess, VERMILION_TIP_PREV_SESSION)
-  zui.tooltip(controls.btn_next_sess, VERMILION_TIP_NEXT_SESSION)
-  zui.tooltip(controls.btn_save,      VERMILION_TIP_SAVE)
-  zui.tooltip(controls.btn_prev_view, VERMILION_TIP_PREV_VIEW)
-  zui.tooltip(controls.btn_next_view, VERMILION_TIP_NEXT_VIEW)
-  zui.tooltip(VermilionGraphWindowSettingsBtn, VERMILION_TIP_SETTINGS)
-  zui.tooltip(VermilionGraphWindowCloseBtn, VERMILION_TIP_CLOSE)
   wire_save_hooks()
   M.refresh_record_button()
 
@@ -2357,13 +2339,11 @@ function M.init()
       release_all_pools()
       set_view(view)
     end)
-    hit_c:SetHandler("OnMouseEnter", function(self)
+    hit_c:SetHandler("OnMouseEnter", function()
       label:SetColor(1, 1, 1, 1)
-      ZO_Tooltips_ShowTextTooltip(self, BOTTOM, GetString(view_tips()[view]))
     end)
     hit_c:SetHandler("OnMouseExit", function()
       style_tabs()
-      ZO_Tooltips_HideTextTooltip()
     end)
     controls.tabs[v] = { hit = hit_c, label = label, line = line, band = band }
   end

@@ -111,7 +111,6 @@ function M.init()
   window:SetHidden(true)
   Vermilion.Skin.panel(VermilionAboutBg)
   Vermilion.Skin.close(VermilionAboutCloseBtn)
-  zui.tooltip(VermilionAboutCloseBtn, VERMILION_TIP_CLOSE)
   VermilionAboutWindowTitle:SetText(GetString(VERMILION_ABOUT_TITLE))
   build()
 end

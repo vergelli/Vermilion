@@ -8,7 +8,6 @@ local string_format = string.format
 local math_floor    = math.floor
 local d             = d
 local api           = Vermilion.zenimax.api
-local zui           = Vermilion.zenimax.ui
 local zc            = Vermilion.zenimax.constants
 local zev           = Vermilion.zenimax.events
 local Scene         = Vermilion.zenimax.scene
@@ -58,6 +57,10 @@ local function fmt_ago(ts)
   local days = math_floor((now - (ts or now)) / 86400)
   if days <= 0 then return GetString(VERMILION_LIB_TODAY) end
   return days .. "d"
+end
+
+local function fmt_date(ts)
+  return (api.GetDateStringFromTimestamp and ts and api.GetDateStringFromTimestamp(ts)) or fmt_ago(ts)
 end
 
 local function fmt_k(v)
@@ -248,16 +251,17 @@ function M.refresh()
     row.name:SetText(h.label or h.zone or "?")
     row.name:SetColor(C_NAME.r, C_NAME.g, C_NAME.b, 1)
     row.stats:SetText(string_format(
-      "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r",
+      "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r  |c9e9490%s|r",
       fmt_k(sum.avg or 0), fmt_k(sum.peak or 0),
       (pc == C_PIP_HOT) and "f2c74c" or "d95a4e",
-      math_floor((sum.crit_pct or 0) * 100 + 0.5)))
+      math_floor((sum.crit_pct or 0) * 100 + 0.5),
+      fmt_date(h.ts)))
     row.stats:SetColor(1, 1, 1, 1)
     local kind_icon = Vermilion.ContentKind.icon(h.kind)
     if kind_icon then row.kind:SetTexture(kind_icon) end
     row.kind:SetHidden(kind_icon == nil)
     row.vet:SetHidden((h.difficulty or 0) ~= zc.DUNGEON_DIFFICULTY_VETERAN)
-    row.when:SetText((h.manual and HAND_GLYPH or "") .. fmt_dur(h.dur_ms) .. "  " .. fmt_ago(h.ts))
+    row.when:SetText((h.manual and HAND_GLYPH or "") .. fmt_dur(h.dur_ms))
     row.when:SetColor(C_DIM.r, C_DIM.g, C_DIM.b, 1)
     row.star:SetHidden(not h.locked)
   end
@@ -270,33 +274,11 @@ function M.refresh()
 end
 
 function M.on_row_exit(i)
-  ZO_Tooltips_HideTextTooltip()
   if rows[i] then rows[i].hov:SetHidden(true) end
 end
 
 function M.on_row_enter(i)
-  local idx = row_session[i]
-  if not idx then return end
-  rows[i].hov:SetHidden(false)
-  local s = Vermilion.SessionStore.get(idx)
-  if not s then return end
-  local sum = s.head.sum or {}
-  local h = s.head
-  local when = (api.GetDateStringFromTimestamp and h.ts and api.GetDateStringFromTimestamp(h.ts)) or fmt_ago(h.ts)
-  local diff = ""
-  local kind_label = Vermilion.ContentKind.label(h.kind)
-  if kind_label then diff = "  ·  " .. kind_label end
-  if (h.difficulty or 0) == zc.DUNGEON_DIFFICULTY_VETERAN then diff = diff .. "  ·  " .. GetString(VERMILION_LIB_VETERAN)
-  elseif (h.difficulty or 0) == zc.DUNGEON_DIFFICULTY_NORMAL then diff = diff .. "  ·  " .. GetString(VERMILION_LIB_NORMAL) end
-  local text = string_format(GetString(VERMILION_LIB_ROW_HEAD),
-    when, h.zone or "?", diff, h.group_size or 0, fmt_dur(h.dur_ms))
-  text = text .. "\n" .. string_format(GetString(VERMILION_LIB_ROW_TIP),
-    fmt_k(sum.total_damage or 0), fmt_k(sum.total_shield or 0),
-    math_floor((sum.crit_pct or 0) * 100 + 0.5), sum.hits or 0)
-  if s.head.locked then
-    text = text .. "\n" .. GetString(VERMILION_LIB_ROW_TIP_LOCKED)
-  end
-  ZO_Tooltips_ShowTextTooltip(rows[i].root, TOP, text)
+  if row_session[i] then rows[i].hov:SetHidden(false) end
 end
 
 function M.on_label_focus(on)
@@ -531,10 +513,6 @@ function M.init()
   controls.label_edit:SetDefaultText(GetString(VERMILION_LIB_LABEL_HINT))
   controls.label_btn:SetText(GetString(VERMILION_LIB_LABEL_SAVE))
   controls.label_btn:SetEnabled(false)
-  zui.tooltip(controls.open_btn,   VERMILION_TIP_LIB_OPEN,   TOP)
-  zui.tooltip(controls.lock_btn,   VERMILION_TIP_LIB_LOCK,   TOP)
-  zui.tooltip(controls.delete_btn, VERMILION_TIP_LIB_DELETE, TOP)
-  zui.tooltip(VermilionLibraryCloseBtn, VERMILION_TIP_CLOSE)
 
   controls.title:SetText(GetString(VERMILION_LIB_TITLE))
   controls.title:SetColor(0.75, 0.75, 0.75, 1)

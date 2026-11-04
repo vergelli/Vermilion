@@ -54,7 +54,8 @@ local function persist_graph(key, val)
 end
 
 local function sample_label(ms)
-  return string.format(GetString(VERMILION_SETTINGS_SAMPLE), math_floor(1000 / ms))
+  local hz = math_floor(1000 / ms)
+  return string.format(GetString(VERMILION_SETTINGS_SAMPLE), hz, math_floor(Vermilion.Constants.TEMPORAL.CAPACITY / hz / 60))
 end
 
 local function refresh_all_sliders()
@@ -324,16 +325,6 @@ function M.init()
   controls.title_lighta   = VermilionSettingsPanelLightAlphaTitle
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
-  zui.tooltip(controls.sample_btn,   VERMILION_TIP_SAMPLE)
-  zui.tooltip(VermilionSettingsPanelAboutBtn, VERMILION_TIP_ABOUT)
-  zui.tooltip(controls.sounds_btn,   VERMILION_TIP_SOUNDS)
-  zui.tooltip(controls.light_btn,    VERMILION_TIP_LIGHT)
-  zui.tooltip(controls.kills_btn,    VERMILION_TIP_KILLS)
-  zui.tooltip(controls.avg_btn,      VERMILION_TIP_AVG)
-  zui.tooltip(controls.unknown_btn,  VERMILION_TIP_UNKNOWN)
-  zui.tooltip(controls.logo_btn,     VERMILION_TIP_LOGO)
-  zui.tooltip(controls.reset_btn,    VERMILION_TIP_RESET)
-  zui.tooltip(VermilionSettingsPanelCloseBtn, VERMILION_TIP_CLOSE)
 
   controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION .. (Vermilion.Constants.DEBUG and ("  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
