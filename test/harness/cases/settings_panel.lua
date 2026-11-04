@@ -14,7 +14,6 @@ return function(H)
   local left_col = {
     VermilionSettingsPanelSampleBtn,
     VermilionSettingsPanelSliderTrackVPAlpha,
-    VermilionSettingsPanelSliderTrackCritThresh,
   }
   local right_col = {
     VermilionSettingsPanelUnknownBtn,
@@ -59,29 +58,30 @@ return function(H)
   TB.stop_recording()
   S.on_reset_click()
   eq(S.snapshot().sample_rate_ms, 1000, "reset restores the sample rate")
-  eq(S.snapshot().crit_threshold_pct, 50, "reset restores the crit threshold")
+  eq(S.snapshot().viewport_alpha_pct, 30, "reset restores the viewport alpha")
+  ok(rawget(_G, "VermilionSettingsPanelSliderTrackCritThresh") == nil, "the crit threshold slider is gone")
 
-  local track = VermilionSettingsPanelSliderTrackCritThresh
+  local track = VermilionSettingsPanelSliderTrackVPAlpha
   local function at(pct) H.state.mouse_x = track:GetLeft() + 2 + (track:GetWidth() - 4) * pct end
   at(0.73)
   track._onOnMouseDown(track)
-  eq(S.snapshot().crit_threshold_pct, 73, "a press moves to any percent, not to fixed steps")
-  eq(VermilionSettingsPanelCritThreshLabel._text, "73%", "the label follows")
+  eq(S.snapshot().viewport_alpha_pct, 73, "a press moves to any percent, not to fixed steps")
+  eq(VermilionSettingsPanelVPAlphaLabel._text, "73%", "the label follows")
   at(0.21)
   H.advance(50)
-  eq(S.snapshot().crit_threshold_pct, 21, "dragging follows the mouse")
-  eq(sv.graph.crit_threshold_pct, 21, "and persists")
+  eq(S.snapshot().viewport_alpha_pct, 21, "dragging follows the mouse")
+  eq(sv.graph.viewport_alpha_pct, 21, "and persists")
   at(5)
   H.advance(50)
-  eq(S.snapshot().crit_threshold_pct, 100, "dragging past the end clamps")
+  eq(S.snapshot().viewport_alpha_pct, 100, "dragging past the end clamps")
   track._onOnMouseUp(track)
   at(0.4)
   H.advance(50)
-  eq(S.snapshot().crit_threshold_pct, 100, "releasing ends the drag")
-  local fill = VermilionSettingsCritThreshFill
+  eq(S.snapshot().viewport_alpha_pct, 100, "releasing ends the drag")
+  local fill = VermilionSettingsVPAlphaFill
   ok(fill._w == track:GetWidth() - 4, "a full slider shows the whole fill")
   S.on_reset_click()
-  eq(VermilionSettingsPanelCritThreshLabel._text, "50%", "reset moves the slider back")
+  eq(VermilionSettingsPanelVPAlphaLabel._text, "30%", "reset moves the slider back")
   H.state.mouse_x = nil
 
   local old = {}

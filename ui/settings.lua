@@ -32,7 +32,6 @@ local SAMPLE_1HZ, SAMPLE_2HZ = 1000, 500
 local SAMPLE_DEFAULT = SAMPLE_1HZ
 
 local VPALPHA_DEFAULT = 30
-local CRITTHRESH_DEFAULT = 50
 local LIGHTA_DEFAULT = 40
 
 local sliders = {}
@@ -40,7 +39,6 @@ local sliders = {}
 local controls           = {}
 local current_sample     = SAMPLE_DEFAULT
 local current_vpalpha    = VPALPHA_DEFAULT
-local current_critthresh = CRITTHRESH_DEFAULT
 local current_lighta     = LIGHTA_DEFAULT
 
 local function persist_temporal(key, val)
@@ -60,7 +58,6 @@ end
 
 local function refresh_all_sliders()
   sliders.vpalpha.set(current_vpalpha)
-  sliders.critthresh.set(current_critthresh)
   sliders.lighta.set(current_lighta)
 end
 
@@ -230,12 +227,9 @@ function M.on_reset_click()
   Sound.play("confirm")
   current_sample     = SAMPLE_DEFAULT
   current_vpalpha    = VPALPHA_DEFAULT
-  current_critthresh = CRITTHRESH_DEFAULT
   persist_temporal("sample_rate_ms", current_sample)
   persist_graph("viewport_alpha_pct", current_vpalpha)
-  persist_graph("crit_threshold_pct", current_critthresh)
   Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
-  Vermilion.Graph.set_crit_threshold(current_critthresh)
   controls.sample_btn:SetText(sample_label(current_sample))
   local sv = Vermilion.SavedVars
   if sv and sv.settings then
@@ -266,7 +260,6 @@ function M.snapshot()
     sample_rate_hz      = hz,
     time_window_s       = math_floor(capacity / hz),
     viewport_alpha_pct  = current_vpalpha,
-    crit_threshold_pct  = current_critthresh,
     temporal_capacity   = capacity,
   }
 end
@@ -276,7 +269,7 @@ function M.report_lines()
   return {
     string.format("[config] graph: sample=%dms (%dHz) keeps=%ds capacity=%d",
       s.sample_rate_ms, s.sample_rate_hz, s.time_window_s, s.temporal_capacity),
-    string.format("[config] viewport_alpha=%d%%  crit_threshold=%d%%", s.viewport_alpha_pct, s.crit_threshold_pct),
+    string.format("[config] viewport_alpha=%d%%", s.viewport_alpha_pct),
   }
 end
 
@@ -296,10 +289,8 @@ function M.init()
   M.migrate_recording(sv.temporal, sv.settings)
   current_sample     = sv.temporal.sample_rate_ms or SAMPLE_DEFAULT
   current_vpalpha    = sv.graph.viewport_alpha_pct or VPALPHA_DEFAULT
-  current_critthresh = sv.graph.crit_threshold_pct or CRITTHRESH_DEFAULT
 
   Vermilion.TemporalBuffer.init(Vermilion.Constants.TEMPORAL.CAPACITY)
-  Vermilion.Graph.set_crit_threshold(current_critthresh)
 
   controls.window         = VermilionSettingsPanel
   controls.window:SetHidden(true)
@@ -310,9 +301,6 @@ function M.init()
   controls.title_vpalpha  = VermilionSettingsPanelVPAlphaTitle
   controls.label_vpalpha  = VermilionSettingsPanelVPAlphaLabel
   controls.track_vpalpha  = VermilionSettingsPanelSliderTrackVPAlpha
-  controls.title_critthresh = VermilionSettingsPanelCritThreshTitle
-  controls.label_critthresh = VermilionSettingsPanelCritThreshLabel
-  controls.track_critthresh = VermilionSettingsPanelSliderTrackCritThresh
   controls.reset_btn      = VermilionSettingsPanelResetBtn
   controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
   controls.unknown_label  = VermilionSettingsPanelUnknownLabel
@@ -356,12 +344,11 @@ function M.init()
   controls.avg_btn:SetText(avg_label(M.average_line()))
   current_lighta = sv.settings.light_alpha_pct or LIGHTA_DEFAULT
 
-  for _, k in ipairs({ "vpalpha", "critthresh", "lighta" }) do
+  for _, k in ipairs({ "vpalpha", "lighta" }) do
     controls["title_" .. k]:SetColor(0.75, 0.75, 0.75, 1)
     controls["label_" .. k]:SetColor(0.95, 0.80, 0.20, 1)
   end
   controls.title_vpalpha:SetText(GetString(VERMILION_SETTING_VIEWPORT_ALPHA))
-  controls.title_critthresh:SetText(GetString(VERMILION_SETTING_CRIT_THRESHOLD))
   controls.title_lighta:SetText(GetString(VERMILION_SETTING_LIGHT_ALPHA))
 
   local Slider = Vermilion.Slider
@@ -372,15 +359,6 @@ function M.init()
       current_vpalpha = v
       persist_graph("viewport_alpha_pct", v)
       Vermilion.Graph.set_viewport_alpha(v / 100)
-    end,
-  })
-  sliders.critthresh = Slider.new({
-    name = "VermilionSettingsCritThresh", track = controls.track_critthresh, label = controls.label_critthresh,
-    min = 0, max = 100, value = current_critthresh,
-    on_change = function(v)
-      current_critthresh = v
-      persist_graph("crit_threshold_pct", v)
-      Vermilion.Graph.set_crit_threshold(v)
     end,
   })
   sliders.lighta = Slider.new({

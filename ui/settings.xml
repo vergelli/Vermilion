@@ -85,27 +85,8 @@
           <Dimensions x="272" y="14"/>
         </Control>
 
-        <Label name="$(parent)CritThreshTitle"
-               font="ZoFontGameSmall"
-               horizontalAlignment="LEFT"
-               verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="106"/>
-          <Dimensions x="160" y="12"/>
-        </Label>
-        <Label name="$(parent)CritThreshLabel"
-               font="ZoFontGameSmall"
-               horizontalAlignment="RIGHT"
-               verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="206" offsetY="106"/>
-          <Dimensions x="80" y="12"/>
-        </Label>
-        <Control name="$(parent)SliderTrackCritThresh" mouseEnabled="true">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="121"/>
-          <Dimensions x="272" y="14"/>
-        </Control>
-
         <Button name="$(parent)SampleBtn" mouseEnabled="true" font="ZoFontGameSmall" inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="146"/>
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="108"/>
           <Dimensions x="272" y="24"/>
           <OnClicked>Vermilion.Settings.on_sample_click()</OnClicked>
         </Button>
