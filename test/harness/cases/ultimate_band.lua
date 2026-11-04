@@ -44,6 +44,8 @@ return function(H)
   ok(snap.bars[1] == 41001 and snap.bars[2] == 41002, "both bars know their ultimate")
   ok(snap.steps > 10, "power updates build the charge curve, steps=" .. snap.steps)
   ok(snap.used == 1, "the cast registers exactly once, used=" .. snap.used)
+  local _, _, real = U.casts()
+  ok(real == 1, "the power drop is one real cast, got " .. real)
   ok(snap.abilities == 2, "one ability record per bar at session start, got " .. snap.abilities)
   local st = U.steps()
   ok(U.pct_at(st[1], 1) <= 0.2, "charge starts near zero")
@@ -176,5 +178,27 @@ return function(H)
   H.slotted = nil
   H.state.ult_costs = nil
   H.state.active_bar = nil
+  Vermilion.Metrics.reset()
+
+  Vermilion.Metrics.reset()
+  Vermilion.Visibility.set("graph", true)
+  G.on_flush_click()
+  G.on_record_click()
+  H.ult_power(300)
+  H.advance(1000)
+  for _ = 1, 20 do
+    H.ult_used()
+    H.advance(150)
+  end
+  H.damage_out({ hit = 1000 })
+  H.ult_power(50)
+  H.advance(1000)
+  H.ult_used()
+  H.advance(1000)
+  G.on_stop_click()
+  local sum = U.summary()
+  ok(sum.casts == 1, "pressing the button without casting is not a cast, got " .. sum.casts)
+  G.on_flush_click()
+  Vermilion.Visibility.set("graph", false)
   Vermilion.Metrics.reset()
 end

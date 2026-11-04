@@ -20,8 +20,7 @@ function M.by_name(TB)
   local t_prev = nil
   for k = 1, n do
     local s = TB.at(k)
-    local dt = t_prev and (s.t - t_prev) / 1000 or 1
-    if dt <= 0 then dt = 1 end
+    local dt = t_prev and (s.t - t_prev) / 1000 or 0
     t_prev = s.t
     local eos = ((s.eDPS or 0) + (s.ShDPS or 0)) * dt
     if eos > 0 then

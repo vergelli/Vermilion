@@ -111,7 +111,7 @@ local function draw_ult_band_at(t0, span, x_left, bw, t_last)
   local nb = math_floor(bw / 4)
   if nb < 1 then return end
   local st, sv, ns = U.steps()
-  local ut, ub, un = U.used()
+  local ut, ub, un = U.casts()
   local at, ab, ai, ac, an = U.abilities()
   local t_hi = t0 + span
   VIS.ult.t0, VIS.ult.span, VIS.ult.xl, VIS.ult.bw = t0, span, x_left, bw
