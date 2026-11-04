@@ -57,6 +57,7 @@ local function rec_reset(rec, id)
   rec.open_t0      = nil
   wipe(rec.holders)
   wipe(rec.holders_n)
+  wipe(rec.holder_ids)
   wipe(rec.units_ever)
   wipe(rec.ids)
 end
@@ -69,7 +70,7 @@ local function rec_acquire(id)
     n_free = n_free - 1
   else
     rec = { iv_t0 = {}, iv_t1 = {}, step_t = {}, step_c = {}, holders = {},
-            holders_n = {}, units_ever = {}, ids = {} }
+            holders_n = {}, holder_ids = {}, units_ever = {}, ids = {} }
   end
   rec_reset(rec, id)
   return rec
@@ -222,33 +223,49 @@ local function close_interval(rec, t)
   rec.open_t0 = nil
 end
 
-local function holder_add(rec, unitId, endTime, t)
-  local n = rec.holders_n[unitId]
-  if n == nil or n == 0 then
-    rec.holders_n[unitId] = 1
+local function holder_add(rec, unitId, endTime, t, abilityId)
+  local n = rec.holders_n[unitId] or 0
+  local ids = rec.holder_ids[unitId]
+  if not ids then
+    ids = {}
+    rec.holder_ids[unitId] = ids
+  end
+  local fresh = n == 0
+  if fresh then
     rec.conc = rec.conc + 1
     if rec.conc > rec.max_conc then rec.max_conc = rec.conc end
     if rec.conc == 1 then open_interval(rec, t) end
     push_step(rec, t)
     rec.holders[unitId] = endTime or 0
   else
-    rec.holders_n[unitId] = n + 1
     local et = endTime or 0
     if et > (rec.holders[unitId] or 0) then rec.holders[unitId] = et end
+  end
+  if not ids[abilityId] then
+    ids[abilityId] = true
+    rec.holders_n[unitId] = n + 1
   end
   if not rec.units_ever[unitId] then
     rec.units_ever[unitId] = true
     rec.unique_units = rec.unique_units + 1
   end
+  return fresh
 end
 
-local function holder_remove(rec, unitId, t, force)
+local function holder_remove(rec, unitId, t, force, abilityId)
   local n = rec.holders_n[unitId]
   if n == nil or n == 0 then return end
-  if force then n = 1 end
-  if n > 1 then
-    rec.holders_n[unitId] = n - 1
-    return
+  local ids = rec.holder_ids[unitId]
+  if not force then
+    if not ids or not ids[abilityId] then return end
+    ids[abilityId] = nil
+    n = n - 1
+    if n > 0 then
+      rec.holders_n[unitId] = n
+      return
+    end
+  elseif ids then
+    wipe(ids)
   end
   rec.holders_n[unitId] = 0
   rec.holders[unitId] = nil
@@ -278,20 +295,24 @@ function M.on_effect(changeType, abilityId, unitId, endTime, now_ms, unitTag, ef
       note_excluded(abilityId, effectType, "not a debuff")
       return
     end
+    if changeType == EFFECT_RESULT_UPDATED and (endTime or 0) * 1000 <= now_ms then
+      local known = by_id[abilityId]
+      if not known or (known.holders_n[unitId] or 0) == 0 then
+        bump("debuffs.empty_update")
+        return
+      end
+    end
     local rec = get_rec(abilityId)
     if not rec then return end
-    if changeType == EFFECT_RESULT_GAINED then
+    if changeType == EFFECT_RESULT_GAINED then bump("debuffs.gained") else bump("debuffs.refreshed") end
+    if holder_add(rec, unitId, endTime, now_ms, abilityId) then
       rec.applications = rec.applications + 1
-      bump("debuffs.gained")
-    else
-      bump("debuffs.refreshed")
     end
-    holder_add(rec, unitId, endTime, now_ms)
   elseif changeType == EFFECT_RESULT_FADED then
     local rec = by_id[abilityId]
     if rec then
       bump("debuffs.faded")
-      holder_remove(rec, unitId, now_ms)
+      holder_remove(rec, unitId, now_ms, false, abilityId)
     end
   end
 end
@@ -416,7 +437,7 @@ function M.load_session(metas, steps, t0, t1)
       conc_avg = m.conc_avg or 0, longest_gap_ms = m.longest_gap_ms or 0,
       n_steps = 0, step_t = {}, step_c = {},
       n_iv = 0, iv_t0 = {}, iv_t1 = {},
-      holders = {}, holders_n = {}, units_ever = {}, ids = { m.id }, n_ids = 1,
+      holders = {}, holders_n = {}, holder_ids = {}, units_ever = {}, ids = { m.id }, n_ids = 1,
     }
     n_tracked = i
   end

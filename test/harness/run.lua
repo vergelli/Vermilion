@@ -25,6 +25,7 @@ local CASES = {
   "film_test",
   "about",
   "export",
+  "effect_events",
   "session_store",
   "content_kind",
   "auto_record",
