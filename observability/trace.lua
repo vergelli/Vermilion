@@ -39,6 +39,7 @@ local CONST_NAMES = {
   "ACTION_RESULT_HOT_TICK_CRITICAL", "ACTION_RESULT_HEAL_ABSORBED",
   "EFFECT_RESULT_GAINED", "EFFECT_RESULT_FADED", "EFFECT_RESULT_UPDATED",
   "EFFECT_RESULT_FULL_REFRESH", "EFFECT_RESULT_TRANSFER",
+  "COMBAT_MECHANIC_FLAGS_MAGICKA", "COMBAT_MECHANIC_FLAGS_STAMINA", "COMBAT_MECHANIC_FLAGS_ULTIMATE",
   "POWERTYPE_HEALTH", "BUFF_EFFECT_TYPE_BUFF", "BUFF_EFFECT_TYPE_DEBUFF",
   "COMBAT_UNIT_TYPE_PLAYER", "COMBAT_UNIT_TYPE_PLAYER_PET",
   "COMBAT_UNIT_TYPE_GROUP", "COMBAT_UNIT_TYPE_OTHER",
@@ -219,6 +220,17 @@ end
 function M.init()
   zev.register("Vermilion_Trace_CE", C.EVENT_COMBAT_EVENT, function(...) rec("CE", ...) end)
   zev.register("Vermilion_Trace_EF", C.EVENT_EFFECT_CHANGED, function(...) rec("EF", ...) end)
+  if C.EVENT_POWER_UPDATE then
+    zev.register("Vermilion_Trace_PU", C.EVENT_POWER_UPDATE, function(...) rec("PU", ...) end)
+    zev.add_filter("Vermilion_Trace_PU", C.EVENT_POWER_UPDATE, C.REGISTER_FILTER_UNIT_TAG, "player")
+  end
+  if C.EVENT_ACTION_SLOT_ABILITY_USED then
+    zev.register("Vermilion_Trace_SU", C.EVENT_ACTION_SLOT_ABILITY_USED, function(slot)
+      if not active then return end
+      local id, pool, cost = Vermilion.Casts.slot_info(slot)
+      rec("SU", slot, id, pool, cost)
+    end)
+  end
   zev.register("Vermilion_Trace_CS", C.EVENT_PLAYER_COMBAT_STATE, function(in_combat) rec("CS", in_combat) end)
   if C.EVENT_UNIT_DEATH_STATE_CHANGED then
     zev.register("Vermilion_Trace_DE", C.EVENT_UNIT_DEATH_STATE_CHANGED, function(tag, dead) rec("DE", tag, dead) end)

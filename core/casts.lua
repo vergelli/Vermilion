@@ -68,6 +68,16 @@ local function slot_cost(api, zc, slot, cat, id)
   return 0, 0
 end
 
+function M.slot_info(slot)
+  local api, zc = Vermilion.zenimax.api, Vermilion.zenimax.constants
+  if not api.GetSlotBoundId then return 0, 0, 0 end
+  local cat = api.GetActiveHotbarCategory and api.GetActiveHotbarCategory() or zc.HOTBAR_CATEGORY_PRIMARY
+  local id = slot_ability(api, zc, slot, cat)
+  if id <= 0 then return 0, 0, 0 end
+  local pool, cost = slot_cost(api, zc, slot, cat, id)
+  return id, pool, cost
+end
+
 function M.on_used(slot)
   bump("casts.used")
   if not recording or n >= CAP then return end
