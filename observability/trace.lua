@@ -224,6 +224,9 @@ function M.on_record(sv)
   reset()
   M.start()
   record_power_baseline()
+  local U = Vermilion.Ultimate
+  U.refresh_slots()
+  rec("UC", U.bar_id(1) or 0, U.cost(1) or 0, U.bar_id(2) or 0, U.cost(2) or 0)
 end
 
 function M.on_stop(sv)

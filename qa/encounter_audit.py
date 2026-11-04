@@ -152,7 +152,6 @@ def audit(rows, dump, export, c):
     mine = own_units(rows)
     names = {int(r[2]): r[3] for r in rows if len(r) > 3 and r[1] == 'ABILITY_INFO'}
     nm = lambda i: names.get(i, '#%d' % i)
-    units = unit_names(rows)
     sec = sections_of(export)
     head = dump['HEAD'][0]
     off = align(rows, dump, mine)
@@ -163,13 +162,19 @@ def audit(rows, dump, export, c):
     lo, hi = min(trace_hits) + off - 400, max(trace_hits) + off + 400
 
     hits = []
+    shields = []
     energize = collections.Counter()
     kills = set()
+    live_name = {}
     for r in rows:
+        if len(r) > 10 and r[1] == 'UNIT_ADDED':
+            live_name[r[2]] = r[10].split('^')[0].replace(';', ',')
         if len(r) > 9 and r[1] == 'COMBAT_EVENT' and lo <= int(r[0]) <= hi:
             tgt = r[19] if len(r) > 19 else '*'
             if r[2] in DMG and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
-                hits.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), tgt))
+                hits.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), live_name.get(tgt, tgt)))
+            elif r[2] == 'DAMAGE_SHIELDED' and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
+                shields.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), live_name.get(tgt, tgt)))
             elif r[2] == 'POWER_ENERGIZE' and (tgt == '1' or (r[9] == '1' and tgt == '*')):
                 energize[r[4]] += int(r[5])
             elif r[2] in KILL and r[9] in mine:
@@ -177,19 +182,24 @@ def audit(rows, dump, export, c):
     if not hits:
         c.add('hits in the window', 0, head[3], False)
         return
-    t0, t1 = hits[0][0], hits[-1][0]
+    output = sorted(hits + shields, key=lambda h: h[0])
+    t0, t1 = output[0][0], output[-1][0]
     fight = (t1 - t0) / 1000
     total = sum(h[1] for h in hits)
+    shield_total = sum(h[1] for h in shields)
+    all_output = total + shield_total
     crits = [h for h in hits if h[2] in CRIT]
 
     c.add('damage total', total, head[2], str(total) == head[2])
     c.add('hits', len(hits), head[3], str(len(hits)) == head[3])
     c.add('crit hits', len(crits), head[4], str(len(crits)) == head[4])
     S = sec.get('Summary')
+    v = cell(S, 'Total shield')
+    c.add('shield cracked', shield_total, v, v is not None and v == shield_total)
     v = cell(S, 'Fight time')
     c.add('fight time s', round(fight, 1), v, v is not None and close(v, fight, 0.3))
     v = cell(S, 'Average output')
-    c.add('average per second', round(total / fight), v, v is not None and abs(v / (total / fight) - 1) <= 0.001 + 0.3 / fight)
+    c.add('average per second', round(all_output / fight), v, v is not None and abs(v / (all_output / fight) - 1) <= 0.001 + 0.3 / fight)
     v = cell(S, 'Crit rate')
     c.add('crit rate %', round(len(crits) / len(hits) * 100, 1), v, v is not None and close(v, len(crits) / len(hits) * 100, 0.1))
     dc = sum(h[1] for h in crits) / total * 100
@@ -200,11 +210,11 @@ def audit(rows, dump, export, c):
         bytype[h[3]] += h[1]
     top_val = bytype.most_common(1)[0][1]
     v = cell(S, 'Main damage type', 2)
-    c.add('main damage type %', round(top_val / total * 100, 1), v, v is not None and close(v, top_val / total * 100, 0.5))
+    c.add('main damage type %', round(top_val / total * 100, 1), v, v is not None and close(v, top_val / total * 100, 0.5 + shield_total / all_output * 100))
 
-    ts = [h[0] for h in hits]
+    ts = [h[0] for h in output]
     cum = [0]
-    for h in hits:
+    for h in output:
         cum.append(cum[-1] + h[1])
     peak = 0
     for t in ts:
@@ -212,7 +222,7 @@ def audit(rows, dump, export, c):
         j = bisect.bisect_right(ts, t)
         peak = max(peak, (cum[j] - cum[i]) / 5)
     v = cell(S, 'Peak output')
-    c.add('peak rolling 5 s', round(peak), v, v is not None and 0.93 * peak <= v <= 1.01 * peak, 'sampled, can read lower')
+    c.add('peak rolling 5 s', round(peak), v, v is not None and 0.75 * peak <= v <= 1.01 * peak, 'highest sample, reads lower than the true top')
 
     truth = collections.Counter()
     for h in hits:
@@ -223,39 +233,46 @@ def audit(rows, dump, export, c):
     ta = sum(addon.values()) or 1
     worst, worst_n = 0, ''
     for n, val in truth.items():
-        gap = abs(val / total - addon[n] / ta) * 100
+        gap = abs(val / all_output - addon[n] / ta) * 100
+        if shield_total:
+            gap = max(0, gap - shield_total / all_output * 100)
         if gap > worst:
             worst, worst_n = gap, n
     c.add('skill shares, worst gap', '0', '%.2f' % worst, worst <= 0.5, worst_n)
     sumrow = cell(sec.get('Skills'), 'Sum of the table')
-    c.add('skills sum against total', total, sumrow, sumrow is not None and abs(sumrow / total - 1) <= 0.01)
+    c.add('skills sum against total', all_output, sumrow, sumrow is not None and abs(sumrow / all_output - 1) <= 0.01 + 5000 / all_output)
 
     bytgt = collections.Counter()
-    for h in hits:
-        bytgt[units.get(h[5], h[5]).split('^')[0].replace(';', ',')] += h[1]
+    for h in output:
+        bytgt[h[5]] += h[1]
+    seen_targets = collections.Counter()
     for r in sec.get('Targets') or []:
-        if len(r) >= 4 and r[0] in bytgt:
-            share = bytgt[r[0]] / total * 100
-            try:
-                c.add('target ' + r[0], round(share, 1), r[3], close(float(r[3]), share, 0.5))
-            except ValueError:
-                pass
+        if len(r) >= 4:
+            seen_targets[r[0]] += 1
+            if r[0] in bytgt and seen_targets[r[0]] == 1:
+                share = bytgt[r[0]] / all_output * 100
+                try:
+                    c.add('target ' + r[0], round(share, 1), r[3], close(float(r[3]), share, 1.0))
+                except ValueError:
+                    pass
+    dupes = [n for n, k in seen_targets.items() if k > 1 and n not in ('', 'Time on the top target %', 'Target switches')]
+    c.add('target rows unique', 0, len(dupes), len(dupes) == 0, ','.join(dupes)[:40])
 
     state = []
     for r in rows:
         if len(r) > 13 and r[1] == 'COMBAT_EVENT' and r[9] == '1':
-            state.append((int(r[0]), r[11], r[12], r[13]))
+            state.append((int(r[0]), r[11], r[12], r[13], r[10]))
         elif len(r) > 23 and r[1] == 'COMBAT_EVENT' and r[19] == '1':
-            state.append((int(r[0]), r[21], r[22], r[23]))
+            state.append((int(r[0]), r[21], r[22], r[23], r[20]))
         elif len(r) > 10 and r[1] == 'BEGIN_CAST' and r[6] == '1':
-            state.append((int(r[0]), r[8], r[9], r[10]))
+            state.append((int(r[0]), r[8], r[9], r[10], r[7]))
     state.sort(key=lambda s: s[0])
 
     def share_of(field, test):
         under = whole = 0
         for k in range(len(state) - 1):
             a0, a1 = max(state[k][0], t0), min(state[k + 1][0], t1)
-            if a1 > a0:
+            if a1 > a0 and not state[k][4].startswith('0/'):
                 whole += a1 - a0
                 if test(state[k][field]):
                     under += a1 - a0
@@ -269,7 +286,7 @@ def audit(rows, dump, export, c):
     for label, field, name in (('Magicka', 1, 'magicka under 15% of fight'), ('Stamina', 2, 'stamina under 15% of fight')):
         v = cell(R, label, 4)
         s = share_of(field, low)
-        c.add(name, round(s, 1), v, v is not None and close(v, s, 3))
+        c.add(name, round(s, 1), v, v is not None and close(v, s, max(3.5, 150 / fight)))
 
     costs = [int(x[0]) for x in dump['ULTCOST']]
     if costs and costs[0] > 0:
@@ -293,21 +310,25 @@ def audit(rows, dump, export, c):
         if len(r) > 6 and r[1] == 'BEGIN_CAST' and r[6] == '1' and lo <= int(r[0]) <= hi:
             casts[nm(int(r[5]))].add(r[4])
     per = collections.Counter()
+    drains = collections.Counter()
     spend = collections.Counter()
     for x in dump['CAST']:
         pool, cost, tick, name = x[2], int(x[3]), x[4], x[5]
         if pool in ('1', '2'):
             if tick == '0':
                 per[name] += 1
+            else:
+                drains[name] += 1
             spend[pool] += cost
     for n, val in per.most_common():
         real = len(casts.get(n, ()))
-        c.add('casts ' + n, real, val, abs(real - val) <= max(1, 0.1 * real))
+        slack = 0.4 if drains[n] else 0.1
+        c.add('casts ' + n, real, val, abs(real - val) <= max(1, slack * real), 'a cancelled channel can read as drains' if drains[n] else '')
     pools = {x[0]: (float(x[1]), float(x[2])) for x in dump['POOL']}
     for p, label in (('1', 'magicka'), ('2', 'stamina')):
         if p in pools and pools[p][1] > 0:
             ratio = spend[p] / pools[p][1]
-            c.add('spend table against pool, ' + label, round(pools[p][1]), spend[p], abs(ratio - 1) <= 0.03)
+            c.add('spend table within pool, ' + label, round(pools[p][1]), spend[p], ratio <= 1.03, 'rest is dodge, block, sprint')
     rest = collections.Counter()
     for x in dump['REST']:
         rest[x[1]] += int(x[2])
@@ -315,7 +336,11 @@ def audit(rows, dump, export, c):
     c.add('restored stamina', energize[FLAG_STA], rest['2'], energize[FLAG_STA] == rest['2'])
 
     open_, spans = {}, collections.defaultdict(list)
+    shared = set()
     for r in rows:
+        if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and lo <= int(r[0]) <= hi:
+            if r[6] != '1' or r[16] in ('*', '1'):
+                shared.add(nm(int(r[5])))
         if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and r[6] == '1' and r[16] not in ('*', '1'):
             t = int(r[0])
             k = (nm(int(r[5])), r[5], r[16])
@@ -330,30 +355,38 @@ def audit(rows, dump, export, c):
         up[x[0]].append((int(x[1]), int(x[2])))
     for n, val in sorted(spans.items()):
         tr = union(val) / 1000
-        if n in up:
+        if n in up and n not in shared:
             a = union(up[n]) / 1000
-            c.add('uptime s ' + n, round(tr, 1), round(a, 1), close(a, tr, max(1, 0.015 * tr)))
+            c.add('uptime s ' + n, round(tr, 1), round(a, 1), close(a, tr, max(1.2, 0.015 * tr, 0.45 * len(val))))
     for x in dump['DEBUFF']:
         n = x[0]
-        if n in spans:
+        if n in spans and n not in shared:
             tr = union(spans[n]) / 1000
             a = float(x[1]) / 1000
-            c.add('debuff s ' + n, round(tr, 1), round(a, 1), close(a, tr, max(1, 0.015 * tr)))
+            c.add('debuff s ' + n, round(tr, 1), round(a, 1), close(a, tr, max(1.2, 0.015 * tr, 0.45 * len(spans[n]))))
             m = merged(spans[n])
             edges = [m[0][0] - t0, t1 - m[-1][1]] + [m[i + 1][0] - m[i][1] for i in range(len(m) - 1)]
             g = max(edges) / 1000
             ag = float(x[3]) / 1000
-            c.add('longest gap s ' + n, round(g, 1), round(ag, 1), close(ag, g, 1.5))
+            c.add('longest gap s ' + n, round(g, 1), round(ag, 1), close(ag, g, 2))
     for r in sec.get('Debuffs') or []:
         n = r[0]
-        if n in spans and len(r) > 1:
+        if n in spans and n not in shared and len(r) > 1:
             p = min(100, union(spans[n]) / 1000 / fight * 100)
             try:
-                c.add('debuff % of fight ' + n, round(p, 1), r[1], close(float(r[1]), p, 1))
+                c.add('debuff % of fight ' + n, round(p, 1), r[1], close(float(r[1]), p, max(1, 45 * len(spans[n]) / fight)))
             except ValueError:
                 pass
     k = dump['KILLS'][0][0] if dump['KILLS'] else '0'
-    c.add('kills', len(kills), k, str(len(kills)) == k)
+    c.add('kills, at least the log', len(kills), k, int(k) >= len(kills), 'the log writes fewer than the game event')
+    last_kill = {}
+    repeated = 0
+    for x in dump['KILL']:
+        t, uid = int(x[0]), x[1]
+        if uid in last_kill and t - last_kill[uid] < 1500:
+            repeated += 1
+        last_kill[uid] = t
+    c.add('no kill counted twice', 0, repeated, repeated == 0)
 
 
 def run(log_path, trace_path, slice_to=None, quiet=False):

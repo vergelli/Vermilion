@@ -10,6 +10,7 @@ local SIG = {
   GR = "bnsn",
   PU = "snnnnn",
   SU = "nnnnn",
+  UC = "nnnn",
   EP = "n",
   MK = "sn",
 }

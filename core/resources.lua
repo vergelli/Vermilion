@@ -10,7 +10,7 @@ local MAG, STA = 1, 2
 local FLOW_CAP = 65535
 local LOW = 0.15
 local GRACE_MS = 3000
-local DEATH_DROP = 0.5
+local DEATH_DROP = 0.1
 
 local recording = false
 local cur    = { 0, 0 }
@@ -22,6 +22,7 @@ local saw_any = false
 local dead = false
 local grace = { 0, 0 }
 local deaths_t = {}
+local deaths_end = {}
 local n_deaths = 0
 local DEATH_CAP = 256
 
@@ -41,14 +42,19 @@ function M.on_power(p, value, powerMax, effectiveMax)
   local mx = max[p]
   if effectiveMax and effectiveMax > 0 then mx = effectiveMax
   elseif powerMax and powerMax > 0 then mx = powerMax end
+  if dead then
+    local api = Vermilion.zenimax.api
+    if api.IsUnitDead and not api.IsUnitDead("player") then M.on_death(false) end
+  end
   if seen[p] and not dead then
     local d = value - cur[p]
     if d < 0 then
-      if value == 0 and -d >= mx * DEATH_DROP then
-        grace[p] = now_ms() + GRACE_MS
+      local t = now_ms()
+      local cast = Vermilion.Casts.on_drop(p, -d, t)
+      if value == 0 and not cast and -d >= mx * DEATH_DROP then
+        grace[p] = t + GRACE_MS
       else
         spent[p] = spent[p] - d
-        Vermilion.Casts.on_drop(p, -d, now_ms())
       end
     elseif d > 0 and now_ms() >= grace[p] then
       gained[p] = gained[p] + d
@@ -83,20 +89,25 @@ function M.on_death(is_dead)
     if recording and n_deaths < DEATH_CAP then
       n_deaths = n_deaths + 1
       deaths_t[n_deaths] = now_ms()
+      deaths_end[n_deaths] = 0
     end
   elseif dead then
     dead = false
+    if n_deaths > 0 and deaths_end[n_deaths] == 0 then deaths_end[n_deaths] = now_ms() end
     local until_ms = now_ms() + GRACE_MS
     grace[MAG], grace[STA] = until_ms, until_ms
   end
 end
 
-function M.deaths() return deaths_t, n_deaths end
+function M.deaths() return deaths_t, n_deaths, deaths_end end
 function M.is_dead() return dead end
 
 function M.load_session(recs)
   recs = recs or {}
-  for i = 1, #recs do deaths_t[i] = recs[i].t or 0 end
+  for i = 1, #recs do
+    deaths_t[i] = recs[i].t or 0
+    deaths_end[i] = recs[i].e or deaths_t[i]
+  end
   n_deaths = #recs
 end
 
@@ -161,6 +172,7 @@ function M.summary(TB)
   local prev_t = nil
   local lo, hi = Vermilion.Metrics.fight_bounds()
   local inside, mag_zero, sta_zero, mag_known, sta_known = 0, 0, 0, false, false
+  local di = 1
   for i = 1, n do
     local s = TB.at(i)
     if prev_t then r.damage = r.damage + ((s.eDPS or 0) + (s.ShDPS or 0)) * (s.t - prev_t) / 1000 end
@@ -173,7 +185,9 @@ function M.summary(TB)
     r.sta_out = r.sta_out + (s.sta_out or 0)
     if m > 0 then mag_known = true end
     if st > 0 then sta_known = true end
-    if not lo or (s.t >= lo and s.t <= hi) then
+    while di <= n_deaths and deaths_end[di] > 0 and deaths_end[di] < s.t do di = di + 1 end
+    local is_dead = di <= n_deaths and s.t >= deaths_t[di]
+    if (not lo or (s.t >= lo and s.t <= hi)) and not is_dead then
       inside = inside + 1
       if m == 0 then mag_zero = mag_zero + 1 elseif m < LOW then r.mag_low = r.mag_low + 1 end
       if st == 0 then sta_zero = sta_zero + 1 elseif st < LOW then r.sta_low = r.sta_low + 1 end

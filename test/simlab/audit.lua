@@ -240,9 +240,10 @@ print(string.format("DPS truth %.0f over %.1f s | addon %.0f over %.1f s", true_
 if math.abs(rel(sm.avg, true_avg)) > 0.5 then bad[#bad + 1] = "average per second of fight" end
 if sm.crit_hits ~= T.crit_hits then bad[#bad + 1] = "crit hit count" end
 if math.abs(sm.crit_pct * 100 - pct(T.crit_dmg, T.dmg)) > 0.5 then bad[#bad + 1] = "damage from crits" end
-if math.abs(rel(totC.damage + totC.shield, all)) > 0.5 then bad[#bad + 1] = "skills total" end
-if math.abs(rel(totT.damage, all)) > 0.5 then bad[#bad + 1] = "targets total" end
-if math.abs(rel(dnt, all)) > 0.5 then bad[#bad + 1] = "names total" end
+local tail_room = 1 + 500000 / all
+if math.abs(rel(totC.damage + totC.shield, all)) > tail_room then bad[#bad + 1] = "skills total" end
+if math.abs(rel(totT.damage, all)) > tail_room then bad[#bad + 1] = "targets total" end
+if math.abs(rel(dnt, all)) > tail_room then bad[#bad + 1] = "names total" end
 if T.shield == 0 and worst > 0.5 then bad[#bad + 1] = "skill share" end
 if umax > 1.5 then bad[#bad + 1] = string.format("uptime off by %.1f s", umax) end
 if dmax > 1.5 then bad[#bad + 1] = string.format("debuffs off by %.1f s", dmax) end

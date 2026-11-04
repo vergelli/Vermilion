@@ -98,6 +98,7 @@ local DESC = {
   },
   deaths = {
     { name = "t", width = 4 },
+    { name = "e", width = 4 },
   },
 }
 
@@ -317,12 +318,14 @@ function M.capture(cooperative)
     if amt > 65535 then amt = 65535 end
     restore_recs[i] = { t = rel, id = rti[i] or 0, pool = rtp[i] or 0, amt = amt }
   end
-  local dts, dn = Vermilion.Resources.deaths()
+  local dts, dn, dte = Vermilion.Resources.deaths()
   local death_recs = {}
   for i = 1, dn do
     local rel = dts[i] - t0
     if rel < 0 then rel = 0 end
-    death_recs[i] = { t = rel }
+    local back = (dte[i] > 0) and (dte[i] - t0) or (t_end - t0)
+    if back < rel then back = rel end
+    death_recs[i] = { t = rel, e = back }
   end
 
   local total_damage, total_shield, total_crit, hits, crit_hits = Vermilion.Metrics.totals()
