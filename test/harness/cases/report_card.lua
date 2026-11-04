@@ -40,7 +40,7 @@ return function(H)
   ok(VermilionHoverCardRowName4._text == "Peak at" and (VermilionHoverCardRowVal4._text or ""):find("s") ~= nil, "row 4 says when the peak was")
   ok(VermilionHoverCardRowName5._text == "Time dealing damage" and (VermilionHoverCardRowVal5._text or ""):find("%%"), "row 5 is the active share")
   ok(VermilionHoverCardRowName6._text == "Main damage type" and (VermilionHoverCardRowVal6._text or ""):find("100%%"), "row 6 names the main damage type, got " .. tostring(VermilionHoverCardRowVal6._text))
-  ok((VermilionHoverCardTime._text or ""):find("copy") ~= nil, "the card must tell the user the chip is clickable")
+  ok((VermilionHoverCardTime._text or ""):find("export") ~= nil, "the card must tell the user the chip is clickable")
   ok(VermilionHoverCard._draw_tier == DT_HIGH, "the card draws above every label")
   hit._onOnMouseExit(hit)
   ok(VermilionHoverCard._hidden == true, "leaving the chip closes the report")
@@ -90,13 +90,9 @@ return function(H)
 
   H.sounds = {}
   hit._onOnMouseUp(hit, nil, true)
-  ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("click")), "clicking the chip must confirm with a sound")
-  ok(Vermilion.CopyBox.is_visible(), "clicking the chip must open the copy box")
-  local eb = rawget(_G, "VermilionCopyBoxEdit")
-  local txt = eb and eb._text or ""
-  ok(txt:find("Damage report", 1, true) ~= nil and txt:find("Hits:", 1, true) ~= nil and txt:find("|c", 1, true) == nil,
-     "copy text must carry the report in plain text: " .. txt)
-  Vermilion.CopyBox.hide()
+  ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("open")), "clicking the chip opens the export window")
+  ok(VermilionExport._hidden == false, "clicking the chip must open the export")
+  Vermilion.Export.hide()
 
   local session = Vermilion.SessionStore.capture()
   ok(G.load_session(session), "captured session must reload")

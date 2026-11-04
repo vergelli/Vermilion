@@ -124,6 +124,7 @@ function M.on_session_start()
 end
 
 function M.session_start() return start_ms end
+function M.start_meta() return start_zone, start_group end
 
 local function lib_root()
   local sv = Vermilion.SavedVars

@@ -90,6 +90,9 @@ local function on_slash(input)
       for m in string.gmatch(input, "(%d+)") do list[#list + 1] = tonumber(m) end
       if #list == 0 then list = { 8, 20, 30, 45, 60 } end
       Vermilion.CopyBox.show("Vermilion film test", Vermilion.FilmTest.run(list, GetGameTimeMilliseconds)) ; return
+    elseif cmd == "copytest" then
+      local size, got = Vermilion.Export.copy_test(tonumber(string.match(input, "(%d+)")))
+      d(string.format("[copytest] sent %d, box holds %d", size, got)) ; return
     elseif cmd == "gcprobe" then
 
       local n = tonumber(string_match(input, "^%s*%S+%s+(%d+)")) or 1000
@@ -229,6 +232,7 @@ local function on_addon_loaded()
   Vermilion.Assign.init()
   Vermilion.Library.init()
   Vermilion.About.init()
+  Vermilion.Export.init()
   Vermilion.Visibility.init()
 
   Vermilion.slash = on_slash

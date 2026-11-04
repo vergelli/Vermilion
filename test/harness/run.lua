@@ -24,6 +24,7 @@ local CASES = {
   "xml_anchors",
   "film_test",
   "about",
+  "export",
   "session_store",
   "content_kind",
   "auto_record",

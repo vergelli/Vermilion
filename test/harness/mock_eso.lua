@@ -241,7 +241,12 @@ local MOCKC = {
     elseif k == "GetLeft" then fn = function(s) local r = H.layout(s) return r.x end
     elseif k == "GetRight" then fn = function(s) local r = H.layout(s) return r.x + r.w end
     elseif k == "GetCenter" then fn = function(s) local r = H.layout(s) return r.x + r.w / 2, r.y + r.h / 2 end
-    elseif k == "SetText" then fn = function(s, t) s._text = t end
+    elseif k == "SetText" then fn = function(s, t)
+      if s._max and type(t) == "string" and #t > s._max then t = t:sub(1, s._max) end
+      s._text = t
+    end
+    elseif k == "TakeFocus" then fn = function(s) s._focused = true end
+    elseif k == "LoseFocus" then fn = function(s) s._focused = false end
     elseif k == "GetText" then fn = function(s) return s._text or "" end
     elseif k == "GetStringWidth" then
       fn = function(s, text)

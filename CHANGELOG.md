@@ -7,6 +7,7 @@ All notable changes to Vermilion are documented here. This project follows
 
 ### Closing pass (November 2026)
 
+- New Export button and window: the whole session as plain text ready to copy, with skills, targets, uptime, debuffs, resources, ultimate, kills and a timeline; long reports split into parts
 - About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them

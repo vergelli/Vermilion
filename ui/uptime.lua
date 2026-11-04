@@ -567,6 +567,14 @@ function M.reset_scroll() scroll[1], scroll[2], scroll[3] = 0, 0, 0 end
 function M.clear_hover() hover_key = nil end
 function M.hovered() return hover_key end
 function M.rows() return order, order.n, rows end
+function M.compute()
+  local TB = Vermilion.TemporalBuffer
+  local n = TB.count()
+  if n == 0 then return order, 0, rows end
+  build(TB, TB.at(n).t)
+  compute_steady()
+  return order, order.n, rows
+end
 function M.costs() return cost_order, cost_order.n end
 function M.lane() return lane end
 function M.rects() return sec_rect end
