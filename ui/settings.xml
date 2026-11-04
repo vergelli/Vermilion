@@ -26,14 +26,6 @@
           <Dimensions x="24" y="24"/>
         </Texture>
 
-        <Label name="$(parent)WindowTitle"
-               font="ZoFontWindowTitle"
-               horizontalAlignment="LEFT"
-               verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="42" offsetY="10"/>
-          <Dimensions y="18"/>
-        </Label>
-
         <Label name="$(parent)VersionLabel"
                font="ZoFontGameSmall"
                horizontalAlignment="RIGHT"

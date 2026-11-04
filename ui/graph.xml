@@ -79,15 +79,6 @@
           <Anchor point="CENTER" relativePoint="TOP" offsetY="2"/>
         </Texture>
 
-        <!-- Title -->
-        <Label name="$(parent)TitleLabel"
-               font="ZoFontGameSmall"
-               horizontalAlignment="LEFT"
-               verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="42" offsetY="12"/>
-          <Dimensions x="128" y="14"/>
-        </Label>
-
         <Button name="$(parent)SettingsBtn"
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
@@ -227,36 +218,6 @@
           <Anchor point="LEFT" relativeTo="$(parent)StatusLabel" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
           <Anchor point="RIGHT" relativePoint="TOPRIGHT" offsetX="-60" offsetY="45"/>
           <Dimensions y="14"/>
-        </Label>
-
-        <!-- Live DPS readout: weapons icon (idle/active) + current EOS value.
-             Sits in the TITLE row on the LEFT, just after the title (well clear
-             of the gear); the view nav owns the controls-row right like Verdant. -->
-        <Texture name="$(parent)DpsIcon"
-                 textureFile="/esoui/art/treeicons/collection_indexicon_weapons_up.dds">
-          <Anchor point="TOPLEFT" offsetX="174" offsetY="6"/>
-          <Dimensions x="26" y="26"/>
-        </Texture>
-
-        <Label name="$(parent)ReadoutLabel"
-               font="ZoFontGameLarge"
-               horizontalAlignment="LEFT"
-               verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="204" offsetY="6"/>
-          <Dimensions x="64" y="26"/>
-        </Label>
-
-
-        <Texture name="$(parent)CritIcon" textureFile="EsoUI/Art/LFG/LFG_icon_dps.dds">
-          <Anchor point="LEFT" relativeTo="$(parent)ReadoutLabel" relativePoint="RIGHT" offsetX="6" offsetY="0"/>
-          <Dimensions x="20" y="20"/>
-        </Texture>
-        <Label name="$(parent)CritLabel"
-               font="ZoFontGame"
-               horizontalAlignment="LEFT"
-               verticalAlignment="CENTER">
-          <Anchor point="LEFT" relativeTo="$(parent)CritIcon" relativePoint="RIGHT" offsetX="3" offsetY="0"/>
-          <Dimensions x="40" y="18"/>
         </Label>
 
         <!-- View navigation: [<<] [SKILL] [>] — in the controls row, far right,

@@ -16,7 +16,6 @@ return function(H)
   ok(VermilionGraphWindowChromeTop._hidden == true, "chrome strips must hide")
   ok(VermilionGraphWindowBg._hidden == true, "outer border must hide")
   ok(VermilionGraphWindowRecordBtn._hidden == true, "record button must hide")
-  ok(VermilionGraphWindowReadoutLabel._hidden == true, "the live readout hides with the chrome")
   ok(VermilionGraphWindowStopBtn._hidden == true, "minimal controls stay hidden until hover")
   ok(math.abs((VermilionGraphWindow._alpha or 1) - 0.4) < 0.01,
      "window must dim to the configured alpha, got " .. tostring(VermilionGraphWindow._alpha))

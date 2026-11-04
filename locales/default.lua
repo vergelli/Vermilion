@@ -16,7 +16,6 @@ ZO_CreateStringId("VERMILION_BUFFER_CLEARED", "Buffers cleared.")
 ZO_CreateStringId("VERMILION_LOADED",         "Vermilion v%s loaded. Type %s to toggle.")
 
 -- Settings panel
-ZO_CreateStringId("VERMILION_SETTINGS_TITLE",         "Vermilion Settings")
 ZO_CreateStringId("VERMILION_SETTINGS_RESET",         "Reset to Defaults")
 ZO_CreateStringId("VERMILION_SETTING_VIEWPORT_ALPHA", "Viewport Alpha")
 ZO_CreateStringId("VERMILION_SETTING_CRIT_THRESHOLD", "Crit-rate threshold")
@@ -45,7 +44,6 @@ ZO_CreateStringId("VERMILION_HELP_GRAPH",   "  /vermilion         toggle the dam
 ZO_CreateStringId("VERMILION_HELP_HELP",    "  /vermilion help    show this list")
 
 -- Graph window
-ZO_CreateStringId("VERMILION_GRAPH_TITLE",   "Damage Analysis")
 ZO_CreateStringId("VERMILION_DEBUG_TAG",     "debug")
 ZO_CreateStringId("VERMILION_GRAPH_SETTINGS", "Settings")
 ZO_CreateStringId("VERMILION_ABOUT_TITLE", "About")
@@ -304,5 +302,4 @@ ZO_CreateStringId("VERMILION_BUFF_FAM_MOBILITY",    "Mobility")
 ZO_CreateStringId("VERMILION_BUFF_FAM_STATUS",      "Status effect: burning, poisoned and the rest")
 ZO_CreateStringId("VERMILION_BUFF_FAM_CONTROL",     "Control: taunts, stuns and snares")
 
-ZO_CreateStringId("VERMILION_READOUT_IDLE",     "idle")
 ZO_CreateStringId("VERMILION_REPORT_MAIN_TYPE", "Main damage type")
