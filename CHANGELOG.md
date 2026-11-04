@@ -13,6 +13,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Recordings keep 30 minutes at 1 Hz or 15 at 2 Hz, with no length setting; older long sessions still open whole
 - Settings: saved profiles and the heavy combination warning are gone
 - Own library, save and arrow icons, and a veined scrollbar in the Session Library
+- About window from Settings: author, credits and what Vermilion takes up on disk and in memory
 - Settings: sliders drag continuously, with gold veined lacquer and the ruby as the handle
 - RESOURCES: Best Return list, ranked so a cheap lucky cast does not top it
 - UPTIME: one view, steadiness moved to the row card, refresh totals box

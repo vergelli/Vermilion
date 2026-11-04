@@ -9,7 +9,7 @@ local in_hud = true
 local user_visible = { graph = false }
 local restore = {}
 local graph_shown = false
-local AUX_WINDOWS = { "VermilionSettingsPanel", "VermilionSettingsConfirm", "VermilionLibrary", "VermilionAssignPanel" }
+local AUX_WINDOWS = { "VermilionSettingsPanel", "VermilionLibrary", "VermilionAbout", "VermilionAssignPanel" }
 
 local function apply()
   if VermilionGraphWindow then

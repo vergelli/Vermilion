@@ -104,6 +104,7 @@ function M.toggle()
     Sound.play("open")
   else
     Scene.hide_top_level(win)
+    Vermilion.About.hide()
     Sound.play("close")
   end
 end
@@ -281,7 +282,7 @@ end
 function M.init()
   Vermilion.Skin.panel(VermilionSettingsPanelBg)
   Vermilion.Skin.buttons({
-    VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
+    VermilionSettingsPanelAboutBtn, VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
     VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
   })
@@ -324,6 +325,7 @@ function M.init()
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
   zui.tooltip(controls.sample_btn,   VERMILION_TIP_SAMPLE)
+  zui.tooltip(VermilionSettingsPanelAboutBtn, VERMILION_TIP_ABOUT)
   zui.tooltip(controls.sounds_btn,   VERMILION_TIP_SOUNDS)
   zui.tooltip(controls.light_btn,    VERMILION_TIP_LIGHT)
   zui.tooltip(controls.kills_btn,    VERMILION_TIP_KILLS)
@@ -338,6 +340,7 @@ function M.init()
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
   M.refresh_dev_button()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
+  VermilionSettingsPanelAboutBtn:SetText(GetString(VERMILION_ABOUT_TITLE))
   controls.sample_btn:SetText(sample_label(current_sample))
   M.refresh_unknown_count()
   controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)
