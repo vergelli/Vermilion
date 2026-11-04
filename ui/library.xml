@@ -159,7 +159,7 @@
           <Dimensions x="110" y="24"/>
           <OnClicked>Vermilion.Library.on_lock_click()</OnClicked>
           <Controls>
-            <Texture name="$(parent)Icon" textureFile="EsoUI/Art/Miscellaneous/locked_up.dds">
+            <Texture name="$(parent)Icon" textureFile="Vermilion/assets/skin/lock_closed.dds">
               <Anchor point="LEFT" offsetX="10" offsetY="0"/>
               <Dimensions x="16" y="16"/>
             </Texture>
@@ -174,7 +174,7 @@
           <Dimensions x="110" y="24"/>
           <OnClicked>Vermilion.Library.on_delete_click()</OnClicked>
           <Controls>
-            <Texture name="$(parent)Icon" textureFile="EsoUI/Art/Buttons/decline_up.dds">
+            <Texture name="$(parent)Icon" textureFile="Vermilion/assets/skin/delete.dds">
               <Anchor point="LEFT" offsetX="10" offsetY="0"/>
               <Dimensions x="16" y="16"/>
             </Texture>
