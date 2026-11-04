@@ -164,6 +164,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
     nm = lambda i: names.get(i, '#%d' % i)
     sec = sections_of(export)
     head = dump['HEAD'][0]
+    exact = len(head) > 9 and head[9] == '1'
     if window:
         lo, hi = window
     else:
@@ -227,13 +228,13 @@ def audit(rows, dump, export, c, window=None, recording=None):
     c.add('crit rate %', round(len(crits) / len(hits) * 100, 1), v, v is not None and close(v, len(crits) / len(hits) * 100, 0.1))
     dc = sum(h[1] for h in crits) / total * 100
     v = cell(S, 'Damage from crits')
-    c.add('damage from crits %', round(dc, 1), v, v is not None and close(v, dc, 0.5))
+    c.add('damage from crits %', round(dc, 1), v, v is not None and close(v, dc, 0.06 if exact else 0.5))
     bytype = collections.Counter()
     for h in hits:
         bytype[h[3]] += h[1]
     top_val = bytype.most_common(1)[0][1]
     v = cell(S, 'Main damage type', 2)
-    c.add('main damage type %', round(top_val / total * 100, 1), v, v is not None and close(v, top_val / total * 100, 0.5 + shield_total / all_output * 100))
+    c.add('main damage type %', round(top_val / total * 100, 1), v, v is not None and close(v, top_val / total * 100, (0.06 if exact else 0.5) + shield_total / all_output * 100))
 
     ts = [h[0] for h in output]
     cum = [0]
@@ -261,9 +262,9 @@ def audit(rows, dump, export, c, window=None, recording=None):
             gap = max(0, gap - shield_total / all_output * 100)
         if gap > worst:
             worst, worst_n = gap, n
-    c.add('skill shares, worst gap', '0', '%.2f' % worst, worst <= 0.5, worst_n)
+    c.add('skill shares, worst gap', '0', '%.2f' % worst, worst <= (0.01 if exact else 0.5), worst_n)
     sumrow = cell(sec.get('Skills'), 'Sum of the table')
-    c.add('skills sum against total', all_output, sumrow, sumrow is not None and abs(sumrow / all_output - 1) <= 0.01 + 5000 / all_output)
+    c.add('skills sum against total', all_output, sumrow, sumrow is not None and (abs(sumrow - all_output) <= 1 if exact else abs(sumrow / all_output - 1) <= 0.01 + 5000 / all_output))
 
     bytgt = collections.Counter()
     for h in output:
@@ -275,7 +276,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
             if r[0] in bytgt and seen_targets[r[0]] == 1:
                 share = bytgt[r[0]] / all_output * 100
                 try:
-                    c.add('target ' + r[0], round(share, 1), r[3], close(float(r[3]), share, 1.0))
+                    c.add('target ' + r[0], round(share, 1), r[3], close(float(r[3]), share, 0.06 if exact else 1.0))
                 except ValueError:
                     pass
     dupes = [n for n, k in seen_targets.items() if k > 1 and n not in ('', 'Time on the top target %', 'Target switches')]

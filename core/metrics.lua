@@ -75,7 +75,19 @@ local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 
 
 local fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 
+local ex_skills, ex_skills_abs, ex_shields = {}, {}, {}
+local ex_tg, ex_tg_abs, ex_tg_name, ex_tg_type = {}, {}, {}, {}
+local ex_live = {
+  skills = ex_skills, skills_abs = ex_skills_abs, shields = ex_shields,
+  targets = ex_tg, targets_abs = ex_tg_abs, target_names = ex_tg_name, target_types = ex_tg_type,
+}
+local ex_loaded = nil
+
 function M.session_mark()
+  for _, t in pairs(ex_live) do
+    for k in pairs(t) do t[k] = nil end
+  end
+  ex_loaded = nil
   tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
   fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 end
@@ -86,7 +98,30 @@ local function note_fight(t)
   if not fight_last or t > fight_last then fight_last = t end
 end
 
-function M.set_fight_ms(ms, first) fight_loaded, fight_loaded_first = ms, first end
+function M.set_fight_ms(ms, first, exact) fight_loaded, fight_loaded_first, ex_loaded = ms, first, exact end
+
+function M.exact()
+  if fight_loaded then return ex_loaded end
+  return ex_live
+end
+
+function M.exact_copy()
+  local out = {}
+  for name, t in pairs(ex_live) do
+    local c = {}
+    for k, v in pairs(t) do c[k] = v end
+    out[name] = c
+  end
+  return out
+end
+
+function M.output_total()
+  local ex = M.exact()
+  if not ex then return nil end
+  local total = 0
+  for _, v in pairs(ex.skills) do total = total + v end
+  return total
+end
 
 function M.fight_bounds()
   if fight_loaded then
@@ -121,6 +156,12 @@ function M.ingest_damage_out(ev)
     tot_hits   = tot_hits + 1
     tot_overkill = tot_overkill + (ev.overflow or 0)
     note_fight(ev.t)
+    local key = (ev.ability_id or 0) * 64 + (ev.damage_type or 0) + 1
+    ex_skills[key] = (ex_skills[key] or 0) + amt
+    local uid = ev.target_unit_id or 0
+    ex_tg[uid] = (ex_tg[uid] or 0) + amt
+    ex_tg_name[uid] = ev.target_name
+    ex_tg_type[uid] = ev.target_type
     if is_crit(ev) then
       tot_crit = tot_crit + amt
       tot_crit_hits = tot_crit_hits + 1
@@ -136,6 +177,20 @@ function M.ingest_shield_out(ev)
   if amt > 0 then
     tot_shield = tot_shield + amt
     note_fight(ev.t)
+    local aid = ev.attack_id or 0
+    local dt = (aid > 0) and (ev.attack_dtype or 0) or DT_SHIELD
+    local key = aid * 64 + dt + 1
+    ex_skills[key] = (ex_skills[key] or 0) + amt
+    ex_skills_abs[key] = (ex_skills_abs[key] or 0) + amt
+    local sid = ev.ability_id or 0
+    ex_shields[sid] = (ex_shields[sid] or 0) + amt
+    local uid = ev.target_unit_id or 0
+    ex_tg[uid] = (ex_tg[uid] or 0) + amt
+    ex_tg_abs[uid] = (ex_tg_abs[uid] or 0) + amt
+    if ex_tg_name[uid] == nil then
+      ex_tg_name[uid] = ev.target_name
+      ex_tg_type[uid] = ev.target_type
+    end
     shield_out_buf:push(ev)
   else
     event_pool:release(ev)

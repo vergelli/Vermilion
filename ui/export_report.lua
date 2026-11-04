@@ -82,7 +82,7 @@ local function skills_section()
   lines[#lines + 1] = GetString(VERMILION_EXPORT_SKILLS_SUM) .. ";" .. int(total)
   local TB = Vermilion.TemporalBuffer
   local lo = Vermilion.Metrics.fight_bounds()
-  if lo and TB.count() > 0 and TB.at(1).t > lo + 2000 then
+  if not Vermilion.Metrics.exact() and lo and TB.count() > 0 and TB.at(1).t > lo + 2000 then
     lines[#lines + 1] = string_format(GetString(VERMILION_EXPORT_PARTIAL), secs(TB.at(TB.count()).t - TB.at(1).t))
   end
   return section(GetString(VERMILION_EXPORT_SEC_SKILLS), GetString(VERMILION_EXPORT_COL_SKILLS), lines)

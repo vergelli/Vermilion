@@ -7,7 +7,7 @@ end
 return function(out_path, sess, hits)
   local w = assert(io.open(out_path, "wb"))
   local sum = sess.head.sum
-  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1)
+  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1, sum.exact and 1 or 0)
   for _, h in ipairs(hits or {}) do line(w, "HIT", h[1], h[2], h[3], h[4]) end
 
   local t, id, pool, cost, n, tick = Vermilion.Casts.records()
@@ -22,13 +22,20 @@ return function(out_path, sess, hits)
 
   local TB = Vermilion.TemporalBuffer
   local ab = {}
-  for i = 2, TB.count() do
-    local s = TB.at(i)
-    local eos = ((s.eDPS or 0) + (s.ShDPS or 0)) * (s.t - TB.at(i - 1).t) / 1000
-    local list = s.eos_abilities
-    for k = 1, (list and list.count or 0) do
-      local e = list[k]
-      ab[e.id] = (ab[e.id] or 0) + (e.share or 0) * eos
+  if sum.exact then
+    for key, v in pairs(sum.exact.skills) do
+      local aid = math.floor(key / 64)
+      ab[aid] = (ab[aid] or 0) + v
+    end
+  else
+    for i = 2, TB.count() do
+      local s = TB.at(i)
+      local eos = ((s.eDPS or 0) + (s.ShDPS or 0)) * (s.t - TB.at(i - 1).t) / 1000
+      local list = s.eos_abilities
+      for k = 1, (list and list.count or 0) do
+        local e = list[k]
+        ab[e.id] = (ab[e.id] or 0) + (e.share or 0) * eos
+      end
     end
   end
   for aid, v in pairs(ab) do line(w, "ABIL", aid, string.format("%.1f", v), GetAbilityName(aid) or "") end

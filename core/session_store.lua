@@ -352,13 +352,14 @@ function M.capture(cooperative)
         peak = math_floor(peak_eos + 0.5),
         avg_edps = math_floor(sum_edps / n_series + 0.5),
         peak_edps = math_floor(peak_edps + 0.5),
-        crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0,
+        crit_pct = (total_damage > 0 and total_crit / total_damage) or ((sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit))) or 0,
         total_damage = total_damage,
         total_shield = total_shield,
         total_crit = total_crit,
         hits = hits,
         crit_hits = crit_hits,
         overkill = overkill,
+        exact = Vermilion.Metrics.exact_copy(),
         fight_ms = Vermilion.Metrics.fight_ms(),
         fight_t0 = (function()
           local lo = Vermilion.Metrics.fight_bounds()

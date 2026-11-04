@@ -103,6 +103,39 @@ local function lane_label(rec)
   return rec.name ~= "" and rec.name or tostring(rec.id)
 end
 
+local function rec_for(id, raw, ttype)
+  local is_player = (ttype == UNIT_ENEMY_PLAYER)
+  local rec
+  if is_player then
+    rec = by_id[id]
+    if not rec then rec = { id = id, name = "", raw = nil, is_player = true, n = 1, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_id[id] = rec end
+  else
+    local base = base_name(raw)
+    rec = by_name[base]
+    if not rec then rec = { id = id, name = "", raw = nil, is_player = false, n = 0, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_name[base] = rec end
+  end
+  if rec.gen ~= gen then
+    rec.gen = gen
+    rec.total = 0
+    rec.abs = 0
+    rec.n = is_player and 1 or 0
+    order.n = order.n + 1
+    order[order.n] = rec
+  end
+  local plain = base_name(raw)
+  if plain ~= rec.raw then
+    rec.raw = plain
+    rec.name = plain
+  end
+  if not is_player and seen[id] ~= gen then
+    seen[id] = gen
+    rec.n = rec.n + 1
+    rec.id = id
+  end
+  rec.ttype = ttype or rec.ttype
+  return rec
+end
+
 local function aggregate()
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()
@@ -119,37 +152,7 @@ local function aggregate()
     local best, best_v = nil, 0
     for k = 1, (list and list.count or 0) do
       local e = list[k]
-      local id = e.id or 0
-      local raw = e.name or ""
-      local is_player = (e.ttype == UNIT_ENEMY_PLAYER)
-      local rec
-      if is_player then
-        rec = by_id[id]
-        if not rec then rec = { id = id, name = "", raw = nil, is_player = true, n = 1, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_id[id] = rec end
-      else
-        local base = base_name(raw)
-        rec = by_name[base]
-        if not rec then rec = { id = id, name = "", raw = nil, is_player = false, n = 0, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_name[base] = rec end
-      end
-      if rec.gen ~= gen then
-        rec.gen = gen
-        rec.total = 0
-        rec.abs = 0
-        rec.n = is_player and 1 or 0
-        order.n = order.n + 1
-        order[order.n] = rec
-      end
-      local plain = base_name(raw)
-      if plain ~= rec.raw then
-        rec.raw = plain
-        rec.name = plain
-      end
-      if not is_player and seen[id] ~= gen then
-        seen[id] = gen
-        rec.n = rec.n + 1
-        rec.id = id
-      end
-      rec.ttype = e.ttype or rec.ttype
+      local rec = rec_for(e.id or 0, e.name or "", e.ttype)
       local v = (e.share or 0) * eos
       if dt > 0 then
         rec.total = rec.total + v * dt
@@ -162,6 +165,18 @@ local function aggregate()
     if i == 1 then totals.t0 = s.t end
     totals.t_hi = s.t
     prev_t = s.t
+  end
+  local ex = Vermilion.Metrics.exact()
+  if ex and ex.targets then
+    for r = 1, order.n do order[r].total = 0; order[r].abs = 0 end
+    totals.damage = 0
+    local names, types, abs = ex.target_names, ex.target_types, ex.targets_abs
+    for id, amt in pairs(ex.targets) do
+      local rec = rec_for(id, names[id] or "", types[id])
+      rec.total = rec.total + amt
+      rec.abs = rec.abs + (abs[id] or 0)
+      totals.damage = totals.damage + amt
+    end
   end
   for k = order.n + 1, #order do order[k] = nil end
   for k = n + 1, #dom do dom[k] = nil end
