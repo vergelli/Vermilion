@@ -155,4 +155,20 @@ return function(H)
   while view_label._text ~= "SKILL" do G.next_view() end
   Vermilion.Visibility.set("graph", false)
   Vermilion.Metrics.reset()
+  G.on_flush_click()
+  G.on_record_click()
+  H.state.mouse_x, H.state.mouse_y = 400, 300
+  while view_label._text ~= "CONTRIB" do G.next_view() end
+  local tinted = 0
+  for _, c in ipairs(H.controls) do
+    if (c._name or ""):find("^VermilionContribIcon") then c:SetColor(0.2, 1, 0.2, 0.3); tinted = tinted + 1 end
+  end
+  ok(tinted > 0, "the shared icon pool has objects to dirty")
+  G.rerender()
+  for _, c in ipairs(H.controls) do
+    if c._hidden == false and (c._name or ""):find("^VermilionContribIcon") then
+      ok(c._r == 1 and c._g == 1 and c._b == 1, "an icon keeps no tint left by another view")
+    end
+  end
+  G.on_stop_click()
 end

@@ -2238,7 +2238,10 @@ function M.init()
     end, fill_reset)
   controls.pool_c_icon = Pool.new("VermilionContribIcon", controls.canvas, CT_TEXTURE,
     function(c) c:SetPixelRoundingEnabled(false) end,
-    function(c) c:SetHidden(true) end)
+    function(c)
+      c:SetHidden(true)
+      c:SetColor(1, 1, 1, 1)
+    end)
   controls.pool_c_lbl = Pool.new("VermilionContribLbl", controls.canvas, CT_LABEL,
     function(c)
       c:SetFont("ZoFontGameSmall")
