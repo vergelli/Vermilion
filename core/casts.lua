@@ -9,10 +9,18 @@ local log = Vermilion.Log.for_module("casts")
 local CAP = 4000
 local COST_CAP = 65535
 local MAG, STA = 1, 2
+local PEND_CAP = 8
+local PRESS_WINDOW_MS = 1500
+local TICK_WINDOW_MS = 1500
+local COST_TOLERANCE = 0.15
 
 local recording = false
 local n = 0
-local cast_t, cast_id, cast_pool, cast_cost = {}, {}, {}, {}
+local cast_t, cast_id, cast_pool, cast_cost, cast_tick = {}, {}, {}, {}, {}
+local pend = {
+  [MAG] = { n = 0, t = {}, id = {}, cost = {}, last_id = 0, last_cost = 0, last_t = 0 },
+  [STA] = { n = 0, t = {}, id = {}, cost = {}, last_id = 0, last_cost = 0, last_t = 0 },
+}
 local acc = {}
 
 local function bump(key) Vermilion.Diagnostics.bump(key) end
@@ -78,6 +86,73 @@ function M.slot_info(slot)
   return id, pool, cost
 end
 
+local function push(t, id, pool, cost, tick)
+  if n >= CAP then return end
+  if cost > COST_CAP then cost = COST_CAP end
+  n = n + 1
+  cast_t[n], cast_id[n], cast_pool[n], cast_cost[n], cast_tick[n] = t, id, pool, cost, tick
+end
+
+local function pend_remove(q, i)
+  for k = i, q.n - 1 do
+    q.t[k], q.id[k], q.cost[k] = q.t[k + 1], q.id[k + 1], q.cost[k + 1]
+  end
+  q.n = q.n - 1
+end
+
+local function pend_expire(q, t)
+  while q.n > 0 and t - q.t[1] > PRESS_WINDOW_MS do pend_remove(q, 1) end
+end
+
+local function pend_clear()
+  for p = MAG, STA do
+    local q = pend[p]
+    q.n, q.last_id, q.last_cost, q.last_t = 0, 0, 0, 0
+  end
+end
+
+function M.stage(id, pool, cost, t)
+  if not recording then return end
+  local q = pend[pool]
+  if not q or cost <= 0 then
+    push(t, id, pool, cost, 0)
+    return
+  end
+  pend_expire(q, t)
+  if q.n >= PEND_CAP then pend_remove(q, 1) end
+  q.n = q.n + 1
+  q.t[q.n], q.id[q.n], q.cost[q.n] = t, id, cost
+end
+
+function M.on_drop(pool, amount, t)
+  if not recording then return end
+  local q = pend[pool]
+  if not q then return end
+  pend_expire(q, t)
+  local best, best_gap = nil, 0
+  for i = 1, q.n do
+    local gap = math.abs(amount - q.cost[i])
+    if gap <= q.cost[i] * COST_TOLERANCE and (not best or gap < best_gap) then
+      best, best_gap = i, gap
+    end
+  end
+  if best then
+    local id, cost = q.id[best], q.cost[best]
+    for i = q.n, 1, -1 do
+      if q.id[i] == id then pend_remove(q, i) end
+    end
+    push(t, id, pool, amount, 0)
+    q.last_id, q.last_cost, q.last_t = id, cost, t
+    return
+  end
+  if q.last_id > 0 and t - q.last_t <= TICK_WINDOW_MS and math.abs(amount - q.last_cost) <= q.last_cost * COST_TOLERANCE then
+    push(t, q.last_id, pool, amount, 1)
+    q.last_t = t
+    return
+  end
+  bump("casts.drop_unmatched")
+end
+
 function M.on_used(slot)
   bump("casts.used")
   if not recording or n >= CAP then return end
@@ -87,28 +162,29 @@ function M.on_used(slot)
   local id = slot_ability(api, zc, slot, cat)
   if id <= 0 then return end
   local pool, cost = slot_cost(api, zc, slot, cat, id)
-  if cost > COST_CAP then cost = COST_CAP end
-  n = n + 1
-  cast_t[n], cast_id[n], cast_pool[n], cast_cost[n] = now_ms(), id, pool, cost
+  M.stage(id, pool, cost, now_ms())
 end
 
 function M.start_session()
   recording = true
   n = 0
+  pend_clear()
 end
 
 function M.finalize()
   if not recording then return end
   recording = false
+  pend_clear()
   log:info("session finalize: casts=", n)
 end
 
 function M.reset()
   recording = false
   n = 0
+  pend_clear()
 end
 
-function M.records() return cast_t, cast_id, cast_pool, cast_cost, n end
+function M.records() return cast_t, cast_id, cast_pool, cast_cost, n, cast_tick end
 function M.count() return n end
 function M.is_recording() return recording end
 
@@ -121,6 +197,7 @@ function M.load_session(recs)
     cast_id[i]   = r.id or 0
     cast_pool[i] = r.pool or 0
     cast_cost[i] = r.cost or 0
+    cast_tick[i] = r.tick or 0
   end
   n = #recs
   log:info("session loaded: casts=", n)

@@ -40,14 +40,24 @@ return function(H)
   sv.settings.session_autosave = true
   sv.library = { version = 1, sessions = {} }
   G.on_record_click()
-  H.skill_used(3); H.skill_used(4); H.skill_used(5); H.skill_used(3)
-  H.skill_used(8)
-  H.skill_used(1)
-  H.skill_used(6)
+  local pool_left = { [POWERTYPE_MAGICKA] = 9000000, [POWERTYPE_STAMINA] = 9000000 }
+  H.res_power(POWERTYPE_MAGICKA, pool_left[POWERTYPE_MAGICKA], 9000000)
+  H.res_power(POWERTYPE_STAMINA, pool_left[POWERTYPE_STAMINA], 9000000)
+  local function cast(slot, ptype, spend)
+    H.skill_used(slot)
+    if ptype then
+      pool_left[ptype] = pool_left[ptype] - spend
+      H.res_power(ptype, pool_left[ptype], 9000000)
+    end
+  end
+  cast(3, POWERTYPE_MAGICKA, 2500); cast(4, POWERTYPE_STAMINA, 2200); cast(5); cast(3, POWERTYPE_MAGICKA, 2500)
+  cast(8)
+  cast(1)
+  cast(6, POWERTYPE_STAMINA, 1800)
   H.state.active_bar = HOTBAR_CATEGORY_BACKUP
-  H.skill_used(3)
+  cast(3, POWERTYPE_MAGICKA, 4300)
   H.state.active_bar = HOTBAR_CATEGORY_PRIMARY
-  H.skill_used(7)
+  cast(7, POWERTYPE_MAGICKA, 3553)
   local t, id, pool, cost, n = Cst.records()
   ok(n == 7, "seven skill casts recorded, the ultimate and the first slot ignored, got " .. n)
   ok(id[7] == 61000 and pool[7] == 1 and cost[7] == 3553, "a scribed skill is recorded under its real ability with its magicka cost, got " .. tostring(id[7]) .. " pool " .. tostring(pool[7]) .. " cost " .. tostring(cost[7]))
@@ -74,9 +84,9 @@ return function(H)
   H.crafted[8] = 61000
   H.ability_costs[61000] = { base = 3780, flags = MAGF, cost = { [MAGF] = 3553 } }
 
-  for _ = 1, 600 do H.skill_used(3) end
+  for _ = 1, 600 do cast(3, POWERTYPE_MAGICKA, 2500) end
   local alloc = H.addon_alloc(function()
-    for _ = 1, 200 do H.skill_used(3) end
+    for _ = 1, 200 do cast(3, POWERTYPE_MAGICKA, 2500) end
   end)
   ok(alloc < (HARNESS_DEBUG and 40000 or 64), string.format("two hundred casts into warm arrays allocate %.0f addon-side bytes", alloc))
   ok(Cst.count() == 808, "every cast was kept, got " .. Cst.count())

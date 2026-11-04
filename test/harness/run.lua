@@ -26,6 +26,7 @@ local CASES = {
   "about",
   "export",
   "effect_events",
+  "cast_confirm",
   "session_store",
   "content_kind",
   "auto_record",
