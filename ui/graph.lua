@@ -104,7 +104,7 @@ local recording_start_ms = 0
 local summary_text       = nil
 local CHIP               = { H = 0, W = 0 }
 local SCR                = { hex = setmetatable({}, { __mode = "k" }) }
-local last_readout, last_crit_pct, last_elapsed = nil, nil, nil
+local last_elapsed = nil
 
 local VIEW_BY_SKILL   = 1
 local VIEW_BY_TYPE    = 2
@@ -154,12 +154,8 @@ local C_CARD_STAT, C_CARD_NAME, C_CARD_TIME = HC.C_STAT, HC.C_NAME, HC.C_TIME
 
 local C_CROSSHAIR   = { r = 1.00, g = 0.38, b = 0.26, a = 0.85 }
 
-local C_CRIT_IDLE  = { r = 0.55, g = 0.55, b = 0.55, a = 0.85 }
 local C_CRIT_BELOW = { r = 0.90, g = 0.32, b = 0.28, a = 1.0 }
-local C_CRIT_ON    = { r = 0.95, g = 0.78, b = 0.30, a = 1.0 }
-local C_CRIT_ABOVE = { r = 0.42, g = 0.85, b = 0.45, a = 1.0 }
 M.KIND = { time = VIS.gold, damage = C_LINE_EDPS, shield = C_SHDPS, crit = C_CRIT, magicka = VIS.mag, stamina = VIS.sta, ultimate = VIS.ready, warn = C_CRIT_BELOW, neutral = C_CARD_STAT }
-local CRIT_MARGIN  = 5
 
 -- small helpers
 local function fmt_val(v)
@@ -177,63 +173,6 @@ local function fmt_readout(v)
 end
 
 
-local DPS_ICON_IDLE   = "/esoui/art/treeicons/collection_indexicon_weapons_up.dds"
-local DPS_ICON_ACTIVE = "/esoui/art/treeicons/collection_indexicon_weapons_down.dds"
-
-local function update_header(eos)
-  local idle = eos <= 0 and not Vermilion.TemporalBuffer.is_recording()
-  local v = idle and -1 or math_floor(eos + 0.5)
-  if v == last_readout then return end
-  local was_idle = (last_readout == -1)
-  last_readout = v
-  if idle then
-    controls.readout:SetText(GetString(VERMILION_READOUT_IDLE))
-    controls.readout:SetColor(0.52, 0.48, 0.48, 0.85)
-  else
-    controls.readout:SetText(fmt_readout(eos))
-    if was_idle or last_readout == nil then
-      controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
-    end
-  end
-  controls.dps_icon:SetTexture(eos > 0 and DPS_ICON_ACTIVE or DPS_ICON_IDLE)
-end
-
-local function apply_crit(c, txt)
-  controls.crit:SetText(txt)
-  controls.crit:SetColor(c.r, c.g, c.b, c.a)
-  if controls.icon then controls.icon:SetColor(c.r, c.g, c.b, c.a) end
-end
-
-local function update_crit(now)
-  if not controls.crit then return end
-  local crit, tot = Vermilion.Metrics.crit_rate(now)
-  if tot <= 0 then
-    if last_crit_pct ~= -1 then
-      last_crit_pct = -1
-      apply_crit(C_CRIT_IDLE, "—")
-    end
-    return
-  end
-  local pct = math_floor(crit / tot * 100 + 0.5)
-  if pct == last_crit_pct then return end
-  last_crit_pct = pct
-  local c
-  if pct < crit_threshold_pct - CRIT_MARGIN then
-    c = C_CRIT_BELOW
-  elseif pct > crit_threshold_pct + CRIT_MARGIN then
-    c = C_CRIT_ABOVE
-  else
-    c = C_CRIT_ON
-  end
-  apply_crit(c, pct .. "%")
-end
-
-local function header_tick()
-  if controls.window:IsHidden() then return end
-  local now = GetGameTimeMilliseconds()
-  update_header(Vermilion.Metrics.eDPS(now) + Vermilion.Metrics.ShDPS(now))
-  update_crit(now)
-end
 
 local Pool = Vermilion.lib.plot.Pool
 
@@ -1075,7 +1014,6 @@ function light.chrome(hidden)
   VermilionGraphWindowSettingsBtn:SetHidden(hidden)
   VermilionGraphWindowAboutBtn:SetHidden(hidden)
   VermilionGraphWindowCloseBtn:SetHidden(hidden)
-  controls.title:SetHidden(hidden)
   controls.btn_record:SetHidden(hidden)
   controls.btn_flush:SetHidden(hidden)
   controls.btn_lib:SetHidden(hidden)
@@ -1083,10 +1021,6 @@ function light.chrome(hidden)
   controls.btn_next_sess:SetHidden(hidden)
   controls.btn_save:SetHidden(hidden)
   controls.btn_export:SetHidden(hidden)
-  controls.dps_icon:SetHidden(hidden)
-  controls.readout:SetHidden(hidden)
-  controls.crit:SetHidden(hidden)
-  if controls.icon then controls.icon:SetHidden(hidden) end
 end
 
 function light.minimal(hidden)
@@ -1635,9 +1569,6 @@ local function on_sample_update()
   Vermilion.DebuffTracker.expire_stale(now)
   Vermilion.Uptime.expire_stale(now)
 
-  update_header(edps + shdps)
-  update_crit(now)
-
   local elapsed = math_floor((now - recording_start_ms) / 1000)
   if elapsed ~= last_elapsed then
     last_elapsed = elapsed
@@ -1733,7 +1664,7 @@ function M.on_flush_click()
   Vermilion.SessionStore.finish_autosave()
   light.exit()
   summary_text = nil
-  last_readout, last_crit_pct, last_elapsed = nil, nil, nil
+  last_elapsed = nil
   if Vermilion.TemporalBuffer.is_recording() then
     zev.unregister_update(Vermilion.Constants.TEMPORAL.UPDATE_NAME)
     Vermilion.TemporalBuffer.stop_recording()
@@ -1758,8 +1689,6 @@ function M.on_flush_click()
   refresh_button_colors()
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
-  update_header(0)
-  if controls.crit then apply_crit(C_CRIT_IDLE, "—") end
   controls.no_data:SetHidden(false)
 end
 
@@ -2154,7 +2083,6 @@ end
 
 function M.init()
   controls.window        = VermilionGraphWindow
-  controls.title         = VermilionGraphWindowTitleLabel
   controls.btn_record    = VermilionGraphWindowRecordBtn
   controls.btn_record_menu = VermilionGraphWindowRecordMenuBtn
   controls.rec_mode      = VermilionGraphWindowRecModeLabel
@@ -2175,10 +2103,6 @@ function M.init()
   controls.canvas        = VermilionGraphWindowViewportCanvas
   FC.bind(controls.canvas)
   controls.no_data       = VermilionGraphWindowViewportNoDataLabel
-  controls.readout       = VermilionGraphWindowReadoutLabel
-  controls.dps_icon      = VermilionGraphWindowDpsIcon
-  controls.crit          = VermilionGraphWindowCritLabel
-  controls.icon          = VermilionGraphWindowCritIcon
 
   DamageTypeColors = Vermilion.DamageTypeColors
 
@@ -2303,8 +2227,6 @@ function M.init()
     end,
     function(c) c:SetHidden(true) end)
 
-  controls.title:SetText(GetString(VERMILION_GRAPH_TITLE) .. (Vermilion.Constants.DEBUG and ("  ·  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
-  controls.title:SetColor(0.75, 0.75, 0.75, 1)
   controls.btn_record:SetText("|t16:16:Vermilion/assets/rec.dds|t " .. GetString(VERMILION_GRAPH_RECORD))
   controls.btn_record_menu:SetText("|t14:14:" .. Vermilion.Skin.CARET .. "|t")
   controls.rec_panel:ClearAnchors()
@@ -2415,10 +2337,8 @@ function M.init()
   controls.view_label:SetText(VIEW_LABELS[current_view])
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
 
-  controls.readout:SetColor(C_LINE_EOS.r, C_LINE_EOS.g, C_LINE_EOS.b, 0.95)
 
   crit_threshold_pct = sv.graph.crit_threshold_pct or crit_threshold_pct
-  apply_crit(C_CRIT_IDLE, "—")
 
   controls.card = HC.build(controls.window, controls.summary.hit, fmt_secs)
   card_fader = HC.fader()
@@ -2659,7 +2579,5 @@ function M.init()
     rerender = function() render_current_view() end,
   })
 
-  update_header(0)
-  zev.register_update("VermilionHeaderTick", 1000, header_tick)
   refresh_button_colors()
 end

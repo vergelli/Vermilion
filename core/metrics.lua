@@ -159,19 +159,6 @@ function M.crit_split(now_ms)
   return crit, (total / ws) - crit
 end
 
-function M.crit_rate(now_ms)
-  damage_out_buf:trim(now_ms)
-  local hits, crits = 0, 0
-  for i = damage_out_buf.head, damage_out_buf.tail do
-    local e = damage_out_buf.entries[i]
-    if (e.amount or 0) > 0 then
-      hits = hits + 1
-      if is_crit(e) then crits = crits + 1 end
-    end
-  end
-  return crits, hits
-end
-
 function M.session_crit_rate(sum)
   if sum.crit_hits and (sum.hits or 0) > 0 then return sum.crit_hits / sum.hits end
   return sum.crit_pct or 0

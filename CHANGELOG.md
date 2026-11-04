@@ -20,6 +20,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: damage from your pets was not counted at all. The game's own dummy result and ESO Logs count it
 - Fixed: pressing a channeled skill while it channels no longer counts as another cast
 - Fixed: the summary in the viewport could be cut off after a shorter fight, hiding its last values
+- Removed the live DPS and crit indicators and the "Damage Analysis" title from the header, and the title of the Settings window
 - About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them

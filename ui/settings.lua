@@ -304,7 +304,6 @@ function M.init()
   controls.window         = VermilionSettingsPanel
   controls.window:SetHidden(true)
   Scene.register_top_level(controls.window)
-  controls.window_title   = VermilionSettingsPanelWindowTitle
   VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   controls.sample_btn     = VermilionSettingsPanelSampleBtn
@@ -326,7 +325,6 @@ function M.init()
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
 
-  controls.window_title:SetText(GetString(VERMILION_SETTINGS_TITLE))
   VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION .. (Vermilion.Constants.DEBUG and ("  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
   M.refresh_dev_button()
