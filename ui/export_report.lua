@@ -22,6 +22,7 @@ local function secs(ms) return string_format("%.1f", (ms or 0) / 1000) end
 local function share(v, total) return (total and total > 0) and pct(v / total) or "0.0" end
 
 local function section(title, header, lines)
+  if #lines == 0 then return "" end
   local out = { "", "## " .. title }
   if header then out[#out + 1] = header end
   for i = 1, #lines do out[#out + 1] = lines[i] end
@@ -140,6 +141,9 @@ local function resources_section()
       lines[i] = table_concat({ clean(r.name), int(r.mag), int(r.sta), share(r.total, totals.regained) }, ";")
     end
     out[#out + 1] = section(GetString(VERMILION_EXPORT_SEC_RECOVERED), GetString(VERMILION_EXPORT_COL_RECOVERED), lines)
+    for i = #out, 1, -1 do
+      if out[i] == "" then table.remove(out, i) end
+    end
   end)
   return table_concat(out, "\n")
 end

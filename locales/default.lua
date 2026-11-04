@@ -253,7 +253,7 @@ ZO_CreateStringId("VERMILION_EXPORT_COL_UPTIME", "Effect;Uptime %;Applications;A
 ZO_CreateStringId("VERMILION_EXPORT_SEC_DEBUFFS", "Debuffs")
 ZO_CreateStringId("VERMILION_EXPORT_COL_DEBUFFS", "Debuff;Uptime %;Applications;Units;Max at once;Longest gap s")
 ZO_CreateStringId("VERMILION_EXPORT_SEC_RESOURCES", "Resources")
-ZO_CreateStringId("VERMILION_EXPORT_COL_RESOURCES", "Pool;Gained;Spent;Gained over spent;Time under 15% %")
+ZO_CreateStringId("VERMILION_EXPORT_COL_RESOURCES", "Pool;Gained;Spent;Gained over spent;Time under 15 percent %")
 ZO_CreateStringId("VERMILION_EXPORT_RES_MAG", "Magicka")
 ZO_CreateStringId("VERMILION_EXPORT_RES_STA", "Stamina")
 ZO_CreateStringId("VERMILION_EXPORT_RES_EFF", "Damage per 1000 points spent")

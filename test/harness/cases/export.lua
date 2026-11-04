@@ -29,9 +29,10 @@ return function(H)
   ok(VermilionExportProgress._hidden == true and VermilionExportBody._hidden == false, "then it shows the text")
 
   local txt = VermilionExportEdit._text or ""
-  for _, needle in ipairs({ "## Summary", "## Skills", "## Targets", "## Uptime", "## Debuffs", "## Timeline", "Total damage;" }) do
+  for _, needle in ipairs({ "## Summary", "## Skills", "## Targets", "## Timeline", "Total damage;" }) do
     ok(txt:find(needle, 1, true), "the report carries " .. needle .. ": " .. txt:sub(1, 400))
   end
+  ok(not txt:find("##[^\n]*\n[^\n]*\n\n"), "a section with no rows is left out")
   ok(not txt:find("|", 1, true), "no pipe reaches the edit box, the game reads it as markup")
 
   local _, n, totals = Vermilion.ContribView.compute()
