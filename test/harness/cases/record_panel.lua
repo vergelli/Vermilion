@@ -102,8 +102,6 @@ return function(H)
   G.on_flush_click()
 
   ok(rawget(_G, "VermilionSettingsPanelAutoRecBtn") == nil and rawget(_G, "VermilionSettingsPanelAutosaveBtn") == nil and rawget(_G, "VermilionSettingsPanelAutoStopBtn") == nil, "the settings panel no longer carries the three recording buttons")
-  local note = VermilionSettingsPanelRecordingNote
-  ok(note and type(note._text) == "string" and note._text:find("record button", 1, true), "the settings panel points to the record button")
 
   AR.set_mode(before_mode)
   AR.set_auto_stop(before_stop == true)

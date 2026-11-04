@@ -66,7 +66,6 @@ ZO_CreateStringId("VERMILION_RECPANEL_ANY_FIGHT", "Any fight")
 ZO_CreateStringId("VERMILION_RECPANEL_BOSS",      "Boss fights")
 ZO_CreateStringId("VERMILION_RECPANEL_FIGHT_END", "When the fight ends")
 ZO_CreateStringId("VERMILION_RECPANEL_ON_STOP",   "When it stops")
-ZO_CreateStringId("VERMILION_SETTINGS_RECORDING_NOTE", "Recording is set from the record button on the graph window: press the arrow next to it.")
 ZO_CreateStringId("VERMILION_GRAPH_FLUSH",   "New")
 ZO_CreateStringId("VERMILION_GRAPH_NO_DATA", "No data. Press |t14:14:Vermilion/assets/rec.dds|t Record during combat.\nVermilion counts only YOUR damage and shields.")
 
@@ -139,7 +138,6 @@ ZO_CreateStringId("VERMILION_TIP_KILLS",    "Mark every killing blow with a skul
 ZO_CreateStringId("VERMILION_TIP_RESET",    "Put every setting back to its default")
 
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GRAPH",      "GRAPH")
-ZO_CreateStringId("VERMILION_SETTINGS_SEC_RECORDING",  "RECORDING")
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GENERAL",    "GENERAL")
 
 ZO_CreateStringId("VERMILION_GRAPH_NOW",        "now")
