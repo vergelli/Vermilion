@@ -43,3 +43,10 @@ Fights Match The Game Log
     [Tags]    replay    numeric
     ${msg}=    Fights Match The Game Log
     Log    ${msg}
+
+Saved Sessions Match The Game Log
+    [Documentation]    Each replayed fight is saved to a library file and read back the way a tester's
+    ...                SavedVariables are, then compared with the same log without any trace.
+    [Tags]    replay    numeric
+    ${msg}=    Saved Sessions Match The Game Log
+    Log    ${msg}

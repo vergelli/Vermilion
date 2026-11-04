@@ -565,7 +565,7 @@ local function session_summary()
   for id, v in pairs(VIS.shd) do
     if id > 0 and v > SUM.top_shield_v then SUM.top_shield, SUM.top_shield_v = id, v end
   end
-  SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits, SUM.crit_hits = Vermilion.Metrics.totals()
+  SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits, SUM.crit_hits, SUM.overkill = Vermilion.Metrics.totals()
   local ls = controls.loaded_sum
   if ls then
     SUM.total_damage = ls.total_damage or 0
@@ -573,6 +573,7 @@ local function session_summary()
     SUM.total_crit   = ls.total_crit or 0
     SUM.hits         = ls.hits or 0
     SUM.crit_hits    = ls.crit_hits
+    SUM.overkill     = ls.overkill
   end
   SUM.crit_rate = Vermilion.Metrics.session_crit_rate(SUM)
   SUM.fight_ms = Vermilion.Metrics.fight_ms()

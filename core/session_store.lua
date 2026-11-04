@@ -328,7 +328,7 @@ function M.capture(cooperative)
     death_recs[i] = { t = rel, e = back }
   end
 
-  local total_damage, total_shield, total_crit, hits, crit_hits = Vermilion.Metrics.totals()
+  local total_damage, total_shield, total_crit, hits, crit_hits, overkill = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
   local temporal = sv and sv.temporal or {}
   local C = Vermilion.Constants
@@ -358,6 +358,7 @@ function M.capture(cooperative)
         total_crit = total_crit,
         hits = hits,
         crit_hits = crit_hits,
+        overkill = overkill,
         fight_ms = Vermilion.Metrics.fight_ms(),
         fight_t0 = (function()
           local lo = Vermilion.Metrics.fight_bounds()

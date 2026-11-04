@@ -28,6 +28,11 @@ through the current code and checks every number against the log. `--slice=<trac
 saves the part of the log for that fight next to the trace in the corpus, and from then on the gate
 checks it. A recording only has to be made once: a fix is verified by replaying it.
 
+A tester with a release build only has to send `Logs/Encounter.log` and `SavedVariables/Vermilion.lua`.
+`python qa/encounter_audit.py --saved <Encounter.log> <Vermilion.lua>` compares every saved session the
+log covers, as it was recorded. It cannot verify a fix, that needs a trace.
+`--self-check <log> <trace>` runs the same comparison on a replayed fight, the gate does it on every trace.
+
 ## Feeding the oracle with real fights
 
 The only data that validates the measurement is a trace: the game's raw events, captured in

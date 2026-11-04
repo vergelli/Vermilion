@@ -34,11 +34,14 @@ def channels_of(rows):
     return out
 
 
-def replay(trace, rows, out):
+def replay(trace, rows, out, sv=None):
     chan = ','.join('%s=%d' % kv for kv in channels_of(rows).items())
     lua = shutil.which('lua') or 'lua'
+    env = dict(os.environ)
+    if sv:
+        env['VERMILION_REPLAY_SV'] = sv
     p = subprocess.run([lua, 'test/simlab/replay_session.lua', '.', trace, out, chan], cwd=ROOT,
-                       capture_output=True, text=True, errors='replace')
+                       capture_output=True, text=True, errors='replace', env=env)
     if p.returncode != 0:
         raise RuntimeError('replay failed: ' + p.stdout[-800:] + p.stderr[-800:])
 
@@ -71,10 +74,16 @@ def sections_of(export):
     return out
 
 
+def local_units(rows):
+    me = {r[2] for r in rows if len(r) > 4 and r[1] == 'UNIT_ADDED' and r[3] == 'PLAYER' and r[4] == 'T'}
+    return me or {'1'}
+
+
 def own_units(rows):
-    mine = {'1'}
+    me = local_units(rows)
+    mine = set(me)
     for r in rows:
-        if len(r) > 15 and r[1] == 'UNIT_ADDED' and r[15] == '1':
+        if len(r) > 15 and r[1] == 'UNIT_ADDED' and r[15] in me:
             mine.add(r[2])
     return mine
 
@@ -148,34 +157,45 @@ def cell(rows, label, col=1):
     return None
 
 
-def audit(rows, dump, export, c):
+def audit(rows, dump, export, c, window=None, recording=None):
     mine = own_units(rows)
+    me = local_units(rows)
     names = {int(r[2]): r[3] for r in rows if len(r) > 3 and r[1] == 'ABILITY_INFO'}
     nm = lambda i: names.get(i, '#%d' % i)
     sec = sections_of(export)
     head = dump['HEAD'][0]
-    off = align(rows, dump, mine)
-    if off is None:
-        c.add('alignment with the log', 'none', 'none', False)
-        return
-    trace_hits = [int(h[0]) for h in dump['HIT']]
-    lo, hi = min(trace_hits) + off - 400, max(trace_hits) + off + 400
+    if window:
+        lo, hi = window
+    else:
+        off = align(rows, dump, mine)
+        if off is None:
+            c.add('alignment with the log', 'none', 'none', False)
+            return
+        trace_hits = [int(h[0]) for h in dump['HIT']]
+        lo, hi = min(trace_hits) + off - 400, max(trace_hits) + off + 400
+
+    rlo, rhi = lo, hi
+    if recording:
+        rlo, rhi = min(lo, recording[0]), max(hi, recording[1])
 
     hits = []
     shields = []
     energize = collections.Counter()
     kills = set()
+    overkill = 0
     live_name = {}
     for r in rows:
         if len(r) > 10 and r[1] == 'UNIT_ADDED':
             live_name[r[2]] = r[10].split('^')[0].replace(';', ',')
-        if len(r) > 9 and r[1] == 'COMBAT_EVENT' and lo <= int(r[0]) <= hi:
+        if len(r) > 9 and r[1] == 'COMBAT_EVENT' and rlo <= int(r[0]) <= rhi:
             tgt = r[19] if len(r) > 19 else '*'
-            if r[2] in DMG and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
+            inside = lo <= int(r[0]) <= hi
+            if inside and r[2] in DMG and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
                 hits.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), live_name.get(tgt, tgt)))
-            elif r[2] == 'DAMAGE_SHIELDED' and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
+                overkill += int(r[6] or 0)
+            elif inside and r[2] == 'DAMAGE_SHIELDED' and r[9] in mine and tgt not in mine and tgt != '*' and int(r[5]) > 0:
                 shields.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), live_name.get(tgt, tgt)))
-            elif r[2] == 'POWER_ENERGIZE' and (tgt == '1' or (r[9] == '1' and tgt == '*')):
+            elif r[2] == 'POWER_ENERGIZE' and (tgt in me or (r[9] in me and tgt == '*')):
                 energize[r[4]] += int(r[5])
             elif r[2] in KILL and r[9] in mine:
                 kills.add(tgt)
@@ -196,6 +216,9 @@ def audit(rows, dump, export, c):
     S = sec.get('Summary')
     v = cell(S, 'Total shield')
     c.add('shield cracked', shield_total, v, v is not None and v == shield_total)
+    v = cell(S, 'Overkill')
+    if v is not None:
+        c.add('overkill', overkill, v, v == overkill)
     v = cell(S, 'Fight time')
     c.add('fight time s', round(fight, 1), v, v is not None and close(v, fight, 0.3))
     v = cell(S, 'Average output')
@@ -260,11 +283,11 @@ def audit(rows, dump, export, c):
 
     state = []
     for r in rows:
-        if len(r) > 13 and r[1] == 'COMBAT_EVENT' and r[9] == '1':
+        if len(r) > 13 and r[1] == 'COMBAT_EVENT' and r[9] in me:
             state.append((int(r[0]), r[11], r[12], r[13], r[10]))
-        elif len(r) > 23 and r[1] == 'COMBAT_EVENT' and r[19] == '1':
+        elif len(r) > 23 and r[1] == 'COMBAT_EVENT' and r[19] in me:
             state.append((int(r[0]), r[21], r[22], r[23], r[20]))
-        elif len(r) > 10 and r[1] == 'BEGIN_CAST' and r[6] == '1':
+        elif len(r) > 10 and r[1] == 'BEGIN_CAST' and r[6] in me:
             state.append((int(r[0]), r[8], r[9], r[10], r[7]))
     state.sort(key=lambda s: s[0])
 
@@ -297,7 +320,7 @@ def audit(rows, dump, export, c):
     drops = 0
     prev = None
     for st in state:
-        if lo <= st[0] <= hi:
+        if rlo <= st[0] <= rhi:
             u = int(st[3].split('/')[0])
             if prev is not None and prev - u >= 50:
                 drops += 1
@@ -307,7 +330,7 @@ def audit(rows, dump, export, c):
 
     casts = collections.defaultdict(set)
     for r in rows:
-        if len(r) > 6 and r[1] == 'BEGIN_CAST' and r[6] == '1' and lo <= int(r[0]) <= hi:
+        if len(r) > 6 and r[1] == 'BEGIN_CAST' and r[6] in me and rlo <= int(r[0]) <= rhi:
             casts[nm(int(r[5]))].add(r[4])
     per = collections.Counter()
     drains = collections.Counter()
@@ -339,9 +362,9 @@ def audit(rows, dump, export, c):
     shared = set()
     for r in rows:
         if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and lo <= int(r[0]) <= hi:
-            if r[6] != '1' or r[16] in ('*', '1'):
+            if r[6] not in me or r[16] == '*' or r[16] in me:
                 shared.add(nm(int(r[5])))
-        if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and r[6] == '1' and r[16] not in ('*', '1'):
+        if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and r[6] in me and r[16] != '*' and r[16] not in me:
             t = int(r[0])
             k = (nm(int(r[5])), r[5], r[16])
             if r[2] == 'GAINED' and k not in open_:
@@ -430,8 +453,107 @@ def run(log_path, trace_path, slice_to=None, quiet=False):
     return 0
 
 
+def locate(hits, end, dur, span, total):
+    near = [h for h in hits if end - dur - 15000 <= h[0] <= end + 15000]
+    best = None
+    i, acc = 0, 0
+    for j, h in enumerate(near):
+        acc += h[1]
+        while h[0] - near[i][0] > span + 300:
+            acc -= near[i][1]
+            i += 1
+        gap = abs(acc - total)
+        if best is None or gap < best[0]:
+            best = (gap, near[i][0], h[0])
+    return best
+
+
+def run_saved(log_path, sv_path):
+    rows_all = read_log(log_path)
+    names = {}
+    for r in rows_all:
+        if len(r) > 3 and r[1] == 'ABILITY_INFO':
+            names[r[2]] = r[3]
+    lua = shutil.which('lua') or 'lua'
+    failed = audited = skipped = older = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        names_file = os.path.join(tmp, 'names.tsv')
+        with open(names_file, 'w', encoding='utf-8') as f:
+            for k, v in names.items():
+                f.write('%s\t%s\n' % (k, v.replace('\t', ' ')))
+        p = subprocess.run([lua, 'test/simlab/saved_sessions.lua', '.', sv_path, tmp, names_file], cwd=ROOT,
+                           capture_output=True, text=True, errors='replace')
+        if p.returncode != 0:
+            print('AUDIT: FAIL could not read the sessions ' + p.stdout[-400:] + p.stderr[-400:])
+            return 1
+        blocks = []
+        for rows in blocks_of(rows_all):
+            if rows and len(rows[0]) > 2 and rows[0][1] == 'BEGIN_LOG':
+                mine = own_units(rows)
+                hits = [(int(r[0]), int(r[5])) for r in rows
+                        if len(r) > 19 and r[1] == 'COMBAT_EVENT' and r[2] in DMG and r[9] in mine
+                        and r[19] not in mine and r[19] != '*' and int(r[5]) > 0]
+                blocks.append((rows, int(rows[0][2]), hits))
+        for name in sorted(os.listdir(tmp)):
+            if not name.endswith('.tsv') or name == 'names.tsv':
+                continue
+            dump, export = read_dump(os.path.join(tmp, name))
+            head = dump['HEAD'][0]
+            ts, dur, total, fight = int(head[0]), int(head[1]), int(head[2]), int(float(head[5]))
+            zone = head[6][:22]
+            first_gap = int(float(head[8])) if len(head) > 8 else -1
+            if fight <= 0 or first_gap < 0:
+                older += 1
+                print('%s  %-22s recorded before the fight time, not compared' % (name[:3], zone))
+                continue
+            found = None
+            for rows, epoch, hits in blocks:
+                best = locate(hits, ts * 1000 - epoch, dur, fight, total)
+                if best and (found is None or best[0] < found[0]):
+                    found = (best[0], rows, best[1], best[2])
+            if not found or found[0] > 0.02 * total:
+                skipped += 1
+                print('%s  %-22s %d damage, no fight in this log comes close' % (name[:3], zone, total))
+                continue
+            c = Checks()
+            start = found[2] - first_gap
+            audit(found[1], dump, export, c, (found[2] - 100, found[3] + 100), (start - 100, start + dur + 100))
+            audited += 1
+            print('%s  %-22s %d checks, %d differ' % (name[:3], zone, len(c.rows), len(c.failed)))
+            for row in c.rows:
+                if not row[3]:
+                    print('     FAIL %-44s log %-12s addon %s' % (row[0][:44], row[1], row[2]))
+            if c.failed:
+                failed += 1
+    print('%d sessions compared, %d differ, %d not found in this log, %d older' % (audited, failed, skipped, older))
+    print('AUDIT: ok' if failed == 0 and audited > 0 else 'AUDIT: FAIL')
+    return 0 if failed == 0 and audited > 0 else 1
+
+
+def self_check(log_path, trace_path):
+    rows = blocks_of(read_log(log_path))[0]
+    with tempfile.TemporaryDirectory() as tmp:
+        out, sv = os.path.join(tmp, 'dump.tsv'), os.path.join(tmp, 'sv.lua')
+        replay(trace_path, rows, out, sv)
+        dump, _ = read_dump(out)
+        off = align(rows, dump, own_units(rows))
+        if off is None:
+            print('AUDIT: FAIL no alignment')
+            return 1
+        ts = (int(rows[0][2]) + max(int(h[0]) for h in dump['HIT']) + off) // 1000 + 3
+        with open(sv, encoding='utf-8', errors='surrogateescape', newline='') as f:
+            text = f.read()
+        with open(sv, 'w', encoding='utf-8', errors='surrogateescape', newline='') as f:
+            f.write(text.replace('"@TS@"', str(ts)))
+        return run_saved(log_path, sv)
+
+
 if __name__ == '__main__':
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    if '--saved' in sys.argv:
+        sys.exit(run_saved(os.path.abspath(args[0]), os.path.abspath(args[1])))
+    if '--self-check' in sys.argv:
+        sys.exit(self_check(os.path.abspath(args[0]), os.path.abspath(args[1])))
     slice_to = next((a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--slice=')), None)
     if len(args) != 2:
         print('usage: python qa/encounter_audit.py <Encounter.log> <trace.lua> [--slice=out.log]')

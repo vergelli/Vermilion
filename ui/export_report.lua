@@ -59,6 +59,9 @@ local function summary_section()
     GetString(VERMILION_EXPORT_CRIT) .. ";" .. pct(sm.crit_pct),
     GetString(VERMILION_EXPORT_HITS) .. ";" .. int(sm.hits),
   }
+  if sm.overkill then
+    lines[#lines + 1] = GetString(VERMILION_EXPORT_OVERKILL) .. ";" .. int(sm.overkill)
+  end
   if sm.hits > 0 then
     lines[#lines + 1] = GetString(VERMILION_EXPORT_AVG_HIT) .. ";" .. int(sm.total_damage / sm.hits)
   end
