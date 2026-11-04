@@ -973,7 +973,7 @@ function H.damage_out(opts)
     opts.target_name or "Enemy", opts.target_type or COMBAT_UNIT_TYPE_OTHER,
     opts.hit or 1500, 0, opts.damage_type or DAMAGE_TYPE_PHYSICAL, false,
     opts.source_unit_id or 500, opts.target_unit_id or 900,
-    opts.ability_id or 31, 0)
+    opts.ability_id or 31, opts.overflow or 0)
 end
 
 function H.kill(opts)

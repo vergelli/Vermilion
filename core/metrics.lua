@@ -71,12 +71,12 @@ end
 function M.window_seconds() return W_MS / 1000 end
 function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 
-local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
+local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
 
 local fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 
 function M.session_mark()
-  tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
+  tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
   fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 end
 
@@ -111,7 +111,7 @@ function M.session_avg(sum)
 end
 
 function M.totals()
-  return tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits
+  return tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill
 end
 
 function M.ingest_damage_out(ev)
@@ -119,6 +119,7 @@ function M.ingest_damage_out(ev)
   if amt > 0 then
     tot_damage = tot_damage + amt
     tot_hits   = tot_hits + 1
+    tot_overkill = tot_overkill + (ev.overflow or 0)
     note_fight(ev.t)
     if is_crit(ev) then
       tot_crit = tot_crit + amt

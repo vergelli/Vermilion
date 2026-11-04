@@ -7,7 +7,7 @@ end
 return function(out_path, sess, hits)
   local w = assert(io.open(out_path, "wb"))
   local sum = sess.head.sum
-  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "")
+  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1)
   for _, h in ipairs(hits or {}) do line(w, "HIT", h[1], h[2], h[3], h[4]) end
 
   local t, id, pool, cost, n, tick = Vermilion.Casts.records()

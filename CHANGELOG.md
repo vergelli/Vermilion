@@ -35,6 +35,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the report card named a single unit as the enemy focused most, now it names the same one the Targets view ranks first
 - The moment card in the CRIT view says crit damage, since CRIT in the header counts hits. Uptime cards say Refreshes, they count effects, not button presses, and leave out the damage lost of effects the view does not price
 - An empty pool now reads as starved in Resources
+- The export shows overkill on its own line, what a killing hit had left past the target's health
 - About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them

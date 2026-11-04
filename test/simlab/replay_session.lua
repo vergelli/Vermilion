@@ -48,7 +48,7 @@ if c.COMBAT_MECHANIC_FLAGS_MAGICKA then POWER[c.COMBAT_MECHANIC_FLAGS_MAGICKA] =
 if c.COMBAT_MECHANIC_FLAGS_STAMINA then POWER[c.COMBAT_MECHANIC_FLAGS_STAMINA] = POWERTYPE_STAMINA end
 if c.COMBAT_MECHANIC_FLAGS_ULTIMATE then POWER[c.COMBAT_MECHANIC_FLAGS_ULTIMATE] = COMBAT_MECHANIC_FLAGS_ULTIMATE end
 
-local rate = trace.settings and trace.settings.sample_rate_ms
+local rate = tonumber(os.getenv("VERMILION_REPLAY_RATE") or "") or (trace.settings and trace.settings.sample_rate_ms)
 if rate then
   Vermilion.SavedVars.temporal = Vermilion.SavedVars.temporal or {}
   Vermilion.SavedVars.temporal.sample_rate_ms = rate
@@ -110,4 +110,32 @@ local sess = Vermilion.SessionStore.capture()
 G.on_flush_click()
 assert(G.load_session(sess))
 dump(out_path, sess, hits)
+local sv_out = os.getenv("VERMILION_REPLAY_SV")
+if sv_out then
+  local function ser(w, v)
+    local kind = type(v)
+    if kind == "table" then
+      w:write("{")
+      for k, x in pairs(v) do
+        w:write("[")
+        ser(w, k)
+        w:write("]=")
+        ser(w, x)
+        w:write(",")
+      end
+      w:write("}")
+    elseif kind == "string" then
+      w:write(string.format("%q", v))
+    elseif kind == "number" then
+      w:write(string.format("%.17g", v))
+    else
+      w:write(tostring(v))
+    end
+  end
+  sess.head.ts = "@TS@"
+  local w = assert(io.open(sv_out, "wb"))
+  w:write("VermilionSavedVars=")
+  ser(w, { library = { sessions = { sess } } })
+  w:close()
+end
 os.exit(0)
