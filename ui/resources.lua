@@ -726,6 +726,20 @@ end
 
 function M.returns() return ret_order end
 
+function M.with_all(fn)
+  local saved = pick
+  pick = PICK_BOTH
+  sums = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
+  aggregate()
+  local S = strings()
+  local spent, recovered = order[SEC_SPENT], order[SEC_REC]
+  for i = 1, spent.n do dress(spent[i], S) end
+  for i = 1, recovered.n do dress(recovered[i], S) end
+  fn(spent, recovered, totals, dmg_total)
+  pick = saved
+  aggregate()
+end
+
 local function draw_returns(c, canvas, x, y, S)
   local rows = math_min(RET_ROWS, ret_order.n)
   if rows == 0 then return end

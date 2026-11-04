@@ -711,21 +711,17 @@ local function compose_summary(label, parts, avail)
   return text, widest, lines
 end
 
-local function report_text()
-  local card = controls.card
-  local function plain(t)
-    return (tostring(t or ""):gsub("|c%x%x%x%x%x%x", ""):gsub("|r", ""))
-  end
-  local lines = { GetString(VERMILION_REPORT_TITLE) }
-  if summary_text then lines[#lines + 1] = plain(table.concat(summary_text, "   ")) end
-  lines[#lines + 1] = plain(card.stat:GetText())
-  for i = 1, CARD_MAX_ROWS do
-    local r = card.rows[i]
-    if not r.name:IsHidden() then
-      lines[#lines + 1] = plain(r.name:GetText()) .. ": " .. plain(r.val:GetText())
-    end
-  end
-  return table.concat(lines, "\n")
+function M.export_summary() return session_summary() end
+
+function M.export_available()
+  local TB = Vermilion.TemporalBuffer
+  return not TB.is_recording() and TB.count() > 0
+end
+
+function M.export_head()
+  if controls.loaded_head then return controls.loaded_head end
+  local zone, group = Vermilion.SessionStore.start_meta()
+  return { zone = zone, group_size = math.max(group or 0, api.GetGroupSize() or 0), ts = api.GetTimeStamp() }
 end
 
 local function show_report_card()
@@ -1080,6 +1076,7 @@ function light.chrome(hidden)
   controls.btn_prev_sess:SetHidden(hidden)
   controls.btn_next_sess:SetHidden(hidden)
   controls.btn_save:SetHidden(hidden)
+  controls.btn_export:SetHidden(hidden)
   controls.dps_icon:SetHidden(hidden)
   controls.readout:SetHidden(hidden)
   controls.crit:SetHidden(hidden)
@@ -1521,6 +1518,7 @@ local function refresh_button_colors()
   controls.btn_stop:SetEnabled(recording)
   M.refresh_record_button()
   if controls.btn_save then controls.btn_save:SetEnabled(M.save_available()) end
+  if controls.btn_export then controls.btn_export:SetEnabled(M.export_available()) end
   update_hover_gate()
   update_summary_chip()
 end
@@ -1652,6 +1650,7 @@ function M.on_record_click()
   Vermilion.SessionStore.finish_autosave()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_head = nil
   controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
@@ -1734,6 +1733,7 @@ function M.on_flush_click()
   Vermilion.Kills.reset()
   controls.save_locked = false
   controls.loaded_sum = nil
+  controls.loaded_head = nil
   controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
@@ -2088,6 +2088,7 @@ function M.load_session(sess)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
+  controls.loaded_head = sess.head
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)
   refresh_button_colors()
@@ -2147,6 +2148,7 @@ function M.init()
   controls.btn_prev_sess = VermilionGraphWindowPrevSessBtn
   controls.btn_next_sess = VermilionGraphWindowNextSessBtn
   controls.btn_save      = VermilionGraphWindowSaveBtn
+  controls.btn_export    = VermilionGraphWindowExportBtn
   controls.status        = VermilionGraphWindowStatusLabel
   controls.btn_prev_view = VermilionGraphWindowPrevViewBtn
   controls.view_label    = VermilionGraphWindowViewLabel
@@ -2306,7 +2308,7 @@ function M.init()
   Vermilion.Skin.button(controls.btn_flush)
   Vermilion.Skin.button(VermilionGraphWindowSettingsBtn)
   Vermilion.Skin.close(VermilionGraphWindowCloseBtn)
-  Vermilion.Skin.icons({ controls.btn_lib, controls.btn_save, controls.btn_prev_sess, controls.btn_next_sess })
+  Vermilion.Skin.icons({ controls.btn_lib, controls.btn_save, controls.btn_export, controls.btn_prev_sess, controls.btn_next_sess })
   VermilionGraphWindowSettingsBtn:SetText(GetString(VERMILION_GRAPH_SETTINGS))
   VermilionGraphWindowAboutBtn:SetText(GetString(VERMILION_ABOUT_TITLE))
   VermilionGraphWindowAboutBtn:SetNormalFontColor(0.62, 0.56, 0.54, 0.8)
@@ -2391,8 +2393,7 @@ function M.init()
   sum_hit:SetHandler("OnMouseUp", function(_, _, upInside)
     if upInside == false then return end
     show_report_card()
-    Sound.play("click")
-    Vermilion.CopyBox.show(GetString(VERMILION_REPORT_COPY_TITLE), report_text())
+    Vermilion.Export.open()
   end)
   controls.summary = { bg = sum_bg, label = sum_label, help = sum_help, hit = sum_hit }
   controls.status:SetText("")

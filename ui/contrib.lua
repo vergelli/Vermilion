@@ -381,4 +381,8 @@ function M.reset_scroll() scroll = 0 end
 function M.scroll_state() return scroll, max_scroll end
 
 function M.rows() return order, order.n end
+function M.compute()
+  aggregate()
+  return order, order.n, totals
+end
 function M.totals() return totals end

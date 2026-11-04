@@ -569,5 +569,9 @@ function M.scroll_state() return scroll, max_scroll end
 function M.hovered() return hover_id end
 function M.clear_hover() hover_id = nil end
 function M.rows() return order, order.n end
+function M.compute()
+  aggregate()
+  return order, order.n, totals
+end
 function M.totals() return totals end
 function M.lut(i) return Heat.lut(i) end

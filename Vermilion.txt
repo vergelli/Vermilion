@@ -98,6 +98,9 @@ ui/assign.lua
 ui/library.xml
 ui/library.lua
 ui/about.xml
+ui/export.xml
+ui/export_report.lua
+ui/export.lua
 ui/about.lua
 ui/logo.xml
 ui/logo.lua
