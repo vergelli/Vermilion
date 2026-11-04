@@ -27,6 +27,7 @@ local CASES = {
   "export",
   "effect_events",
   "cast_confirm",
+  "fight_time",
   "session_store",
   "content_kind",
   "auto_record",

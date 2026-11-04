@@ -653,6 +653,10 @@ local function session_summary()
     SUM.crit_hits    = ls.crit_hits
   end
   SUM.crit_rate = Vermilion.Metrics.session_crit_rate(SUM)
+  SUM.fight_ms = Vermilion.Metrics.fight_ms()
+  if SUM.fight_ms > 0 then
+    SUM.avg = (SUM.total_damage + SUM.total_shield) / (SUM.fight_ms / 1000)
+  end
   return SUM
 end
 
@@ -1189,12 +1193,21 @@ function VIS.avg_line(with_shield, max_v, ch_plot)
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()
   if n == 0 then return end
-  local sum = 0
-  for i = 1, n do
-    local s = TB.at(i)
-    sum = sum + s.eDPS + (with_shield and s.ShDPS or 0)
+  local value = 0
+  local fight = Vermilion.Metrics.fight_ms()
+  if fight > 0 then
+    local dmg, shd = Vermilion.Metrics.totals()
+    local ls = controls.loaded_sum
+    if ls then dmg, shd = ls.total_damage or 0, ls.total_shield or 0 end
+    value = (dmg + (with_shield and shd or 0)) / (fight / 1000)
+  else
+    for i = 1, n do
+      local s = TB.at(i)
+      value = value + s.eDPS + (with_shield and s.ShDPS or 0)
+    end
+    value = value / n
   end
-  local h = math_floor(ch_plot * (sum / n) / max_v + 0.5) + TIME_STRIP_H
+  local h = math_floor(ch_plot * value / max_v + 0.5) + TIME_STRIP_H
   line:ClearAnchors()
   line:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, 0, -h)
   line:SetAnchor(BOTTOMRIGHT, controls.canvas, BOTTOMRIGHT, 0, -h)
@@ -1652,6 +1665,7 @@ function M.on_record_click()
   controls.save_locked = false
   controls.loaded_sum = nil
   controls.loaded_head = nil
+  Vermilion.Metrics.set_fight_ms(nil)
   controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   Vermilion.TemporalBuffer.clear()
@@ -1735,6 +1749,7 @@ function M.on_flush_click()
   controls.save_locked = false
   controls.loaded_sum = nil
   controls.loaded_head = nil
+  Vermilion.Metrics.session_mark()
   controls.loaded_idx = nil
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
@@ -2089,6 +2104,7 @@ function M.load_session(sess)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
+  Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0)
   controls.loaded_head = sess.head
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)

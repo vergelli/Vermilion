@@ -358,6 +358,7 @@ function M.capture(cooperative)
         total_crit = total_crit,
         hits = hits,
         crit_hits = crit_hits,
+        fight_ms = Vermilion.Metrics.fight_ms(),
       },
       cfg = {
         window_ms = math_floor(Vermilion.Metrics.window_seconds() * 1000 + 0.5),

@@ -422,6 +422,17 @@ function M.is_recording() return recording end
 function M.count() return n_tracked end
 function M.session_start() return t_start end
 function M.session_end() return t_end end
+function M.fight_ms()
+  local f = Vermilion.Metrics.fight_ms()
+  if f > 0 then return f end
+  return t_end - t_start
+end
+function M.uptime_of(rec)
+  local f = M.fight_ms()
+  if f <= 0 then return 0 end
+  local p = rec.uptime_ms / f
+  return (p > 1) and 1 or p
+end
 
 function M.load_session(metas, steps, t0, t1)
   M.reset()

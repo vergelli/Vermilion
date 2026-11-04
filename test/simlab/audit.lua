@@ -62,12 +62,16 @@ local function truth_combat(a, now)
   if DMG[result] and (suid or 0) > 0 then
     T.dmg = T.dmg + hit
     T.hits = T.hits + 1
+    T.first = T.first or now
+    T.last = now
     if CRIT[result] then T.crit_hits = T.crit_hits + 1; T.crit_dmg = T.crit_dmg + hit end
     local nm = real_name[aid] or tostring(aid)
     T.by_id[nm] = (T.by_id[nm] or 0) + hit
     T.by_type[dtype] = (T.by_type[dtype] or 0) + hit
   elseif result == ACTION_RESULT_DAMAGE_SHIELDED then
     T.shield = T.shield + hit
+    T.first = T.first or now
+    T.last = now
     T.shield_rows = (T.shield_rows or 0) + 1
   end
 end
@@ -230,6 +234,9 @@ print(string.format("EFFECT_GAP worst uptime %.1f s, worst debuff %.1f s", umax,
 local bad = {}
 if math.abs(rel(sm.total_damage, T.dmg)) > 0.001 then bad[#bad + 1] = "damage total" end
 if sm.hits ~= T.hits then bad[#bad + 1] = "hit count" end
+local true_avg = all / (math.max(1, T.last - T.first) / 1000)
+print(string.format("DPS truth %.0f over %.1f s | addon %.0f over %.1f s", true_avg, (T.last - T.first) / 1000, sm.avg, sm.fight_ms / 1000))
+if math.abs(rel(sm.avg, true_avg)) > 0.5 then bad[#bad + 1] = "average per second of fight" end
 if sm.crit_hits ~= T.crit_hits then bad[#bad + 1] = "crit hit count" end
 if math.abs(sm.crit_pct * 100 - pct(T.crit_dmg, T.dmg)) > 0.5 then bad[#bad + 1] = "damage from crits" end
 if math.abs(rel(totC.damage + totC.shield, all)) > 0.5 then bad[#bad + 1] = "skills total" end

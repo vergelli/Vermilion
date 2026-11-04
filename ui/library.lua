@@ -252,7 +252,7 @@ function M.refresh()
     row.name:SetColor(C_NAME.r, C_NAME.g, C_NAME.b, 1)
     row.stats:SetText(string_format(
       "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r  |c9e9490%s|r",
-      fmt_k(sum.avg or 0), fmt_k(sum.peak or 0),
+      fmt_k(Vermilion.Metrics.session_avg(sum)), fmt_k(sum.peak or 0),
       (pc == C_PIP_HOT) and "f2c74c" or "d95a4e",
       math_floor(Vermilion.Metrics.session_crit_rate(sum) * 100 + 0.5),
       fmt_date(h.ts)))

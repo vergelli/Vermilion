@@ -218,7 +218,9 @@ local function build(TB, t_hi)
     if ma then r.mn = r.mn + 1; r.mt0[r.mn], r.mt1[r.mn] = ma, mb; r.covered = r.covered + (mb - ma) end
     r.first = (r.mn > 0) and r.mt0[1] or t_hi
     local window = t_hi - r.first
-    r.uptime = (window > 0) and r.covered / window or 0
+    local fight = Vermilion.Metrics.fight_ms()
+    local over = (fight > 0) and fight or window
+    r.uptime = (over > 0) and math_min(1, r.covered / over) or 0
     r.down = math_max(0, window - r.covered)
     local d = dmg[r.name] or 0
     r.dps = (r.covered > 0) and d / (r.covered / 1000) or 0

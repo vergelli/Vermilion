@@ -67,7 +67,7 @@ def main(log_path, dump_path, start=None, end=None):
                 if r[2] in CRIT:
                     crits += 1
                     crit_dmg += h
-            elif r[2] == 'POWER_ENERGIZE' and r[9] == '1':
+            elif r[2] == 'POWER_ENERGIZE' and len(r) > 19 and (r[19] == '1' or (r[9] == '1' and r[19] == '*')):
                 energize[r[4]] += int(r[5])
             elif r[2] in ('ABILITY_ON_COOLDOWN', 'INSUFFICIENT_RESOURCE', 'BUSY', 'QUEUED'):
                 fails[nm(int(r[8]))][r[2]] += 1
