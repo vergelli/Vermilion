@@ -67,8 +67,6 @@ local VIS = {
     { "BR", BOTTOMRIGHT, -1, -1 },
   },
   shd = {},
-  tgt = {},
-  tgt_name = {},
   sample_shields = { count = 0 },
   sample_targets = { count = 0 },
   kill_icon = "EsoUI/Art/DeathRecap/deathRecap_killingBlow_icon.dds",
@@ -521,7 +519,6 @@ local function session_summary()
   local sum_crit, sum_noncrit = 0, 0
   for k in pairs(DOM) do DOM[k] = nil end
   for k in pairs(VIS.shd) do VIS.shd[k] = nil end
-  for k in pairs(VIS.tgt) do VIS.tgt[k] = nil end
   local dom_total, prev_t = 0, nil
   for i = 1, n do
     local s = TB.at(i)
@@ -545,13 +542,6 @@ local function session_summary()
         local id = e.id or 0
         VIS.shd[id] = (VIS.shd[id] or 0) + (e.share or 0) * sv
       end
-      local tg = s.targets
-      for a = 1, (tg and tg.count or 0) do
-        local e = tg[a]
-        local id = e.id or 0
-        VIS.tgt[id] = (VIS.tgt[id] or 0) + (e.share or 0) * dv
-        VIS.tgt_name[id] = e.name
-      end
     end
     prev_t = s.t
     if eos > peak then peak = eos; peak_t = s.t end
@@ -570,10 +560,6 @@ local function session_summary()
     end
     SUM.dom_type = best
     SUM.dom_pct = best_v / dom_total
-  end
-  SUM.top_target, SUM.top_target_v = nil, 0
-  for id, v in pairs(VIS.tgt) do
-    if v > SUM.top_target_v then SUM.top_target, SUM.top_target_v = id, v end
   end
   SUM.top_shield, SUM.top_shield_v = nil, 0
   for id, v in pairs(VIS.shd) do
@@ -734,12 +720,11 @@ local function show_report_card()
       string_format("%s  ·  %d%%", DamageTypeColors.name(sm.dom_type) or "?", math_floor(sm.dom_pct * 100 + 0.5)), dc or C_CARD_STAT)
   end
 
-  if sm.top_target then
-    add_row(GetString(VERMILION_REPORT_TOP_TARGET),
-      string_format("%s  ·  %s", tostring(VIS.tgt_name[sm.top_target] or sm.top_target), fmt_val(sm.top_target_v)), C_LINE_EDPS)
-  end
   local TVw = Vermilion.TargetsView
-  if TVw and sm.top_target then
+  local top_rows, top_n = TVw.compute()
+  if top_n > 0 then
+    add_row(GetString(VERMILION_REPORT_TOP_TARGET),
+      string_format("%s  ·  %s", top_rows[1].name, fmt_val(top_rows[1].total)), C_LINE_EDPS)
     local on_top, switches, lanes = TVw.focus()
     if lanes > 1 then
       add_row(GetString(VERMILION_REPORT_FOCUS_TIME), string_format("%d%%", math_floor(on_top * 100 + 0.5)), C_CARD_STAT)
@@ -962,7 +947,7 @@ local function hover_poll()
     local tot = (col.crit or 0) + (col.noncrit or 0)
     local cp  = (tot > 0) and math_floor((col.crit or 0) / tot * 100 + 0.5) or 0
     show_moment_card(C_CRIT, "Crit",
-      string_format("|c%s%d%% crit|r  ·  %s DPS", hexc(C_CRIT), cp, fmt_readout(tot)),
+      string_format(GetString(VERMILION_CRIT_MOMENT), hexc(C_CRIT), cp, fmt_readout(tot)),
       elapsed, mx, my)
   else
     fade_out(card_fader)

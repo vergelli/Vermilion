@@ -118,7 +118,7 @@ return function(H)
   ok((VermilionHoverCardName._text or "") == rows[order[1]].name, "hovering the first row names its effect, got " .. tostring(VermilionHoverCardName._text))
   local seen = {}
   for _, c in ipairs(H.controls) do if c._hidden == false and type(c._text) == "string" then seen[c._text] = true end end
-  ok(seen["Uptime"] and seen["Presses"] and seen["Mean error"] and seen["Down"], "the row card gives uptime, presses, mean error and downtime")
+  ok(seen["Uptime"] and seen["Refreshes"] and seen["Mean error"] and seen["Down"], "the row card gives uptime, presses, mean error and downtime")
   ok(UV.hovered() == order[1], "the hovered row is remembered for the error strip")
   H.state.mouse_x = canvas:GetLeft() + 1
   H.state.mouse_y = canvas:GetTop() + 1

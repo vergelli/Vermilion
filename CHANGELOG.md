@@ -16,8 +16,8 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: ultimate casts counted button presses, a real fight read 29 casts for 5 ultimates. Casts now come from the ultimate power actually dropping, which also corrects saved sessions
 - Fixed: damage per skill in Resources and Uptime counted the first sample that the rest of the views skip
 - Fixed: Resources counted every press of a skill as a cast with its full cost, including presses on cooldown or without resource. A cast now needs the pool to drop by its cost, and channels that drain on every tick count all their drains
-- Average DPS and the uptime of debuffs and effects now divide by the fight, from the first hit to the last, like ESO Logs does. Pressing Record early no longer lowers them, a real dummy fight read 86.6k against 90.9k
-- Fixed: damage from your pets was not counted at all. The game's own dummy result and ESO Logs count it
+- Average DPS and the uptime of debuffs and effects now divide by the fight, from the first hit to the last. Pressing Record early no longer lowers them, a real dummy fight read 86.6k against 90.9k
+- Fixed: damage from your pets was not counted at all. The game's own dummy result counts it
 - Fixed: pressing a channeled skill while it channels no longer counts as another cast
 - Fixed: the summary in the viewport could be cut off after a shorter fight, hiding its last values
 - Removed ACTIVE from the summary, the report card and the export, on a damage dealer it reads near 100% whenever a DoT ticks
@@ -32,6 +32,9 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the pool emptied by dying counted as spend unless it held more than half its maximum. A dungeon fight read twice its real magicka spend
 - Fixed: the same enemy could take two rows in Targets when the game tagged its name differently
 - The export shows what the pool spent outside skills, like dodge, block and sprint
+- Fixed: the report card named a single unit as the enemy focused most, now it names the same one the Targets view ranks first
+- The moment card in the CRIT view says crit damage, since CRIT in the header counts hits. Uptime cards say Refreshes, they count effects, not button presses, and leave out the damage lost of effects the view does not price
+- An empty pool now reads as starved in Resources
 - About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them

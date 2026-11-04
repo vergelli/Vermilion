@@ -320,7 +320,7 @@ local function draw_starved(c, canvas, TB, n, p, y)
   for k = 1, n + 1 do
     local s = TB.at(k)
     local level = s and level_of(s, p) or 1
-    if s and level > 0 and level < STARVE then
+    if s and level < STARVE then
       if not sx0 then sx0, st0 = x_of(s.t), s.t end
     elseif sx0 then
       local t_end = s and s.t or (lane.t0 + lane.span)
@@ -886,17 +886,17 @@ local function starved_span(TB, k, p)
   local s = TB.at(k)
   if not s then return 0 end
   local level = level_of(s, p)
-  if not (level > 0 and level < STARVE) then return 0 end
+  if not (level < STARVE) then return 0 end
   local i = k
   while i > 1 do
     local pl = level_of(TB.at(i - 1), p)
-    if pl > 0 and pl < STARVE then i = i - 1 else break end
+    if pl < STARVE then i = i - 1 else break end
   end
   local j = k
   local n = TB.count()
   while j < n do
     local nl = level_of(TB.at(j + 1), p)
-    if nl > 0 and nl < STARVE then j = j + 1 else break end
+    if nl < STARVE then j = j + 1 else break end
   end
   local t_end = TB.at(j + 1) and TB.at(j + 1).t or TB.at(j).t
   return t_end - TB.at(i).t
