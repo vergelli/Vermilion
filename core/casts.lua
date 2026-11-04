@@ -18,8 +18,8 @@ local recording = false
 local n = 0
 local cast_t, cast_id, cast_pool, cast_cost, cast_tick = {}, {}, {}, {}, {}
 local pend = {
-  [MAG] = { n = 0, t = {}, id = {}, cost = {}, last_id = 0, last_cost = 0, last_t = 0 },
-  [STA] = { n = 0, t = {}, id = {}, cost = {}, last_id = 0, last_cost = 0, last_t = 0 },
+  [MAG] = { n = 0, t = {}, id = {}, cost = {}, chan = {}, last_id = 0, last_cost = 0, last_t = 0, last_start = 0, last_chan = 0 },
+  [STA] = { n = 0, t = {}, id = {}, cost = {}, chan = {}, last_id = 0, last_cost = 0, last_t = 0, last_start = 0, last_chan = 0 },
 }
 local acc = {}
 
@@ -83,7 +83,9 @@ function M.slot_info(slot)
   local id = slot_ability(api, zc, slot, cat)
   if id <= 0 then return 0, 0, 0 end
   local pool, cost = slot_cost(api, zc, slot, cat, id)
-  return id, pool, cost
+  if not api.GetAbilityCastInfo then return id, pool, cost, 0 end
+  local channeled, duration = api.GetAbilityCastInfo(id, nil, "player")
+  return id, pool, cost, (channeled and duration) or 0
 end
 
 local function push(t, id, pool, cost, tick)
@@ -95,7 +97,7 @@ end
 
 local function pend_remove(q, i)
   for k = i, q.n - 1 do
-    q.t[k], q.id[k], q.cost[k] = q.t[k + 1], q.id[k + 1], q.cost[k + 1]
+    q.t[k], q.id[k], q.cost[k], q.chan[k] = q.t[k + 1], q.id[k + 1], q.cost[k + 1], q.chan[k + 1]
   end
   q.n = q.n - 1
 end
@@ -107,11 +109,11 @@ end
 local function pend_clear()
   for p = MAG, STA do
     local q = pend[p]
-    q.n, q.last_id, q.last_cost, q.last_t = 0, 0, 0, 0
+    q.n, q.last_id, q.last_cost, q.last_t, q.last_start, q.last_chan = 0, 0, 0, 0, 0, 0
   end
 end
 
-function M.stage(id, pool, cost, t)
+function M.stage(id, pool, cost, t, channel_ms)
   if not recording then return end
   local q = pend[pool]
   if not q or cost <= 0 then
@@ -121,7 +123,7 @@ function M.stage(id, pool, cost, t)
   pend_expire(q, t)
   if q.n >= PEND_CAP then pend_remove(q, 1) end
   q.n = q.n + 1
-  q.t[q.n], q.id[q.n], q.cost[q.n] = t, id, cost
+  q.t[q.n], q.id[q.n], q.cost[q.n], q.chan[q.n] = t, id, cost, channel_ms or 0
 end
 
 function M.on_drop(pool, amount, t)
@@ -129,6 +131,15 @@ function M.on_drop(pool, amount, t)
   local q = pend[pool]
   if not q then return end
   pend_expire(q, t)
+  if q.last_id > 0 and q.last_chan > 0 and t - q.last_start <= q.last_chan
+     and math.abs(amount - q.last_cost) <= q.last_cost * COST_TOLERANCE then
+    for i = q.n, 1, -1 do
+      if q.id[i] == q.last_id then pend_remove(q, i) end
+    end
+    push(t, q.last_id, pool, amount, 1)
+    q.last_t = t
+    return
+  end
   local best, best_gap = nil, 0
   for i = 1, q.n do
     local gap = math.abs(amount - q.cost[i])
@@ -137,20 +148,32 @@ function M.on_drop(pool, amount, t)
     end
   end
   if best then
-    local id, cost = q.id[best], q.cost[best]
+    local id, cost, chan = q.id[best], q.cost[best], q.chan[best]
     for i = q.n, 1, -1 do
       if q.id[i] == id then pend_remove(q, i) end
     end
     push(t, id, pool, amount, 0)
-    q.last_id, q.last_cost, q.last_t = id, cost, t
+    q.last_id, q.last_cost, q.last_t, q.last_start, q.last_chan = id, cost, t, t, chan
     return
   end
   if q.last_id > 0 and t - q.last_t <= TICK_WINDOW_MS and math.abs(amount - q.last_cost) <= q.last_cost * COST_TOLERANCE then
-    push(t, q.last_id, pool, amount, 1)
+    if q.last_chan > 0 then
+      push(t, q.last_id, pool, amount, 0)
+      q.last_start = t
+    else
+      push(t, q.last_id, pool, amount, 1)
+    end
     q.last_t = t
     return
   end
   bump("casts.drop_unmatched")
+end
+
+local function channel_of(api, id)
+  if not api.GetAbilityCastInfo then return 0 end
+  local channeled, duration = api.GetAbilityCastInfo(id, nil, "player")
+  if channeled and duration and duration > 0 then return duration end
+  return 0
 end
 
 function M.on_used(slot)
@@ -162,7 +185,7 @@ function M.on_used(slot)
   local id = slot_ability(api, zc, slot, cat)
   if id <= 0 then return end
   local pool, cost = slot_cost(api, zc, slot, cat, id)
-  M.stage(id, pool, cost, now_ms())
+  M.stage(id, pool, cost, now_ms(), channel_of(api, id))
 end
 
 function M.start_session()

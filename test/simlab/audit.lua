@@ -58,7 +58,8 @@ local open = {}
 
 local function truth_combat(a, now)
   local result, is_err, stype, ttype, hit, dtype, suid, aid = a[1], a[2], a[7], a[9], a[10] or 0, a[12], a[14], a[16]
-  if is_err or stype ~= COMBAT_UNIT_TYPE_PLAYER or ttype == COMBAT_UNIT_TYPE_PLAYER or hit <= 0 then return end
+  if is_err or (stype ~= COMBAT_UNIT_TYPE_PLAYER and stype ~= COMBAT_UNIT_TYPE_PLAYER_PET) then return end
+  if ttype == COMBAT_UNIT_TYPE_PLAYER or ttype == COMBAT_UNIT_TYPE_PLAYER_PET or hit <= 0 then return end
   if DMG[result] and (suid or 0) > 0 then
     T.dmg = T.dmg + hit
     T.hits = T.hits + 1

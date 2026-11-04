@@ -36,6 +36,8 @@ dofile(SIMLAB_ROOT .. "/test/harness/loader.lua")
 HARNESS.fire(EVENT_ADD_ON_LOADED, "Vermilion")
 local Cst = Vermilion.Casts
 local NAMES = { [1] = "magicka", [2] = "stamina" }
+local CHANNEL = {}
+for id, ms in (arg[3] or ""):gmatch("(%d+)=(%d+)") do CHANNEL[tonumber(id)] = tonumber(ms) end
 
 for idx, tr in ipairs(traces) do
   local c = tr.constants or {}
@@ -51,7 +53,7 @@ for idx, tr in ipairs(traces) do
       if (a[4] or 0) > 0 and (a[3] == 1 or a[3] == 2) then
         press[a[2]] = (press[a[2]] or 0) + 1
         pressed_cost[a[3]] = pressed_cost[a[3]] + a[4]
-        Cst.stage(a[2], a[3], a[4], e.t)
+        Cst.stage(a[2], a[3], a[4], e.t, a[5] or CHANNEL[a[2]])
       end
     elseif e.tag == "PU" then
       local p = POWER[a[3]]

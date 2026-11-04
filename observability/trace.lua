@@ -244,8 +244,8 @@ function M.init()
   if C.EVENT_ACTION_SLOT_ABILITY_USED then
     zev.register("Vermilion_Trace_SU", C.EVENT_ACTION_SLOT_ABILITY_USED, function(slot)
       if not active then return end
-      local id, pool, cost = Vermilion.Casts.slot_info(slot)
-      rec("SU", slot, id, pool, cost)
+      local id, pool, cost, channel = Vermilion.Casts.slot_info(slot)
+      rec("SU", slot, id, pool, cost, channel)
     end)
   end
   zev.register("Vermilion_Trace_CS", C.EVENT_PLAYER_COMBAT_STATE, function(in_combat) rec("CS", in_combat) end)

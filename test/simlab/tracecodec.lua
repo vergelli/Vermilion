@@ -9,7 +9,7 @@ local SIG = {
   BO = "s",
   GR = "bnsn",
   PU = "snnnnn",
-  SU = "nnnn",
+  SU = "nnnnn",
   EP = "n",
   MK = "sn",
 }

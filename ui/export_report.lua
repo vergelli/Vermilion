@@ -153,11 +153,14 @@ local function ultimate_section()
   local U = Vermilion.Ultimate
   if not U.has_data() then return "" end
   local us = U.summary()
-  return section(GetString(VERMILION_EXPORT_SEC_ULT), nil, {
+  local lines = {
     GetString(VERMILION_EXPORT_ULT_READY) .. ";" .. pct(us.ready_pct),
     GetString(VERMILION_EXPORT_ULT_CASTS) .. ";" .. us.casts,
-    GetString(VERMILION_EXPORT_ULT_GAP) .. ";" .. secs(us.mean_gap_ms),
-  })
+  }
+  if us.casts > 1 then
+    lines[#lines + 1] = GetString(VERMILION_EXPORT_ULT_GAP) .. ";" .. secs(us.mean_gap_ms)
+  end
+  return section(GetString(VERMILION_EXPORT_SEC_ULT), nil, lines)
 end
 
 local function kills_section()

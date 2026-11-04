@@ -53,13 +53,18 @@ def main(log_path, dump_path, start=None, end=None):
     inside = lambda t: start <= t <= end + 6000
     print('zone %s  log window %d to %d' % (head[6], start, end))
 
+    mine = {'1'}
+    for r in rows:
+        if len(r) > 15 and r[1] == 'UNIT_ADDED' and r[15] == '1':
+            mine.add(r[2])
+    print('pets', sorted(mine - {'1'}))
     total = hits = crits = crit_dmg = 0
     truth = collections.Counter()
     energize = collections.Counter()
     fails = collections.defaultdict(collections.Counter)
     for r in rows:
         if len(r) > 9 and r[1] == 'COMBAT_EVENT' and inside(int(r[0])):
-            if r[2] in DMG and r[9] == '1':
+            if r[2] in DMG and r[9] in mine and (len(r) < 20 or r[19] not in mine):
                 h = int(r[5])
                 total += h
                 hits += 1
