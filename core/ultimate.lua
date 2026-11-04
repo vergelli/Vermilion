@@ -267,12 +267,16 @@ function M.summary()
   if n_steps == 0 then return r end
   local t_lo = (t_start > 0) and t_start or step_t[1]
   local t_hi = (t_end > 0) and t_end or step_t[n_steps]
+  local fight_lo, fight_hi = Vermilion.Metrics.fight_bounds()
+  if fight_lo then t_lo, t_hi = fight_lo, fight_hi end
   if t_hi <= t_lo then return r end
   r.dur_ms = t_hi - t_lo
   local ready = 0
   for i = 1, n_steps do
     local t0 = step_t[i]
     local t1 = (i < n_steps) and step_t[i + 1] or t_hi
+    if t0 < t_lo then t0 = t_lo end
+    if t1 > t_hi then t1 = t_hi end
     if t1 > t0 then
       local c = M.cost_at(1, t0)
       if bar_id[2] > 0 or n_abil > 0 then

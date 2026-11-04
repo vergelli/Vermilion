@@ -73,11 +73,11 @@ function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 
 local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
 
-local fight_first, fight_last, fight_loaded = nil, nil, nil
+local fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 
 function M.session_mark()
   tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
-  fight_first, fight_last, fight_loaded = nil, nil, nil
+  fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
 end
 
 local function note_fight(t)
@@ -86,7 +86,16 @@ local function note_fight(t)
   if not fight_last or t > fight_last then fight_last = t end
 end
 
-function M.set_fight_ms(ms) fight_loaded = ms end
+function M.set_fight_ms(ms, first) fight_loaded, fight_loaded_first = ms, first end
+
+function M.fight_bounds()
+  if fight_loaded then
+    if fight_loaded_first then return fight_loaded_first, fight_loaded_first + fight_loaded end
+    return nil, nil
+  end
+  if fight_first and fight_last > fight_first then return fight_first, fight_last end
+  return nil, nil
+end
 
 function M.fight_ms()
   if fight_loaded then return fight_loaded end

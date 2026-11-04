@@ -327,7 +327,7 @@ local function draw_grid(grid, canvas, max_val, span_ms, flip, lookback, top_ins
     grid.time_l:ClearAnchors()
     grid.time_l:SetAnchor(BOTTOMLEFT, canvas, BOTTOMLEFT, 2, 0)
     local zoom_ms = (lookback and Vermilion.FilmWindow.is_zoomed()) and Vermilion.FilmColumns.view_start_ms() or nil
-    if zoom_ms then lookback = false end
+    if zoom_ms or not Vermilion.TemporalBuffer.is_recording() then lookback = false end
     grid.time_l:SetText(lookback and ("-" .. fmt_secs(span_ms)) or (zoom_ms and fmt_secs(zoom_ms)) or "0s")
     grid.time_l:SetHidden(false)
     grid.time_m:ClearAnchors()
@@ -2023,7 +2023,7 @@ function M.load_session(sess)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
-  Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0)
+  Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0, sess.head.sum and sess.head.sum.fight_t0)
   controls.loaded_head = sess.head
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)

@@ -132,7 +132,7 @@ function M.on_drop(pool, amount, t)
   if not q then return end
   pend_expire(q, t)
   if q.last_id > 0 and q.last_chan > 0 and t - q.last_start <= q.last_chan
-     and math.abs(amount - q.last_cost) <= q.last_cost * COST_TOLERANCE then
+     and amount <= q.last_cost * (1 + COST_TOLERANCE) then
     for i = q.n, 1, -1 do
       if q.id[i] == q.last_id then pend_remove(q, i) end
     end

@@ -35,3 +35,11 @@ Numbers Match The Raw Events
     [Tags]    replay    numeric
     ${msg}=    Traces Match Their Events
     Log    ${msg}
+
+Fights Match The Game Log
+    [Documentation]    Replays each recorded fight through the current code and compares its numbers
+    ...                with the Encounter.log the game wrote for that fight: damage, hits, crits, fight
+    ...                time, shares, casts, spend, restores, ultimate, effects, gaps and kills.
+    [Tags]    replay    numeric
+    ${msg}=    Fights Match The Game Log
+    Log    ${msg}

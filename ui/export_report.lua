@@ -77,6 +77,11 @@ local function skills_section()
     lines[i] = table_concat({ i, clean(r.name), clean(r.type), int(r.v), share(r.v, total), int(r.abs) }, ";")
   end
   lines[#lines + 1] = GetString(VERMILION_EXPORT_SKILLS_SUM) .. ";" .. int(total)
+  local TB = Vermilion.TemporalBuffer
+  local lo = Vermilion.Metrics.fight_bounds()
+  if lo and TB.count() > 0 and TB.at(1).t > lo + 2000 then
+    lines[#lines + 1] = string_format(GetString(VERMILION_EXPORT_PARTIAL), secs(TB.at(TB.count()).t - TB.at(1).t))
+  end
   return section(GetString(VERMILION_EXPORT_SEC_SKILLS), GetString(VERMILION_EXPORT_COL_SKILLS), lines)
 end
 
@@ -97,11 +102,12 @@ local function targets_section()
 end
 
 local function uptime_section()
-  local order, n, rows = Vermilion.UptimeView.compute()
+  local UV = Vermilion.UptimeView
+  local order, n, rows = UV.compute()
   local lines = {}
   for i = 1, n do
     local r = rows[order[i]]
-    lines[i] = table_concat({ clean(r.name), pct(r.uptime), r.apps, secs(r.dur), secs(r.down), r.early, r.late, int(r.dps), int(r.cost) }, ";")
+    lines[i] = table_concat({ clean(r.name), pct(r.uptime), r.apps, secs(r.dur), secs(r.down), r.early, r.late, int(r.dps), UV.priced(r) and int(r.cost) or "" }, ";")
   end
   return section(GetString(VERMILION_EXPORT_SEC_UPTIME), GetString(VERMILION_EXPORT_COL_UPTIME), lines)
 end

@@ -159,6 +159,8 @@ function M.summary(TB)
   r.damage, r.eff = 0, 0
   local n = TB.count()
   local prev_t = nil
+  local lo, hi = Vermilion.Metrics.fight_bounds()
+  local inside, mag_zero, sta_zero, mag_known, sta_known = 0, 0, 0, false, false
   for i = 1, n do
     local s = TB.at(i)
     if prev_t then r.damage = r.damage + ((s.eDPS or 0) + (s.ShDPS or 0)) * (s.t - prev_t) / 1000 end
@@ -169,13 +171,20 @@ function M.summary(TB)
     r.mag_out = r.mag_out + (s.mag_out or 0)
     r.sta_in  = r.sta_in  + (s.sta_in  or 0)
     r.sta_out = r.sta_out + (s.sta_out or 0)
-    if m > 0 and m < LOW then r.mag_low = r.mag_low + 1 end
-    if st > 0 and st < LOW then r.sta_low = r.sta_low + 1 end
+    if m > 0 then mag_known = true end
+    if st > 0 then sta_known = true end
+    if not lo or (s.t >= lo and s.t <= hi) then
+      inside = inside + 1
+      if m == 0 then mag_zero = mag_zero + 1 elseif m < LOW then r.mag_low = r.mag_low + 1 end
+      if st == 0 then sta_zero = sta_zero + 1 elseif st < LOW then r.sta_low = r.sta_low + 1 end
+    end
   end
   r.n = n
-  if n > 0 then
-    r.mag_low_pct = r.mag_low / n
-    r.sta_low_pct = r.sta_low / n
+  if mag_known then r.mag_low = r.mag_low + mag_zero end
+  if sta_known then r.sta_low = r.sta_low + sta_zero end
+  if inside > 0 then
+    r.mag_low_pct = r.mag_low / inside
+    r.sta_low_pct = r.sta_low / inside
   end
   if r.mag_out > 0 then r.mag_sigma = r.mag_in / r.mag_out end
   if r.sta_out > 0 then r.sta_sigma = r.sta_in / r.sta_out end

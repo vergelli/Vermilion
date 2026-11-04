@@ -209,10 +209,21 @@ function M.set_auto(sv, on)
   sv.debug.auto_trace = on and true or false
 end
 
+local function record_power_baseline()
+  if not api.GetUnitPower then return end
+  for _, flag in ipairs({ C.COMBAT_MECHANIC_FLAGS_MAGICKA, C.COMBAT_MECHANIC_FLAGS_STAMINA, C.COMBAT_MECHANIC_FLAGS_ULTIMATE }) do
+    if flag then
+      local value, max, effective = api.GetUnitPower("player", flag)
+      if value then rec("PU", "player", 0, flag, value, max or 0, effective or max or 0) end
+    end
+  end
+end
+
 function M.on_record(sv)
   if not M.auto_enabled(sv) then return end
   reset()
   M.start()
+  record_power_baseline()
 end
 
 function M.on_stop(sv)
