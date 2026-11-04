@@ -118,7 +118,6 @@ local VIEW_LABELS     = { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUF
 
 local current_view    = VIEW_BY_SKILL
 
-local crit_threshold_pct = 50
 
 local DT_ICON_DIR = "Vermilion/assets/dtype/"
 local DTYPE_ICON = {}
@@ -1843,11 +1842,6 @@ function M.set_viewport_alpha(a)
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, a)
 end
 
-function M.set_crit_threshold(pct)
-  crit_threshold_pct = pct or 50
-end
-
-function M.get_crit_threshold() return crit_threshold_pct end
 
 function M.toggle()
   local now_visible = not Vermilion.Visibility.get("graph")
@@ -2338,7 +2332,6 @@ function M.init()
   controls.view_label:SetColor(0.75, 0.75, 0.75, 1)
 
 
-  crit_threshold_pct = sv.graph.crit_threshold_pct or crit_threshold_pct
 
   controls.card = HC.build(controls.window, controls.summary.hit, fmt_secs)
   card_fader = HC.fader()

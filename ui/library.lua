@@ -18,7 +18,6 @@ local ROW_GAP = 2
 local MAX_ROWS = 10
 
 local C_PIP_HOT   = { r = 0.95, g = 0.78, b = 0.30 }
-local C_PIP_COLD  = { r = 0.88, g = 0.30, b = 0.26 }
 local C_PIP_NONE  = { r = 0.48, g = 0.45, b = 0.45 }
 local C_NAME      = { r = 0.94, g = 0.88, b = 0.86 }
 local C_DIM       = { r = 0.60, g = 0.55, b = 0.55 }
@@ -35,16 +34,9 @@ local scroll_off = 0
 local drag = { on = false, y0 = 0, off0 = 0 }
 local log
 
-local function crit_hot(sum)
-  local pct = Vermilion.Metrics.session_crit_rate(sum) * 100
-  local threshold = Vermilion.Graph.get_crit_threshold and Vermilion.Graph.get_crit_threshold() or 50
-  return pct >= threshold
-end
-
 local function pip_color(sum)
   if (sum.total_damage or 0) <= 0 then return C_PIP_NONE end
-  if crit_hot(sum) then return C_PIP_HOT end
-  return C_PIP_COLD
+  return C_PIP_HOT
 end
 
 local function fmt_dur(ms)
@@ -253,7 +245,7 @@ function M.refresh()
     row.stats:SetText(string_format(
       "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r  |c9e9490%s|r",
       fmt_k(Vermilion.Metrics.session_avg(sum)), fmt_k(sum.peak or 0),
-      (pc == C_PIP_HOT) and "f2c74c" or "d95a4e",
+      "f2c74c",
       math_floor(Vermilion.Metrics.session_crit_rate(sum) * 100 + 0.5),
       fmt_date(h.ts)))
     row.stats:SetColor(1, 1, 1, 1)

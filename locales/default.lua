@@ -18,7 +18,6 @@ ZO_CreateStringId("VERMILION_LOADED",         "Vermilion v%s loaded. Type %s to 
 -- Settings panel
 ZO_CreateStringId("VERMILION_SETTINGS_RESET",         "Reset to Defaults")
 ZO_CreateStringId("VERMILION_SETTING_VIEWPORT_ALPHA", "Viewport Alpha")
-ZO_CreateStringId("VERMILION_SETTING_CRIT_THRESHOLD", "Crit-rate threshold")
 ZO_CreateStringId("VERMILION_SETTINGS_UNKNOWN",       "Unknown Contributions")
 ZO_CreateStringId("VERMILION_SETTINGS_LOGO_ON",       "Logo: Visible")
 ZO_CreateStringId("VERMILION_SETTINGS_LOGO_OFF",      "Logo: Hidden")
