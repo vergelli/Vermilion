@@ -326,7 +326,7 @@ function M.capture(cooperative)
     death_recs[i] = { t = rel }
   end
 
-  local total_damage, total_shield, total_crit, hits = Vermilion.Metrics.totals()
+  local total_damage, total_shield, total_crit, hits, crit_hits = Vermilion.Metrics.totals()
   local sv = Vermilion.SavedVars
   local temporal = sv and sv.temporal or {}
   local C = Vermilion.Constants
@@ -356,6 +356,7 @@ function M.capture(cooperative)
         total_shield = total_shield,
         total_crit = total_crit,
         hits = hits,
+        crit_hits = crit_hits,
       },
       cfg = {
         window_ms = math_floor(Vermilion.Metrics.window_seconds() * 1000 + 0.5),

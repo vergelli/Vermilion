@@ -62,10 +62,17 @@ return function(H)
     Vermilion.Graph.on_stop_click()
     counts[round] = SV.trace.count
   end
-  ok(#SV.traces == 3, "the ring keeps three traces, got " .. tostring(#SV.traces))
-  ok(SV.traces[3] == SV.trace, "the newest trace mirrors sv.trace")
-  ok(SV.traces[1].count == counts[2] and SV.traces[3].count == counts[4], "the oldest trace is evicted first")
+  ok(#SV.traces == 4, "a dungeon of short pulls fits in the ring, got " .. tostring(#SV.traces))
+  ok(SV.traces[4] == SV.trace, "the newest trace mirrors sv.trace")
   ok(counts[4] > counts[1], "each recording stages only its own events")
+  T.set_ring_events(counts[3] + counts[4] * 2)
+  Vermilion.Graph.on_flush_click()
+  Vermilion.Graph.on_record_click()
+  for _ = 1, 40 do H.damage_out({ hit = 500 }) end
+  H.advance(1000)
+  Vermilion.Graph.on_stop_click()
+  T.set_ring_events(200000)
+  ok(#SV.traces == 3 and SV.traces[1].count == counts[3], "past the event budget the oldest traces leave first, got " .. tostring(#SV.traces))
 
   H.reloads = 0
   SLASH_COMMANDS["/vermilion"]("flush")

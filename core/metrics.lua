@@ -71,14 +71,14 @@ end
 function M.window_seconds() return W_MS / 1000 end
 function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 
-local tot_damage, tot_shield, tot_crit, tot_hits = 0, 0, 0, 0
+local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
 
 function M.session_mark()
-  tot_damage, tot_shield, tot_crit, tot_hits = 0, 0, 0, 0
+  tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
 end
 
 function M.totals()
-  return tot_damage, tot_shield, tot_crit, tot_hits
+  return tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits
 end
 
 function M.ingest_damage_out(ev)
@@ -86,7 +86,10 @@ function M.ingest_damage_out(ev)
   if amt > 0 then
     tot_damage = tot_damage + amt
     tot_hits   = tot_hits + 1
-    if is_crit(ev) then tot_crit = tot_crit + amt end
+    if is_crit(ev) then
+      tot_crit = tot_crit + amt
+      tot_crit_hits = tot_crit_hits + 1
+    end
     damage_out_buf:push(ev)
   else
     event_pool:release(ev)
@@ -128,6 +131,24 @@ function M.crit_split(now_ms)
   end
   crit = crit / ws
   return crit, (total / ws) - crit
+end
+
+function M.crit_rate(now_ms)
+  damage_out_buf:trim(now_ms)
+  local hits, crits = 0, 0
+  for i = damage_out_buf.head, damage_out_buf.tail do
+    local e = damage_out_buf.entries[i]
+    if (e.amount or 0) > 0 then
+      hits = hits + 1
+      if is_crit(e) then crits = crits + 1 end
+    end
+  end
+  return crits, hits
+end
+
+function M.session_crit_rate(sum)
+  if sum.crit_hits and (sum.hits or 0) > 0 then return sum.crit_hits / sum.hits end
+  return sum.crit_pct or 0
 end
 
 local accum_buckets = {}

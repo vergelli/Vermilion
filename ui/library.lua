@@ -36,7 +36,7 @@ local drag = { on = false, y0 = 0, off0 = 0 }
 local log
 
 local function crit_hot(sum)
-  local pct = (sum.crit_pct or 0) * 100
+  local pct = Vermilion.Metrics.session_crit_rate(sum) * 100
   local threshold = Vermilion.Graph.get_crit_threshold and Vermilion.Graph.get_crit_threshold() or 50
   return pct >= threshold
 end
@@ -254,7 +254,7 @@ function M.refresh()
       "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r  |c9e9490%s|r",
       fmt_k(sum.avg or 0), fmt_k(sum.peak or 0),
       (pc == C_PIP_HOT) and "f2c74c" or "d95a4e",
-      math_floor((sum.crit_pct or 0) * 100 + 0.5),
+      math_floor(Vermilion.Metrics.session_crit_rate(sum) * 100 + 0.5),
       fmt_date(h.ts)))
     row.stats:SetColor(1, 1, 1, 1)
     local kind_icon = Vermilion.ContentKind.icon(h.kind)

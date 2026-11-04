@@ -206,8 +206,7 @@ end
 
 local function update_crit(now)
   if not controls.crit then return end
-  local crit, noncrit = Vermilion.Metrics.crit_split(now)
-  local tot = crit + noncrit
+  local crit, tot = Vermilion.Metrics.crit_rate(now)
   if tot <= 0 then
     if last_crit_pct ~= -1 then
       last_crit_pct = -1
@@ -644,14 +643,16 @@ local function session_summary()
   for id, v in pairs(VIS.shd) do
     if id > 0 and v > SUM.top_shield_v then SUM.top_shield, SUM.top_shield_v = id, v end
   end
-  SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits = Vermilion.Metrics.totals()
+  SUM.total_damage, SUM.total_shield, SUM.total_crit, SUM.hits, SUM.crit_hits = Vermilion.Metrics.totals()
   local ls = controls.loaded_sum
   if ls then
     SUM.total_damage = ls.total_damage or 0
     SUM.total_shield = ls.total_shield or 0
     SUM.total_crit   = ls.total_crit or 0
     SUM.hits         = ls.hits or 0
+    SUM.crit_hits    = ls.crit_hits
   end
+  SUM.crit_rate = Vermilion.Metrics.session_crit_rate(SUM)
   return SUM
 end
 
@@ -671,7 +672,7 @@ local function build_summary_text()
   local parts = {
     string_format("|c%s%s|r |c%s%s|r", hexc(C_SUM.AVG),  GetString(VERMILION_SUMMARY_AVG),  vc, fmt_val(sm.avg)),
     string_format("|c%s%s|r |c%s%s|r", hexc(C_SUM.PEAK), GetString(VERMILION_SUMMARY_PEAK), vc, fmt_val(sm.peak)),
-    string_format("|c%s%s|r |c%s%d%%|r", hexc(C_SUM.CRIT), GetString(VERMILION_SUMMARY_CRIT), vc, math_floor(sm.crit_pct * 100 + 0.5)),
+    string_format("|c%s%s|r |c%s%d%%|r", hexc(C_SUM.CRIT), GetString(VERMILION_SUMMARY_CRIT), vc, math_floor(sm.crit_rate * 100 + 0.5)),
     string_format("|c%s%s|r |c%s%d%%|r", hexc(C_SUM.ACTIVE), GetString(VERMILION_SUMMARY_ACTIVE), vc, math_floor(sm.active_pct * 100 + 0.5)),
   }
   local out_total = sm.total_damage + sm.total_shield
@@ -737,8 +738,8 @@ local function show_report_card()
   card.name:SetText(GetString(VERMILION_REPORT_TITLE))
   local total = sm.total_damage + sm.total_shield
   card.stat:SetText(string_format(GetString(VERMILION_REPORT_STAT),
-    hexc(C_CRIT), math_floor(sm.crit_pct * 100 + 0.5), fmt_val(total)))
-  card.time:SetText(GetString(VERMILION_REPORT_COPY_HINT))
+    hexc(C_CRIT), math_floor(sm.crit_rate * 100 + 0.5), fmt_val(total)))
+  card.time:SetText("")
 
   local rows = card.rows
   local n_rows = 0
@@ -2311,9 +2312,7 @@ function M.init()
   Vermilion.Skin.icons({ controls.btn_lib, controls.btn_save, controls.btn_export, controls.btn_prev_sess, controls.btn_next_sess })
   VermilionGraphWindowSettingsBtn:SetText(GetString(VERMILION_GRAPH_SETTINGS))
   VermilionGraphWindowAboutBtn:SetText(GetString(VERMILION_ABOUT_TITLE))
-  VermilionGraphWindowAboutBtn:SetNormalFontColor(0.62, 0.56, 0.54, 0.8)
-  VermilionGraphWindowAboutBtn:SetMouseOverFontColor(0.95, 0.88, 0.84, 1)
-  VermilionGraphWindowAboutBtn:SetPressedFontColor(0.8, 0.72, 0.68, 1)
+  Vermilion.Skin.button(VermilionGraphWindowAboutBtn)
   tint_btn(controls.btn_stop,   0.96, 0.80, 0.34)
   tint_btn(controls.btn_flush,  0.92, 0.46, 0.40)
   wire_save_hooks()
@@ -2390,11 +2389,6 @@ function M.init()
   sum_hit:SetHidden(true)
   sum_hit:SetHandler("OnMouseEnter", function() show_report_card() end)
   sum_hit:SetHandler("OnMouseExit", function() fade_out(card_fader) end)
-  sum_hit:SetHandler("OnMouseUp", function(_, _, upInside)
-    if upInside == false then return end
-    show_report_card()
-    Vermilion.Export.open()
-  end)
   controls.summary = { bg = sum_bg, label = sum_label, help = sum_help, hit = sum_hit }
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)

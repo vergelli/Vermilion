@@ -38,7 +38,7 @@ local function on_slash(input)
         local ring = Vermilion.SavedVars.traces
         d("[trace] " .. Vermilion.Trace.status_line()
           .. "  auto=" .. (Vermilion.Trace.auto_enabled(Vermilion.SavedVars) and "ON" or "OFF")
-          .. "  staged=" .. tostring(ring and #ring or 0) .. "/3"
+          .. "  staged=" .. tostring(ring and #ring or 0)
           .. "  (subcmd: start | stop | save | clear | auto)")
       end
       return

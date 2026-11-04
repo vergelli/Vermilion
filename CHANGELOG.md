@@ -7,6 +7,7 @@ All notable changes to Vermilion are documented here. This project follows
 
 ### Closing pass (November 2026)
 
+- CRIT now means the share of hits that crit, in the header, the report and the library. The share of damage from crits stays in the export and the CRIT view
 - New Export button and window: the whole session as plain text ready to copy, with skills, targets, uptime, debuffs, resources, ultimate, kills and a timeline; long reports split into parts
 - Fixed: debuff uptime ran late on every application, the game sends an echo with each one and it counted as a second holder (Burning read about 12% high in a real fight)
 - Fixed: effects with two ids under one name, like Barbed Trap, closed in Uptime when the short id faded

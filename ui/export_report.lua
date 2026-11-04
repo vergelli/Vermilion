@@ -54,6 +54,7 @@ local function summary_section()
     GetString(VERMILION_EXPORT_AVG) .. ";" .. int(sm.avg),
     GetString(VERMILION_EXPORT_PEAK) .. ";" .. int(sm.peak),
     GetString(VERMILION_EXPORT_PEAK_AT) .. ";" .. secs(sm.peak_t_off),
+    GetString(VERMILION_EXPORT_CRIT_RATE) .. ";" .. (sm.crit_hits and share(sm.crit_hits, sm.hits) or "?"),
     GetString(VERMILION_EXPORT_CRIT) .. ";" .. pct(sm.crit_pct),
     GetString(VERMILION_EXPORT_ACTIVE) .. ";" .. pct(sm.active_pct),
     GetString(VERMILION_EXPORT_HITS) .. ";" .. int(sm.hits),

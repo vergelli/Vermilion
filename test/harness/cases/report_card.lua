@@ -32,7 +32,7 @@ return function(H)
   local stat = VermilionHoverCardStat._text or ""
   ok(stat:find("crit") ~= nil and stat:find("total") ~= nil, "report stat must read crit and total: " .. stat)
   local cp = tonumber(stat:match("|c%x%x%x%x%x%x(%d+)%% crit"))
-  ok(cp and cp == 33, "the crit share is a third here, got " .. tostring(cp))
+  ok(cp and cp == 50, "crit counts hits, half of them here, got " .. tostring(cp))
   ok(VermilionHoverCardRowName1._text == "Damage dealt" and VermilionHoverCardRowName1._hidden == false, "row 1 is the damage dealt")
   ok(VermilionHoverCardRowVal1._text == "9,000" or VermilionHoverCardRowVal1._text == "9000" or VermilionHoverCardRowVal1._text:find("9"), "row 1 carries the total: " .. tostring(VermilionHoverCardRowVal1._text))
   ok(VermilionHoverCardRowName2._text == "Shields cracked" and (VermilionHoverCardRowVal2._text or ""):find("%%"), "row 2 is the shield share")
@@ -40,7 +40,6 @@ return function(H)
   ok(VermilionHoverCardRowName4._text == "Peak at" and (VermilionHoverCardRowVal4._text or ""):find("s") ~= nil, "row 4 says when the peak was")
   ok(VermilionHoverCardRowName5._text == "Time dealing damage" and (VermilionHoverCardRowVal5._text or ""):find("%%"), "row 5 is the active share")
   ok(VermilionHoverCardRowName6._text == "Main damage type" and (VermilionHoverCardRowVal6._text or ""):find("100%%"), "row 6 names the main damage type, got " .. tostring(VermilionHoverCardRowVal6._text))
-  ok((VermilionHoverCardTime._text or ""):find("export") ~= nil, "the card must tell the user the chip is clickable")
   ok(VermilionHoverCard._draw_tier == DT_HIGH, "the card draws above every label")
   hit._onOnMouseExit(hit)
   ok(VermilionHoverCard._hidden == true, "leaving the chip closes the report")
@@ -88,11 +87,7 @@ return function(H)
   H.state.hold_fade = nil
   H.state.mouse_x, H.state.mouse_y = nil, nil
 
-  H.sounds = {}
-  hit._onOnMouseUp(hit, nil, true)
-  ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("open")), "clicking the chip opens the export window")
-  ok(VermilionExport._hidden == false, "clicking the chip must open the export")
-  Vermilion.Export.hide()
+  ok(hit._onOnMouseUp == nil, "the chip only explains, the export has its own button")
 
   local session = Vermilion.SessionStore.capture()
   ok(G.load_session(session), "captured session must reload")
