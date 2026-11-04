@@ -170,13 +170,18 @@ local function aggregate()
   dmg_by_name, dmg_total = Vermilion.DamageNames.by_name(Vermilion.TemporalBuffer)
   order[SEC_SPENT].n, order[SEC_REC].n = 0, 0
   totals.spend, totals.casts, totals.regained, totals.energized = 0, 0, 0, 0
-  local _, cid, cpool, ccost, n = Vermilion.Casts.records()
+  local _, cid, cpool, ccost, n, ctick = Vermilion.Casts.records()
   for i = 1, n do
     local p, cost = cpool[i], ccost[i]
     if p > 0 and cost > 0 and wants(p) then
-      add(rec_for(SEC_SPENT, cid[i]), p, cost)
+      local rec = rec_for(SEC_SPENT, cid[i])
+      add(rec, p, cost)
       totals.spend = totals.spend + cost
-      totals.casts = totals.casts + 1
+      if ctick[i] == 1 then
+        rec.n = rec.n - 1
+      else
+        totals.casts = totals.casts + 1
+      end
     end
   end
   finish(SEC_SPENT)

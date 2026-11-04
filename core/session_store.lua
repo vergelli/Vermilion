@@ -88,6 +88,7 @@ local DESC = {
     { name = "id",   width = 4 },
     { name = "pool", width = 1 },
     { name = "cost", width = 3 },
+    { name = "tick", width = 1 },
   },
   restores = {
     { name = "t",    width = 4 },
@@ -300,14 +301,14 @@ function M.capture(cooperative)
   local ukn, uks, uknn, uki = Vermilion.Uptime.keys()
   local uptime_meta = { names = {}, slotted = {}, ids = {} }
   for k = 1, uknn do uptime_meta.names[k] = ukn[k]; uptime_meta.slotted[k] = uks[k] and 1 or 0; uptime_meta.ids[k] = uki[k] or 0 end
-  local ctt, cti, ctp, ctc, ctn = Vermilion.Casts.records()
+  local ctt, cti, ctp, ctc, ctn, ctk = Vermilion.Casts.records()
   local cast_recs = {}
   for i = 1, ctn do
     local rel = ctt[i] - t0
     if rel < 0 then rel = 0 end
     local cost = ctc[i] or 0
     if cost > 65535 then cost = 65535 end
-    cast_recs[i] = { t = rel, id = cti[i] or 0, pool = ctp[i] or 0, cost = cost }
+    cast_recs[i] = { t = rel, id = cti[i] or 0, pool = ctp[i] or 0, cost = cost, tick = ctk[i] or 0 }
   end
   local rtt, rti, rtp, rta, rtn = Vermilion.Restores.records()
   local restore_recs = {}

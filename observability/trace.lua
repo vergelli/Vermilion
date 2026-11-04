@@ -50,6 +50,8 @@ local CONST_NAMES = {
   "DAMAGE_TYPE_BLEED",
 }
 
+local EFFECT_NOISE = { [2240] = true, [2245] = true, [2250] = true }
+
 local lines  = {}
 local n      = 0
 local active = false
@@ -226,8 +228,15 @@ function M.status_line()
 end
 
 function M.init()
-  zev.register("Vermilion_Trace_CE", C.EVENT_COMBAT_EVENT, function(...) rec("CE", ...) end)
-  zev.register("Vermilion_Trace_EF", C.EVENT_EFFECT_CHANGED, function(...) rec("EF", ...) end)
+  zev.register("Vermilion_Trace_CE", C.EVENT_COMBAT_EVENT, function(...)
+    local result = ...
+    if EFFECT_NOISE[result] and select(7, ...) ~= C.COMBAT_UNIT_TYPE_PLAYER then return end
+    rec("CE", ...)
+  end)
+  zev.register("Vermilion_Trace_EF", C.EVENT_EFFECT_CHANGED, function(...)
+    if select(16, ...) ~= C.COMBAT_UNIT_TYPE_PLAYER and select(4, ...) ~= "player" then return end
+    rec("EF", ...)
+  end)
   if C.EVENT_POWER_UPDATE then
     zev.register("Vermilion_Trace_PU", C.EVENT_POWER_UPDATE, function(...) rec("PU", ...) end)
     zev.add_filter("Vermilion_Trace_PU", C.EVENT_POWER_UPDATE, C.REGISTER_FILTER_UNIT_TAG, "player")

@@ -48,6 +48,7 @@ function M.on_power(p, value, powerMax, effectiveMax)
         grace[p] = now_ms() + GRACE_MS
       else
         spent[p] = spent[p] - d
+        Vermilion.Casts.on_drop(p, -d, now_ms())
       end
     elseif d > 0 and now_ms() >= grace[p] then
       gained[p] = gained[p] + d
