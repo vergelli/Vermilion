@@ -91,7 +91,6 @@
         <Control name="$(parent)SliderTrackVPAlpha" mouseEnabled="true">
           <Anchor point="TOPLEFT" offsetX="14" offsetY="83"/>
           <Dimensions x="272" y="14"/>
-          <OnMouseUp>Vermilion.Settings.on_vpalpha_track_click(self)</OnMouseUp>
         </Control>
 
         <Label name="$(parent)CritThreshTitle"
@@ -111,7 +110,6 @@
         <Control name="$(parent)SliderTrackCritThresh" mouseEnabled="true">
           <Anchor point="TOPLEFT" offsetX="14" offsetY="121"/>
           <Dimensions x="272" y="14"/>
-          <OnMouseUp>Vermilion.Settings.on_critthresh_track_click(self)</OnMouseUp>
         </Control>
 
         <Button name="$(parent)SampleBtn" mouseEnabled="true" font="ZoFontGameSmall" inherits="ZO_DefaultButton">
@@ -228,7 +226,6 @@
         <Control name="$(parent)SliderTrackLightAlpha" mouseEnabled="true">
           <Anchor point="TOPLEFT" offsetX="314" offsetY="229"/>
           <Dimensions x="272" y="14"/>
-          <OnMouseUp>Vermilion.Settings.on_lightalpha_track_click(self)</OnMouseUp>
         </Control>
 
         <Texture name="$(parent)SepColumns">
