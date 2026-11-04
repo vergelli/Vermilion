@@ -183,6 +183,8 @@ return function(H)
   end
   do
     local o, n, rect, joined = RV.dumbbells()
+    local _, full = Vermilion.DamageNames.by_name(TB)
+    ok(joined == full, "shares use the same total as CONTRIB, not only the skills with a cost")
   local rs = RV.return_score(2000, 10, 1000, 20)
   ok(rs < 25 and rs > 20, "a cheap lucky skill is pulled toward the pool ratio, got " .. rs)
   ok(math.abs(RV.return_score(1000000, 50000, 1000, 10) - 20) < 0.5, "a heavy spender keeps its own ratio")

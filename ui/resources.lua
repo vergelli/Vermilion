@@ -56,7 +56,6 @@ local pick_hit = { { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, { x0 = 0, x1 = 0 }, y
 local row_hit = { n = 0, x0 = {}, x1 = {}, y0 = {}, y1 = {}, rec = {}, sec = {} }
 local sec_rect = { { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 }, { y0 = 0, y1 = 0 } }
 local dumb_order = { n = 0 }
-local dmg_joined = 0
 local ROWS = { {}, {}, {}, {}, {} }
 local col_cache = {}
 local rate_in, rate_out = {}, {}
@@ -183,11 +182,9 @@ local function aggregate()
   finish(SEC_SPENT)
   local SC = Vermilion.SkillColors
   local o = order[SEC_SPENT]
-  dmg_joined = 0
   for i = 1, o.n do
     local rec = o[i]
     rec.dmg = (rec.id > 0) and (dmg_by_name[SC.ability_name(rec.id)] or 0) or 0
-    dmg_joined = dmg_joined + rec.dmg
   end
   dumb_order.n = 0
   for i = 1, o.n do
@@ -524,7 +521,7 @@ local function draw_dumbbells(c, canvas, x, y, w, h, S)
   for i = 1, n do
     local rec = o[i]
     local sp = (totals.spend > 0) and rec.total / totals.spend or 0
-    local dm = (dmg_joined > 0) and rec.dmg / dmg_joined or 0
+    local dm = (dmg_total > 0) and rec.dmg / dmg_total or 0
     if sp > mx then mx = sp end
     if dm > mx then mx = dm end
   end
@@ -554,7 +551,7 @@ local function draw_dumbbells(c, canvas, x, y, w, h, S)
     local sp = (totals.spend > 0) and rec.total / totals.spend or 0
     local ax = tx + math_floor(sp / mx * tw + 0.5)
     if rec.dmg > 0 then
-      local dm = (dmg_joined > 0) and rec.dmg / dmg_joined or 0
+      local dm = (dmg_total > 0) and rec.dmg / dmg_total or 0
       local bx = tx + math_floor(dm / mx * tw + 0.5)
       local lo, hi = math_min(ax, bx), math_max(ax, bx)
       if hi > lo then box(c, canvas, lo, hi, cy - 1, 3, (bx < ax) and C_OUT or C_GOLD, dim and 0.35 or 0.9, 3) end
@@ -892,7 +889,7 @@ local function row_card(c, rec, sec, S, mx, my)
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.share, PCT_TEXT[math_floor(rec.total / math_max(totals.spend, 1) * 100 + 0.5)] or "", kind(c, "neutral")
     if rec.dmg > 0 then
       nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.eff, rec.eff_text, kind(c, "damage")
-      nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.dmg_share, PCT_TEXT[math_floor(rec.dmg / math_max(dmg_joined, 1) * 100 + 0.5)] or "", kind(c, "neutral")
+      nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.dmg_share, PCT_TEXT[math_floor(rec.dmg / math_max(dmg_total, 1) * 100 + 0.5)] or "", kind(c, "neutral")
     else
       nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.eff, S.eff_none, kind(c, "neutral")
     end
@@ -1021,4 +1018,4 @@ function M.rows() return order[SEC_SPENT], order[SEC_SPENT].n end
 function M.recovered() return order[SEC_REC], order[SEC_REC].n end
 function M.totals() return totals end
 function M.lane() return lane end
-function M.dumbbells() return dumb_order, dumb_order.n, sec_rect[SEC_DUMB], dmg_joined end
+function M.dumbbells() return dumb_order, dumb_order.n, sec_rect[SEC_DUMB], dmg_total end
