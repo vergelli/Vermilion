@@ -16,6 +16,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: ultimate casts counted button presses, a real fight read 29 casts for 5 ultimates. Casts now come from the ultimate power actually dropping, which also corrects saved sessions
 - Fixed: damage per skill in Resources and Uptime counted the first sample that the rest of the views skip
 - Fixed: Resources counted every press of a skill as a cast with its full cost, including presses on cooldown or without resource. A cast now needs the pool to drop by its cost, and channels that drain on every tick count all their drains
+- Average DPS and the uptime of debuffs and effects now divide by the fight, from the first hit to the last, like ESO Logs does. Pressing Record early no longer lowers them, a real dummy fight read 86.6k against 90.9k
 - About moved out of Settings, next to it in the title bar
 - New look: obsidian chrome, gold hairline frames, lacquer Record button, lacquer active tab, own radios
 - While recording, the chart shows the last 60 seconds with bars of constant width instead of halving them

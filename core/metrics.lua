@@ -73,8 +73,32 @@ function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 
 local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
 
+local fight_first, fight_last, fight_loaded = nil, nil, nil
+
 function M.session_mark()
   tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits = 0, 0, 0, 0, 0
+  fight_first, fight_last, fight_loaded = nil, nil, nil
+end
+
+local function note_fight(t)
+  if not t then return end
+  if not fight_first or t < fight_first then fight_first = t end
+  if not fight_last or t > fight_last then fight_last = t end
+end
+
+function M.set_fight_ms(ms) fight_loaded = ms end
+
+function M.fight_ms()
+  if fight_loaded then return fight_loaded end
+  if fight_first and fight_last > fight_first then return fight_last - fight_first end
+  return 0
+end
+
+function M.session_avg(sum)
+  if sum.fight_ms and sum.fight_ms > 0 then
+    return ((sum.total_damage or 0) + (sum.total_shield or 0)) / (sum.fight_ms / 1000)
+  end
+  return sum.avg or 0
 end
 
 function M.totals()
@@ -86,6 +110,7 @@ function M.ingest_damage_out(ev)
   if amt > 0 then
     tot_damage = tot_damage + amt
     tot_hits   = tot_hits + 1
+    note_fight(ev.t)
     if is_crit(ev) then
       tot_crit = tot_crit + amt
       tot_crit_hits = tot_crit_hits + 1
@@ -100,6 +125,7 @@ function M.ingest_shield_out(ev)
   local amt = ev.amount
   if amt > 0 then
     tot_shield = tot_shield + amt
+    note_fight(ev.t)
     shield_out_buf:push(ev)
   else
     event_pool:release(ev)

@@ -51,6 +51,7 @@ local function summary_section()
     GetString(VERMILION_EXPORT_TOTAL_DAMAGE) .. ";" .. int(sm.total_damage),
     GetString(VERMILION_EXPORT_TOTAL_SHIELD) .. ";" .. int(sm.total_shield),
     GetString(VERMILION_EXPORT_SHIELD_SHARE) .. ";" .. share(sm.total_shield, total),
+    GetString(VERMILION_EXPORT_FIGHT) .. ";" .. secs(sm.fight_ms),
     GetString(VERMILION_EXPORT_AVG) .. ";" .. int(sm.avg),
     GetString(VERMILION_EXPORT_PEAK) .. ";" .. int(sm.peak),
     GetString(VERMILION_EXPORT_PEAK_AT) .. ";" .. secs(sm.peak_t_off),
@@ -108,11 +109,10 @@ end
 
 local function debuffs_section()
   local DT = Vermilion.DebuffTracker
-  local dur = DT.session_end() - DT.session_start()
   local lines = {}
   for i = 1, DT.count() do
     local r = DT.get(i)
-    lines[i] = table_concat({ clean(r.name), share(r.uptime_ms, dur), r.applications or 0, r.unique_units or 0, r.max_conc or 0, secs(r.longest_gap_ms) }, ";")
+    lines[i] = table_concat({ clean(r.name), pct(DT.uptime_of(r)), r.applications or 0, r.unique_units or 0, r.max_conc or 0, secs(r.longest_gap_ms) }, ";")
   end
   return section(GetString(VERMILION_EXPORT_SEC_DEBUFFS), GetString(VERMILION_EXPORT_COL_DEBUFFS), lines)
 end
