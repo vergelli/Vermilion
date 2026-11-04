@@ -40,7 +40,9 @@ return function(H)
   ok(VermilionGraphWindowCornerTLH._hidden == true and VermilionGraphWindowCornerBRV._hidden == true, "the corners go with the hover")
   ok(VermilionGraphWindowStopBtn._hidden == true, "leaving must tuck the minimal controls")
 
-  Vermilion.Settings.on_lightalpha_track_click(VermilionSettingsPanelSliderTrackLightAlpha)
+  local lt = VermilionSettingsPanelSliderTrackLightAlpha
+  lt._onOnMouseDown(lt)
+  lt._onOnMouseUp(lt)
   ok(Vermilion.SavedVars.settings.light_alpha_pct ~= nil, "the opacity slider persists")
 
   G.on_stop_click()

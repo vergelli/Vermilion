@@ -27,91 +27,21 @@ local CT_TEXTURE  = zc.CT_TEXTURE
 local GuiRoot     = zc.GuiRoot
 
 local FILL_TEXTURE = "EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds"
-local FILL_T, FILL_B = 0, 0.53125
 
 local SAMPLE_1HZ, SAMPLE_2HZ = 1000, 500
 local SAMPLE_DEFAULT = SAMPLE_1HZ
 
-local VPALPHA_PRESETS = {}
-local VPALPHA_LABELS  = {}
-for pct = 0, 100, 5 do
-  VPALPHA_PRESETS[#VPALPHA_PRESETS + 1] = pct
-  VPALPHA_LABELS[pct] = pct .. "%"
-end
 local VPALPHA_DEFAULT = 30
-
-local CRITTHRESH_PRESETS = {}
-local CRITTHRESH_LABELS  = {}
-for pct = 0, 100, 5 do
-  CRITTHRESH_PRESETS[#CRITTHRESH_PRESETS + 1] = pct
-  CRITTHRESH_LABELS[pct] = pct .. "%"
-end
 local CRITTHRESH_DEFAULT = 50
-
-local LIGHTA_PRESETS = {}
-local LIGHTA_LABELS  = {}
-for pct = 10, 90, 5 do
-  LIGHTA_PRESETS[#LIGHTA_PRESETS + 1] = pct
-  LIGHTA_LABELS[pct] = pct .. "%"
-end
 local LIGHTA_DEFAULT = 40
+
+local sliders = {}
 
 local controls           = {}
 local current_sample     = SAMPLE_DEFAULT
 local current_vpalpha    = VPALPHA_DEFAULT
 local current_critthresh = CRITTHRESH_DEFAULT
 local current_lighta     = LIGHTA_DEFAULT
-
-local function nearest_idx(presets, ms)
-  local bi, bd = 1, math.huge
-  for i, p in ipairs(presets) do
-    local diff = math.abs(p - ms)
-    if diff < bd then bi, bd = i, diff end
-  end
-  return bi
-end
-
-local function update_slider(track, fill, thumb, label, presets, labels, ms)
-  local w = track:GetWidth()
-  if w <= 0 then return end
-  local idx = nearest_idx(presets, ms)
-  local pct = (idx - 1) / (#presets - 1)
-  fill:SetWidth(math_max(2, w * pct))
-  fill:SetHeight(track:GetHeight())
-  thumb:ClearAnchors()
-  thumb:SetAnchor(TOP,    track, TOPLEFT,    w * pct, -1)
-  thumb:SetAnchor(BOTTOM, track, BOTTOMLEFT, w * pct,  1)
-  thumb:SetWidth(3)
-  label:SetText(labels[ms] or (math_floor(ms / 1000) .. "s"))
-end
-
-local TRACK_BG_TEXTURE = "EsoUI/Art/Miscellaneous/progressbar_frame_bg.dds"
-
-local function setup_slider_visuals(track, name_prefix)
-  local WM = WINDOW_MANAGER
-
-  local bg = WM:CreateControl(name_prefix .. "Bg", track, CT_TEXTURE)
-  bg:SetAnchorFill(track)
-  bg:SetTexture(TRACK_BG_TEXTURE)
-  bg:SetColor(0.55, 0.55, 0.55, 0.85)
-  bg:SetDrawLevel(0)
-
-  local fill = WM:CreateControl(name_prefix .. "Fill", track, CT_TEXTURE)
-  fill:ClearAnchors()
-  fill:SetAnchor(BOTTOMLEFT, track, BOTTOMLEFT, 0, 0)
-  fill:SetTexture(FILL_TEXTURE)
-  fill:SetTextureCoords(0, 1, FILL_T, FILL_B)
-  fill:SetColor(0.88, 0.30, 0.26, 0.92)
-  fill:SetDrawLevel(1)
-
-  local thumb = WM:CreateControl(name_prefix .. "Thumb", track, CT_TEXTURE)
-  thumb:SetTexture(FILL_TEXTURE)
-  thumb:SetTextureCoords(0, 1, FILL_T, FILL_B)
-  thumb:SetColor(1, 1, 1, 1)
-  thumb:SetDrawLevel(2)
-
-  return fill, thumb
-end
 
 local function persist_temporal(key, val)
   local sv = Vermilion.SavedVars
@@ -128,10 +58,9 @@ local function sample_label(ms)
 end
 
 local function refresh_all_sliders()
-  local c = controls
-  update_slider(c.track_vpalpha, c.fill_vpalpha, c.thumb_vpalpha, c.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
-  update_slider(c.track_critthresh, c.fill_critthresh, c.thumb_critthresh, c.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
-  update_slider(c.track_lighta, c.fill_lighta, c.thumb_lighta, c.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
+  sliders.vpalpha.set(current_vpalpha)
+  sliders.critthresh.set(current_critthresh)
+  sliders.lighta.set(current_lighta)
 end
 
 function M.refresh_unknown_count()
@@ -201,15 +130,6 @@ function M.on_logo_click()
   if not now then d("[Vm] " .. GetString(VERMILION_LOGO_HINT)) end
 end
 
-local function track_pick(control, presets)
-  local cx      = GetUIMousePosition()
-  local track_w = control:GetWidth()
-  if track_w <= 0 then return nil end
-  local pct = math_max(0, math_min(1, (cx - control:GetLeft()) / track_w))
-  local idx = math_max(1, math_min(#presets, math_floor(pct * (#presets - 1) + 0.5) + 1))
-  return presets[idx]
-end
-
 function M.on_sample_click()
   if Vermilion.TemporalBuffer.is_recording() then
     Sound.play("deny")
@@ -220,26 +140,6 @@ function M.on_sample_click()
   persist_temporal("sample_rate_ms", current_sample)
   controls.sample_btn:SetText(sample_label(current_sample))
   Sound.play(current_sample == SAMPLE_2HZ and "on" or "off")
-end
-
-function M.on_vpalpha_track_click(control)
-  local v = track_pick(control, VPALPHA_PRESETS)
-  if not v then return end
-  current_vpalpha = v
-  log:info("viewport_alpha ->", current_vpalpha, "%")
-  persist_graph("viewport_alpha_pct", current_vpalpha)
-  Vermilion.Graph.set_viewport_alpha(current_vpalpha / 100)
-  update_slider(controls.track_vpalpha, controls.fill_vpalpha, controls.thumb_vpalpha, controls.label_vpalpha, VPALPHA_PRESETS, VPALPHA_LABELS, current_vpalpha)
-end
-
-function M.on_critthresh_track_click(control)
-  local v = track_pick(control, CRITTHRESH_PRESETS)
-  if not v then return end
-  current_critthresh = v
-  log:info("crit_threshold ->", current_critthresh, "%")
-  persist_graph("crit_threshold_pct", current_critthresh)
-  Vermilion.Graph.set_crit_threshold(current_critthresh)
-  update_slider(controls.track_critthresh, controls.fill_critthresh, controls.thumb_critthresh, controls.label_critthresh, CRITTHRESH_PRESETS, CRITTHRESH_LABELS, current_critthresh)
 end
 
 local function light_label(on)
@@ -303,18 +203,6 @@ function M.on_light_click()
   Sound.play(now and "on" or "off")
   controls.light_btn:SetText(light_label(now))
   Vermilion.Graph.set_light_enabled(now)
-end
-
-function M.on_lightalpha_track_click(control)
-  local v = track_pick(control, LIGHTA_PRESETS)
-  if not v then return end
-  current_lighta = v
-  log:info("light_alpha ->", current_lighta, "%")
-  local sv = Vermilion.SavedVars
-  sv.settings = sv.settings or {}
-  sv.settings.light_alpha_pct = current_lighta
-  Vermilion.Graph.set_light_alpha(current_lighta / 100)
-  update_slider(controls.track_lighta, controls.fill_lighta, controls.thumb_lighta, controls.label_lighta, LIGHTA_PRESETS, LIGHTA_LABELS, current_lighta)
 end
 
 local function sounds_on()
@@ -405,8 +293,8 @@ function M.init()
 
   M.migrate_recording(sv.temporal, sv.settings)
   current_sample     = sv.temporal.sample_rate_ms or SAMPLE_DEFAULT
-  current_vpalpha    = VPALPHA_PRESETS[nearest_idx(VPALPHA_PRESETS, sv.graph.viewport_alpha_pct    or VPALPHA_DEFAULT)]
-  current_critthresh = CRITTHRESH_PRESETS[nearest_idx(CRITTHRESH_PRESETS, sv.graph.crit_threshold_pct or CRITTHRESH_DEFAULT)]
+  current_vpalpha    = sv.graph.viewport_alpha_pct or VPALPHA_DEFAULT
+  current_critthresh = sv.graph.crit_threshold_pct or CRITTHRESH_DEFAULT
 
   Vermilion.TemporalBuffer.init(Vermilion.Constants.TEMPORAL.CAPACITY)
   Vermilion.Graph.set_crit_threshold(current_critthresh)
@@ -479,7 +367,7 @@ function M.init()
   controls.light_btn:SetText(light_label(sv.settings.light_mode == true))
   controls.kills_btn:SetText(kills_label(M.kill_markers()))
   controls.avg_btn:SetText(avg_label(M.average_line()))
-  current_lighta = LIGHTA_PRESETS[nearest_idx(LIGHTA_PRESETS, sv.settings.light_alpha_pct or LIGHTA_DEFAULT)]
+  current_lighta = sv.settings.light_alpha_pct or LIGHTA_DEFAULT
 
   for _, k in ipairs({ "vpalpha", "critthresh", "lighta" }) do
     controls["title_" .. k]:SetColor(0.75, 0.75, 0.75, 1)
@@ -489,10 +377,36 @@ function M.init()
   controls.title_critthresh:SetText(GetString(VERMILION_SETTING_CRIT_THRESHOLD))
   controls.title_lighta:SetText(GetString(VERMILION_SETTING_LIGHT_ALPHA))
 
-  local c = controls
-  c.fill_vpalpha, c.thumb_vpalpha = setup_slider_visuals(c.track_vpalpha, "VermilionSettingsVPAlpha")
-  c.fill_critthresh, c.thumb_critthresh = setup_slider_visuals(c.track_critthresh, "VermilionSettingsCritThresh")
-  c.fill_lighta, c.thumb_lighta = setup_slider_visuals(c.track_lighta, "VermilionSettingsLightA")
+  local Slider = Vermilion.Slider
+  sliders.vpalpha = Slider.new({
+    name = "VermilionSettingsVPAlpha", track = controls.track_vpalpha, label = controls.label_vpalpha,
+    min = 0, max = 100, value = current_vpalpha,
+    on_change = function(v)
+      current_vpalpha = v
+      persist_graph("viewport_alpha_pct", v)
+      Vermilion.Graph.set_viewport_alpha(v / 100)
+    end,
+  })
+  sliders.critthresh = Slider.new({
+    name = "VermilionSettingsCritThresh", track = controls.track_critthresh, label = controls.label_critthresh,
+    min = 0, max = 100, value = current_critthresh,
+    on_change = function(v)
+      current_critthresh = v
+      persist_graph("crit_threshold_pct", v)
+      Vermilion.Graph.set_crit_threshold(v)
+    end,
+  })
+  sliders.lighta = Slider.new({
+    name = "VermilionSettingsLightA", track = controls.track_lighta, label = controls.label_lighta,
+    min = 10, max = 90, value = current_lighta,
+    on_change = function(v)
+      current_lighta = v
+      local s = Vermilion.SavedVars
+      s.settings = s.settings or {}
+      s.settings.light_alpha_pct = v
+      Vermilion.Graph.set_light_alpha(v / 100)
+    end,
+  })
 
   if sv.settings.x and sv.settings.y then
     controls.window:ClearAnchors()

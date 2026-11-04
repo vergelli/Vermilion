@@ -12,6 +12,7 @@ All notable changes to Vermilion are documented here. This project follows
 - After stopping, navigate the fight: wheel zooms, shift plus wheel moves, the strip under the chart shows the whole fight (drag to move, right click to see it all)
 - Recordings keep 30 minutes at 1 Hz or 15 at 2 Hz, with no length setting; older long sessions still open whole
 - Settings: saved profiles and the heavy combination warning are gone
+- Settings: sliders drag continuously, with gold veined lacquer and the ruby as the handle
 - RESOURCES: Best Return list, ranked so a cheap lucky cast does not top it
 - UPTIME: one view, steadiness moved to the row card, refresh totals box
 - Settings: optional average line across SKILL, TYPE and CRIT

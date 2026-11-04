@@ -1,7 +1,8 @@
 return function(H)
   local function ok(cond, msg) if not cond then error(msg, 2) end end
   local Skin = Vermilion.Skin
-  local paths = { Skin.CHROME, Skin.TAB_ON, Skin.RADIO_ON, Skin.RADIO_OFF, Skin.CARET, Skin.FRAME_EDGE }
+  local paths = { Skin.CHROME, Skin.TAB_ON, Skin.RADIO_ON, Skin.RADIO_OFF, Skin.CARET, Skin.FRAME_EDGE,
+    "Vermilion/assets/skin/slider_groove.dds", "Vermilion/assets/skin/slider_fill.dds", "Vermilion/assets/skin/slider_thumb.dds" }
   for _, set in ipairs({ Skin.PLAIN, Skin.LACQUER, Skin.CLOSE }) do
     for _, p in pairs(set) do paths[#paths + 1] = p end
   end

@@ -62,6 +62,29 @@ return function(H)
   eq(S.snapshot().sample_rate_ms, 1000, "reset restores the sample rate")
   eq(S.snapshot().crit_threshold_pct, 50, "reset restores the crit threshold")
 
+  local track = VermilionSettingsPanelSliderTrackCritThresh
+  local function at(pct) H.state.mouse_x = track:GetLeft() + 2 + (track:GetWidth() - 4) * pct end
+  at(0.73)
+  track._onOnMouseDown(track)
+  eq(S.snapshot().crit_threshold_pct, 73, "a press moves to any percent, not to fixed steps")
+  eq(VermilionSettingsPanelCritThreshLabel._text, "73%", "the label follows")
+  at(0.21)
+  H.advance(50)
+  eq(S.snapshot().crit_threshold_pct, 21, "dragging follows the mouse")
+  eq(sv.graph.crit_threshold_pct, 21, "and persists")
+  at(5)
+  H.advance(50)
+  eq(S.snapshot().crit_threshold_pct, 100, "dragging past the end clamps")
+  track._onOnMouseUp(track)
+  at(0.4)
+  H.advance(50)
+  eq(S.snapshot().crit_threshold_pct, 100, "releasing ends the drag")
+  local fill = VermilionSettingsCritThreshFill
+  ok(fill._w == track:GetWidth() - 4, "a full slider shows the whole fill")
+  S.on_reset_click()
+  eq(VermilionSettingsPanelCritThreshLabel._text, "50%", "reset moves the slider back")
+  H.state.mouse_x = nil
+
   local old = {}
   for i = 1, 2400 do old[i] = { t = i * 200, eDPS = 1, ShDPS = 0, crit = 0, noncrit = 0 } end
   TB.load_session(old)
