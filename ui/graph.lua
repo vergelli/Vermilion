@@ -553,6 +553,18 @@ local function session_summary()
   SUM.peak_t_off = peak_t - first_t
   SUM.crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0
   SUM.dom_type, SUM.dom_pct = nil, 0
+  local ex = Vermilion.Metrics.exact()
+  if ex then
+    for k in pairs(DOM) do DOM[k] = nil end
+    for k in pairs(VIS.shd) do VIS.shd[k] = nil end
+    dom_total = 0
+    for key, v in pairs(ex.skills) do
+      local dt = key % 64 - 1
+      DOM[dt] = (DOM[dt] or 0) + v
+      dom_total = dom_total + v
+    end
+    for id, v in pairs(ex.shields or VIS.shd) do VIS.shd[id] = v end
+  end
   if dom_total > 0 then
     local best, best_v = nil, 0
     for key, v in pairs(DOM) do
@@ -575,6 +587,7 @@ local function session_summary()
     SUM.crit_hits    = ls.crit_hits
     SUM.overkill     = ls.overkill
   end
+  if SUM.total_damage > 0 and SUM.total_crit > 0 then SUM.crit_pct = SUM.total_crit / SUM.total_damage end
   SUM.crit_rate = Vermilion.Metrics.session_crit_rate(SUM)
   SUM.fight_ms = Vermilion.Metrics.fight_ms()
   if SUM.fight_ms > 0 then
@@ -2009,7 +2022,7 @@ function M.load_session(sess)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
   controls.save_locked = true
   controls.loaded_sum = sess.head.sum
-  Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0, sess.head.sum and sess.head.sum.fight_t0)
+  Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0, sess.head.sum and sess.head.sum.fight_t0, sess.head.sum and sess.head.sum.exact)
   controls.loaded_head = sess.head
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)

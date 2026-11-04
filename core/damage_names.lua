@@ -17,6 +17,18 @@ function M.by_name(TB)
   for k in pairs(by_name) do by_name[k] = nil end
   total = 0
   local SC = Vermilion.SkillColors
+  local ex = Vermilion.Metrics.exact()
+  if ex then
+    for code, v in pairs(ex.skills) do
+      total = total + v
+      local id = math.floor(code / 64)
+      if id > 0 then
+        local nm = SC.ability_name(id)
+        if nm and nm ~= "" then by_name[nm] = (by_name[nm] or 0) + v end
+      end
+    end
+    return by_name, total
+  end
   local t_prev = nil
   for k = 1, n do
     local s = TB.at(k)

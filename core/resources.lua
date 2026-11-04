@@ -194,6 +194,7 @@ function M.summary(TB)
     end
   end
   r.n = n
+  r.damage = Vermilion.Metrics.output_total() or r.damage
   if mag_known then r.mag_low = r.mag_low + mag_zero end
   if sta_known then r.sta_low = r.sta_low + sta_zero end
   if inside > 0 then

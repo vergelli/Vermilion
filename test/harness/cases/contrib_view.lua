@@ -34,16 +34,10 @@ return function(H)
   local ratio = rows[1].v / rows[2].v
   ok(ratio > 3.0 and ratio < 4.0, "Big Hit must weigh about three and a half Small Hits, got " .. tostring(ratio))
   local t = CV.totals()
-  local TB = Vermilion.TemporalBuffer
-  local expect, prev = 0, nil
-  for i = 1, TB.count() do
-    local s = TB.at(i)
-    if prev then expect = expect + math.floor(s.eDPS * 10 + 0.5) / 10 * (s.t - prev) / 1000 end
-    prev = s.t
-  end
-  ok(math.abs(t.damage - expect) < 1e-6, "the damage total is the integral of the sampled rate, got " .. tostring(t.damage) .. " vs " .. tostring(expect))
-  local all = rows[1].v + rows[2].v + rows[3].v
-  ok(math.abs(all - (t.damage + t.shield)) < 0.01 * (t.damage + t.shield), "the rows add up to the EOS total within share rounding, got " .. tostring(all) .. " vs " .. tostring(t.damage + t.shield))
+  ok(t.damage == 27000, "the damage total adds every hit, got " .. tostring(t.damage))
+  ok(t.shield == 3000, "the shield total adds every hit, got " .. tostring(t.shield))
+  ok(rows[1].v + rows[2].v + rows[3].v == 30000, "the rows add up to the total exactly")
+  ok(rows[1].v == 21000 and rows[2].v == 6000 and rows[3].v == 3000, "each row is the sum of its hits")
 
   local texts = {}
   for _, c in ipairs(H.controls) do

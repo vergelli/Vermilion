@@ -30,6 +30,7 @@ local CASES = {
   "fight_time",
   "pet_damage",
   "screen_numbers",
+  "exact_tables",
   "session_store",
   "content_kind",
   "auto_record",

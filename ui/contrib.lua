@@ -106,31 +106,45 @@ local function aggregate()
   for i = 1, ids.n do acc[ids[i]] = 0; acc_abs[ids[i]] = 0 end
   totals.damage, totals.shield = 0, 0
   local t0, t_prev = 0, 0
-  for i = 1, n do
-    local s = TB.at(i)
-    if i == 1 then
-      t0 = s.t
-    else
-      local dt = (s.t - t_prev) / 1000
-      if dt > 0 then
-        local dv = math_floor(s.eDPS * 10 + 0.5) / 10 * dt
-        local sv = math_floor(s.ShDPS * 10 + 0.5) / 10 * dt
-        totals.damage = totals.damage + dv
-        totals.shield = totals.shield + sv
-        local da = s.dtype_abilities
-        local dn = da.count or 0
-        local eos = dv + sv
-        for k = 1, dn do
-          local ab = da[k]
-          local dtype = ab.key or 0
-          note(ab.id, dtype)
-          local key = ab.id * 64 + (dtype + 1)
-          acc[key] = acc[key] + math_floor(ab.share * 1000 + 0.5) / 1000 * eos
-          acc_abs[key] = acc_abs[key] + math_floor((ab.abs or 0) * 1000 + 0.5) / 1000 * eos
+  local ex = Vermilion.Metrics.exact()
+  if ex then
+    if n > 0 then t0, t_prev = TB.at(1).t, TB.at(n).t end
+    local abs = ex.skills_abs
+    for key, v in pairs(ex.skills) do
+      note(math_floor(key / 64), key % 64 - 1)
+      local a = abs[key] or 0
+      acc[key] = v
+      acc_abs[key] = a
+      totals.damage = totals.damage + v - a
+      totals.shield = totals.shield + a
+    end
+  else
+    for i = 1, n do
+      local s = TB.at(i)
+      if i == 1 then
+        t0 = s.t
+      else
+        local dt = (s.t - t_prev) / 1000
+        if dt > 0 then
+          local dv = math_floor(s.eDPS * 10 + 0.5) / 10 * dt
+          local sv = math_floor(s.ShDPS * 10 + 0.5) / 10 * dt
+          totals.damage = totals.damage + dv
+          totals.shield = totals.shield + sv
+          local da = s.dtype_abilities
+          local dn = da.count or 0
+          local eos = dv + sv
+          for k = 1, dn do
+            local ab = da[k]
+            local dtype = ab.key or 0
+            note(ab.id, dtype)
+            local key = ab.id * 64 + (dtype + 1)
+            acc[key] = acc[key] + math_floor(ab.share * 1000 + 0.5) / 1000 * eos
+            acc_abs[key] = acc_abs[key] + math_floor((ab.abs or 0) * 1000 + 0.5) / 1000 * eos
+          end
         end
       end
+      t_prev = s.t
     end
-    t_prev = s.t
   end
   totals.span = t_prev - t0
 
