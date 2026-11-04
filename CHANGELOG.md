@@ -23,6 +23,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: UPTIME rings staying on screen, the empty category picker, grid and cursor fading halfway down
 - RESOURCES and UPTIME: sections on skinned panels, and subtle pill tabs for Magicka, Stamina and Both
 - Fixed: CONTRIB icons keeping a tint from other views, RESOURCES damage shares disagreeing with CONTRIB
+- Removed the tooltips on tabs, buttons and library rows; library rows show their date instead
 - Fixed: the hover card flickering on some RESOURCES rows, a stray dash outside the window, the CRIT value and the recording mode tag not showing in the header
 
 ### Fixed

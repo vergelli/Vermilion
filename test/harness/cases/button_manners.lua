@@ -14,12 +14,7 @@ return function(H)
   for _, name in ipairs(BUTTONS) do
     local c = rawget(_G, name)
     ok(c ~= nil, name .. " must exist after init")
-    ok(type(c._onOnMouseEnter) == "function", name .. " must explain itself on hover")
-    ok(type(c._onOnMouseExit) == "function", name .. " must hide its tooltip on exit")
-    H.last_tooltip = nil
-    c._onOnMouseEnter(c)
-    ok(type(H.last_tooltip) == "string" and #H.last_tooltip > 3, name .. " tooltip must carry text")
-    c._onOnMouseExit(c)
+    ok(c._onOnMouseEnter == nil and c._onOnMouseExit == nil, name .. " carries no hover")
   end
 
   local function last_sound() return H.sounds and H.sounds[#H.sounds] or nil end
