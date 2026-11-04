@@ -94,6 +94,29 @@ return function(H)
   ok(r4 == r3 and t4 == t2, "casts and drains survive the round trip")
 
   G.on_flush_click()
+  G.on_record_click()
+  H.res_power(POWERTYPE_MAGICKA, 13460, 26940)
+  H.fire(EVENT_POWER_UPDATE, "player", 0, POWERTYPE_MAGICKA, 0, 26940, 26940)
+  local rs = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
+  H.advance(1000)
+  rs = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
+  ok(rs.mag_out == 0, "the pool emptied by dying is not spend, even under half its maximum, got " .. rs.mag_out)
+
+  H.res_power(POWERTYPE_MAGICKA, 20000, 26940)
+  H.advance(4000)
+  Vermilion.Resources.on_death(true)
+  local real_dead = Vermilion.zenimax.api.IsUnitDead
+  Vermilion.zenimax.api.IsUnitDead = function() return false end
+  H.res_power(POWERTYPE_MAGICKA, 15000, 26940)
+  ok(Vermilion.Resources.is_dead() == false, "a power update from a living player ends the death, with no revive event")
+  H.res_power(POWERTYPE_MAGICKA, 14000, 26940)
+  H.advance(1000)
+  rs = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
+  ok(rs.mag_out == 6000, "and the pool counts again, got " .. rs.mag_out)
+  Vermilion.zenimax.api.IsUnitDead = real_dead
+  G.on_stop_click()
+
+  G.on_flush_click()
   Vermilion.Visibility.set("graph", false)
   Vermilion.Metrics.reset()
 end

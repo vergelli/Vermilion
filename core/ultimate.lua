@@ -270,7 +270,19 @@ function M.summary()
   local fight_lo, fight_hi = Vermilion.Metrics.fight_bounds()
   if fight_lo then t_lo, t_hi = fight_lo, fight_hi end
   if t_hi <= t_lo then return r end
-  r.dur_ms = t_hi - t_lo
+  local dts, dn, dte = Vermilion.Resources.deaths()
+  local function dead_overlap(a, b)
+    local sum = 0
+    for k = 1, dn do
+      local d0, d1 = dts[k], (dte[k] > 0) and dte[k] or t_hi
+      if d0 < a then d0 = a end
+      if d1 > b then d1 = b end
+      if d1 > d0 then sum = sum + (d1 - d0) end
+    end
+    return sum
+  end
+  r.dur_ms = t_hi - t_lo - dead_overlap(t_lo, t_hi)
+  if r.dur_ms <= 0 then return r end
   local ready = 0
   for i = 1, n_steps do
     local t0 = step_t[i]
@@ -283,7 +295,7 @@ function M.summary()
         local c2 = M.cost_at(2, t0)
         if c2 > 0 and c2 < c then c = c2 end
       end
-      if step_v[i] >= c then ready = ready + (t1 - t0) end
+      if step_v[i] >= c then ready = ready + (t1 - t0) - dead_overlap(t0, t1) end
     end
   end
   r.ready_ms  = ready

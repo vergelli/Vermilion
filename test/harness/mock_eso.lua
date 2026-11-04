@@ -662,6 +662,7 @@ function IsUnitInCombat(tag)
   return b ~= nil and b.in_combat ~= false
 end
 function IsUnitDead(tag)
+  if tag == "player" then return H.state.player_dead == true end
   local b = H.state.bosses[tag]
   return b ~= nil and b.dead == true
 end
@@ -896,6 +897,7 @@ function H.effect(change_type, ability_id, unit_id, end_time_s, source_type, uni
 end
 
 function H.death(is_dead, tag)
+  if not tag or tag == "player" then H.state.player_dead = is_dead == true end
   return H.fire(EVENT_UNIT_DEATH_STATE_CHANGED, tag or "player", is_dead and true or false)
 end
 

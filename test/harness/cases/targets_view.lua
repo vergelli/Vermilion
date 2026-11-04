@@ -141,7 +141,7 @@ return function(H)
   G.on_stop_click()
   local frows, fn = TV.rows()
   ok(fn == 2, "three skeletons fold into one lane while the player keeps its own, got " .. tostring(fn))
-  local skel = (frows[1].raw == "Skeleton^n") and frows[1] or frows[2]
+  local skel = (frows[1].raw == "Skeleton") and frows[1] or frows[2]
   ok(skel and skel.n == 3 and not skel.is_player and skel.name == "Skeleton", "the folded lane counts its three units and drops the NPC suffix")
   local folded_label = false
   for _, c in ipairs(H.controls) do
@@ -154,6 +154,21 @@ return function(H)
   while view_label._text ~= "SKILL" do G.next_view() end
   G.on_flush_click()
   H.ability_names = nil
+  Vermilion.Visibility.set("graph", false)
+  Vermilion.Metrics.reset()
+
+  Vermilion.Metrics.reset()
+  Vermilion.Visibility.set("graph", true)
+  Vermilion.Graph.on_flush_click()
+  Vermilion.Graph.on_record_click()
+  H.damage_out({ hit = 1000, target_name = "Corrupted Infantry^M", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 801 })
+  H.damage_out({ hit = 1000, target_name = "Corrupted Infantry^F", target_type = COMBAT_UNIT_TYPE_NONE, target_unit_id = 802 })
+  H.advance(3000)
+  Vermilion.Graph.on_stop_click()
+  local rows_t, n_t = Vermilion.TargetsView.compute()
+  ok(n_t == 1 and rows_t[1].name == "Corrupted Infantry", "the same enemy takes one row, got " .. n_t)
+  ok(rows_t[1].n == 2, "and counts both units, got " .. rows_t[1].n)
+  Vermilion.Graph.on_flush_click()
   Vermilion.Visibility.set("graph", false)
   Vermilion.Metrics.reset()
 end

@@ -140,6 +140,14 @@ local function resources_section()
       local per = (r.total > 0) and r.dmg / r.total or 0
       lines[i] = table_concat({ clean(r.name), r.n, int(r.mag), int(r.sta), share(r.total, totals.spend), int(r.dmg), share(r.dmg, dmg_total), string_format("%.1f", per) }, ";")
     end
+    local table_mag, table_sta = 0, 0
+    for i = 1, spent.n do
+      table_mag, table_sta = table_mag + spent[i].mag, table_sta + spent[i].sta
+    end
+    local other_mag, other_sta = rs.mag_out - table_mag, rs.sta_out - table_sta
+    if other_mag > 0 or other_sta > 0 then
+      lines[#lines + 1] = table_concat({ GetString(VERMILION_EXPORT_SPENT_OTHER), "", int(math.max(other_mag, 0)), int(math.max(other_sta, 0)) }, ";")
+    end
     out[#out + 1] = section(GetString(VERMILION_EXPORT_SEC_SPENT), GetString(VERMILION_EXPORT_COL_SPENT), lines)
     lines = {}
     for i = 1, recovered.n do

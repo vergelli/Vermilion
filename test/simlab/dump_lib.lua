@@ -54,6 +54,10 @@ return function(out_path, sess, hits)
 
   local K = Vermilion.Kills
   line(w, "KILLS", K.count())
+  for i = 1, K.count() do
+    local kt, kuid = K.get(i)
+    line(w, "KILL", kt, kuid)
+  end
 
   local parts = {}
   for _, section in ipairs(Vermilion.ExportReport.SECTIONS) do

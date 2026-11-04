@@ -54,6 +54,24 @@ if rate then
   Vermilion.SavedVars.temporal.sample_rate_ms = rate
 end
 
+H.slotted = { [HOTBAR_CATEGORY_PRIMARY] = {}, [HOTBAR_CATEGORY_BACKUP] = {} }
+for _, e in ipairs(events) do
+  if e.tag == "SU" and e.args[1] >= 3 and e.args[1] <= 8 and (e.args[2] or 0) > 0 then
+    local slot, id = e.args[1], e.args[2]
+    local front, back = H.slotted[HOTBAR_CATEGORY_PRIMARY], H.slotted[HOTBAR_CATEGORY_BACKUP]
+    if not front[slot] then front[slot] = id
+    elseif front[slot] ~= id and not back[slot] then back[slot] = id end
+  elseif e.tag == "UC" then
+    H.slotted[HOTBAR_CATEGORY_PRIMARY][8] = e.args[1]
+    H.slotted[HOTBAR_CATEGORY_BACKUP][8] = e.args[3]
+    H.state.ult_costs = { [HOTBAR_CATEGORY_PRIMARY] = e.args[2], [HOTBAR_CATEGORY_BACKUP] = e.args[4] }
+    break
+  end
+end
+local player_dead = false
+IsUnitDead = function(tag) return tag == "player" and player_dead end
+Vermilion.zenimax.api.IsUnitDead = IsUnitDead
+
 local G = Vermilion.Graph
 Vermilion.Visibility.set("graph", true)
 if events[1].t > H.now() then H.advance(events[1].t - H.now()) end
@@ -66,7 +84,9 @@ local ULT_SLOT = ACTION_BAR_ULTIMATE_SLOT_INDEX + 1
 for _, e in ipairs(events) do
   if e.t > H.now() then H.advance(e.t - H.now()) end
   local a = e.args
+  if e.tag == "DE" and a[1] == "player" then player_dead = a[2] == true end
   if e.tag == "SU" then
+    player_dead = false
     if a[1] == ULT_SLOT then
       H.fire(EVENT_ACTION_SLOT_ABILITY_USED, a[1])
       if (a[4] or 0) > 0 then ult_costs[a[4]] = true end

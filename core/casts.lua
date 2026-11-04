@@ -138,7 +138,7 @@ function M.on_drop(pool, amount, t)
     end
     push(t, q.last_id, pool, amount, 1)
     q.last_t = t
-    return
+    return true
   end
   local best, best_gap = nil, 0
   for i = 1, q.n do
@@ -154,7 +154,9 @@ function M.on_drop(pool, amount, t)
     end
     push(t, id, pool, amount, 0)
     q.last_id, q.last_cost, q.last_t, q.last_start, q.last_chan = id, cost, t, t, chan
-    return
+    local other = pend[(pool == MAG) and STA or MAG]
+    other.last_id, other.last_chan = 0, 0
+    return true
   end
   if q.last_id > 0 and t - q.last_t <= TICK_WINDOW_MS and math.abs(amount - q.last_cost) <= q.last_cost * COST_TOLERANCE then
     if q.last_chan > 0 then
@@ -164,9 +166,10 @@ function M.on_drop(pool, amount, t)
       push(t, q.last_id, pool, amount, 1)
     end
     q.last_t = t
-    return
+    return true
   end
   bump("casts.drop_unmatched")
+  return false
 end
 
 local function channel_of(api, id)

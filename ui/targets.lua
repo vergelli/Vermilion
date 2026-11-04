@@ -59,6 +59,17 @@ end
 
 local function by_total_desc(a, b) return a.total > b.total end
 
+local base_of = {}
+
+local function base_name(raw)
+  local b = base_of[raw]
+  if not b then
+    b = raw:gsub("%^%a+$", "")
+    base_of[raw] = b
+  end
+  return b
+end
+
 local function entry_in(list, id)
   for k = 1, (list and list.count or 0) do
     local e = list[k]
@@ -75,7 +86,7 @@ local function lane_share(list, rec)
   else
     for k = 1, (list and list.count or 0) do
       local e = list[k]
-      if e.name == rec.raw then sh = sh + (e.share or 0); ab = ab + (e.abs or 0) end
+      if base_name(e.name or "") == rec.raw then sh = sh + (e.share or 0); ab = ab + (e.abs or 0) end
     end
   end
   return sh, ab
@@ -116,8 +127,9 @@ local function aggregate()
         rec = by_id[id]
         if not rec then rec = { id = id, name = "", raw = nil, is_player = true, n = 1, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_id[id] = rec end
       else
-        rec = by_name[raw]
-        if not rec then rec = { id = id, name = "", raw = nil, is_player = false, n = 0, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_name[raw] = rec end
+        local base = base_name(raw)
+        rec = by_name[base]
+        if not rec then rec = { id = id, name = "", raw = nil, is_player = false, n = 0, ttype = 0, total = 0, abs = 0, gen = -1, disp = -1, text = "" }; by_name[base] = rec end
       end
       if rec.gen ~= gen then
         rec.gen = gen
@@ -127,9 +139,10 @@ local function aggregate()
         order.n = order.n + 1
         order[order.n] = rec
       end
-      if raw ~= rec.raw then
-        rec.raw = raw
-        rec.name = (raw:gsub("%^%a+$", ""))
+      local plain = base_name(raw)
+      if plain ~= rec.raw then
+        rec.raw = plain
+        rec.name = plain
       end
       if not is_player and seen[id] ~= gen then
         seen[id] = gen
@@ -445,7 +458,7 @@ function M.render()
       local row_i = nil
       for r = 1, rows do
         local rec = order[r + off]
-        if (rec.is_player and rec.id == kuid) or (not rec.is_player and rec.raw == kname) then row_i = r break end
+        if (rec.is_player and rec.id == kuid) or (not rec.is_player and rec.raw == base_name(kname or "")) then row_i = r break end
       end
       if row_i and kt >= t0 and kt <= t_hi then
         local sz = (row_h < 16) and row_h or 16

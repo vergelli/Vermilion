@@ -40,6 +40,7 @@ M.GetSlotType                            = GetSlotType
 M.GetAbilityIdForCraftedAbilityId        = GetAbilityIdForCraftedAbilityId
 M.GetAbilityCost                         = GetAbilityCost
 M.GetAbilityCastInfo                     = GetAbilityCastInfo
+M.IsUnitDead                             = IsUnitDead
 M.GetPlayerStat                          = GetPlayerStat
 M.GetActiveHotbarCategory                = GetActiveHotbarCategory
 M.GetUnitPower                           = GetUnitPower
