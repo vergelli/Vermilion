@@ -6,7 +6,7 @@ local zui = Vermilion.zenimax.ui
 local zc  = Vermilion.zenimax.constants
 
 local T = { on = Vermilion.Skin.RADIO_ON, off = Vermilion.Skin.RADIO_OFF, hot = Vermilion.Skin.RADIO_ON,
-            on_dis = "EsoUI/Art/Buttons/RadioButtonDisabledDown.dds", off_dis = "EsoUI/Art/Buttons/RadioButtonDisabledUp.dds" }
+            on_dis = "Vermilion/assets/skin/radio_on_disabled.dds", off_dis = "Vermilion/assets/skin/radio_off_disabled.dds" }
 
 function M.paint(r)
   if r.enabled then

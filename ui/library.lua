@@ -24,7 +24,6 @@ local C_PIP_NONE  = { r = 0.48, g = 0.45, b = 0.45 }
 local C_NAME      = { r = 0.94, g = 0.88, b = 0.86 }
 local C_DIM       = { r = 0.60, g = 0.55, b = 0.55 }
 local C_SEL       = { r = 1.00, g = 0.62, b = 0.58 }
-local C_STAR      = { r = 0.91, g = 0.72, b = 0.29 }
 local VET_ICON    = "EsoUI/Art/LFG/LFG_veteranDungeon_up.dds"
 
 local controls = {}
@@ -164,10 +163,9 @@ local function make_row(i)
   when:SetAnchor(RIGHT, row, RIGHT, -20, 0)
 
   local star = WM:CreateControl(nm .. "Star", row, CT_TEXTURE)
-  star:SetTexture("EsoUI/Art/Miscellaneous/status_locked.dds")
-  star:SetDimensions(13, 15)
+  star:SetTexture("Vermilion/assets/skin/lock_closed.dds")
+  star:SetDimensions(15, 15)
   star:SetAnchor(RIGHT, row, RIGHT, -4, 0)
-  star:SetColor(C_STAR.r, C_STAR.g, C_STAR.b, 0.95)
   star:SetHidden(true)
 
   return { root = row, bg = bg, sel = sel, hov = hov, pip = pip, vet = vet, kind = kind,
@@ -175,8 +173,8 @@ local function make_row(i)
 end
 
 local HAND_GLYPH  = "|t14:14:Vermilion/assets/skin/save_up.dds|t "
-local ICON_LOCK   = "EsoUI/Art/Miscellaneous/locked_up.dds"
-local ICON_UNLOCK = "EsoUI/Art/Miscellaneous/unlocked_up.dds"
+local ICON_LOCK   = "Vermilion/assets/skin/lock_closed.dds"
+local ICON_UNLOCK = "Vermilion/assets/skin/lock_open.dds"
 
 local function tint_icon(icon, on, r, g, b)
   icon:SetColor(r, g, b, on and 0.9 or 0.25)

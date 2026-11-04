@@ -2371,10 +2371,10 @@ function M.init()
   sum_label:SetHidden(true)
 
   local sum_help = WINDOW_MANAGER:CreateControl("VermilionGraphSummaryHelp", controls.window, CT_TEXTURE)
-  sum_help:SetTexture("EsoUI/Art/Miscellaneous/help_icon.dds")
+  sum_help:SetTexture("Vermilion/assets/skin/help.dds")
   sum_help:SetDimensions(16, 16)
   sum_help:SetAnchor(TOPRIGHT, controls.viewport, TOPRIGHT, -8, 6)
-  sum_help:SetColor(0.95, 0.78, 0.74, 0.9)
+  sum_help:SetColor(1, 1, 1, 1)
   sum_help:SetDrawLevel(12)
   sum_help:SetHidden(true)
 
