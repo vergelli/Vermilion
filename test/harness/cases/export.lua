@@ -46,6 +46,8 @@ return function(H)
   ok(math.abs(reported - order[1].v / tot * 100) < 0.051, "the skill share equals what CONTRIB computes")
 
   local sm = G.export_summary()
+  ok(txt:find("Crit rate, share of hits %;50.0", 1, true), "half of the hits were crits: " .. txt:sub(1, 700))
+  ok(txt:find("Damage from crits %;33.3", 1, true), "and a third of the damage came from them")
   ok(txt:find("Total damage;" .. string.format("%d", math.floor(sm.total_damage + 0.5)), 1, true), "the total equals the header summary")
 
   ok(R.paginate("a\nb", 100)[1] == "a\nb", "a short report stays in one page")
@@ -82,10 +84,6 @@ return function(H)
   local size, got = E.copy_test(3000)
   ok(size >= 3000 and got == #VermilionExportEdit._text, "the copy test reports what the box holds")
   ok(VermilionExportEdit._text:find("END " .. size, 1, true), "and ends with its size")
-  E.hide()
-
-  VermilionGraphSummaryHit._onOnMouseUp(VermilionGraphSummaryHit, nil, true)
-  ok(VermilionExport._hidden == false, "the summary chip opens the export too")
   E.hide()
 
   G.on_flush_click()

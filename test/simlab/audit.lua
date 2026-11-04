@@ -160,7 +160,7 @@ print(string.format("TOTAL truth dmg=%.0f shield=%.0f | Metrics dmg=%.0f (%+.2f%
   T.dmg, T.shield, sm.total_damage, rel(sm.total_damage, T.dmg), sm.total_shield, T.hits, sm.hits))
 print(string.format("INTEGRAL contrib=%.0f (%+.2f%%) targets=%.0f (%+.2f%%) names=%.0f (%+.2f%%)",
   totC.damage + totC.shield, rel(totC.damage + totC.shield, all), totT.damage, rel(totT.damage, all), dnt, rel(dnt, all)))
-print(string.format("CRIT truth by hits=%.1f by damage=%.1f | addon=%.1f", pct(T.crit_hits, T.hits), pct(T.crit_dmg, T.dmg), sm.crit_pct * 100))
+print(string.format("CRIT truth by hits=%.1f by damage=%.1f | addon rate=%.1f damage=%.1f", pct(T.crit_hits, T.hits), pct(T.crit_dmg, T.dmg), sm.crit_rate * 100, sm.crit_pct * 100))
 
 local est = {}
 for i = 1, nC do
@@ -230,6 +230,8 @@ print(string.format("EFFECT_GAP worst uptime %.1f s, worst debuff %.1f s", umax,
 local bad = {}
 if math.abs(rel(sm.total_damage, T.dmg)) > 0.001 then bad[#bad + 1] = "damage total" end
 if sm.hits ~= T.hits then bad[#bad + 1] = "hit count" end
+if sm.crit_hits ~= T.crit_hits then bad[#bad + 1] = "crit hit count" end
+if math.abs(sm.crit_pct * 100 - pct(T.crit_dmg, T.dmg)) > 0.5 then bad[#bad + 1] = "damage from crits" end
 if math.abs(rel(totC.damage + totC.shield, all)) > 0.5 then bad[#bad + 1] = "skills total" end
 if math.abs(rel(totT.damage, all)) > 0.5 then bad[#bad + 1] = "targets total" end
 if math.abs(rel(dnt, all)) > 0.5 then bad[#bad + 1] = "names total" end

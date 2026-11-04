@@ -27,9 +27,10 @@ local zev     = Vermilion.zenimax.events
 local C       = Vermilion.zenimax.constants
 local GetGameTimeMilliseconds = api.GetGameTimeMilliseconds
 
-local CAP       = 40000
+local CAP       = 60000
+local RING_EVENTS = 200000
 local CHUNK_MAX = 1800
-local RING      = 3
+local RING      = 30
 
 local CONST_NAMES = {
   "ACTION_RESULT_DAMAGE", "ACTION_RESULT_CRITICAL_DAMAGE", "ACTION_RESULT_DOT_TICK",
@@ -102,6 +103,8 @@ local function rec_bosses()
   end
   rec("BO", table.concat(names, "|"))
 end
+
+function M.set_ring_events(v) RING_EVENTS = v end
 
 function M.set_cap(cap)
   CAP = cap
@@ -184,8 +187,13 @@ function M.save(sv)
   sv.traces = sv.traces or {}
   local ring = sv.traces
   ring[#ring + 1] = entry
-  while #ring > RING do table.remove(ring, 1) end
-  d("[trace] " .. n .. " events staged, slot " .. #ring .. "/" .. RING .. "; /vermilion flush writes them to disk")
+  local held = 0
+  for i = 1, #ring do held = held + (ring[i].count or 0) end
+  while #ring > 1 and (#ring > RING or held > RING_EVENTS) do
+    held = held - (ring[1].count or 0)
+    table.remove(ring, 1)
+  end
+  d("[trace] " .. n .. " events staged, slot " .. #ring .. "; /vermilion flush writes them to disk")
   return entry
 end
 
