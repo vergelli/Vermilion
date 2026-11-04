@@ -228,6 +228,7 @@ local function on_addon_loaded()
   Vermilion.AutoRecord.init()
   Vermilion.Assign.init()
   Vermilion.Library.init()
+  Vermilion.About.init()
   Vermilion.Visibility.init()
 
   Vermilion.slash = on_slash
