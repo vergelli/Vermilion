@@ -20,6 +20,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: damage from your pets was not counted at all. The game's own dummy result and ESO Logs count it
 - Fixed: pressing a channeled skill while it channels no longer counts as another cast
 - Fixed: the summary in the viewport could be cut off after a shorter fight, hiding its last values
+- Removed ACTIVE from the summary, the report card and the export, on a damage dealer it reads near 100% whenever a DoT ticks
 - Removed the crit threshold slider, it only tinted the header indicator and the library rows
 - Removed the live DPS and crit indicators and the "Damage Analysis" title from the header, and the title of the Settings window
 - About moved out of Settings, next to it in the title bar

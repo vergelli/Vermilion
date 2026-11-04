@@ -518,7 +518,7 @@ local function session_summary()
   local n = TB.count()
   SUM.count = n
   local sum_eos, peak, peak_t, first_t = 0, 0, 0, 0
-  local sum_crit, sum_noncrit, active = 0, 0, 0
+  local sum_crit, sum_noncrit = 0, 0
   for k in pairs(DOM) do DOM[k] = nil end
   for k in pairs(VIS.shd) do VIS.shd[k] = nil end
   for k in pairs(VIS.tgt) do VIS.tgt[k] = nil end
@@ -557,13 +557,11 @@ local function session_summary()
     if eos > peak then peak = eos; peak_t = s.t end
     sum_crit = sum_crit + (s.crit or 0)
     sum_noncrit = sum_noncrit + (s.noncrit or 0)
-    if s.eDPS > 0 then active = active + 1 end
   end
   SUM.avg = (n > 0) and (sum_eos / n) or 0
   SUM.peak = peak
   SUM.peak_t_off = peak_t - first_t
   SUM.crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0
-  SUM.active_pct = (n > 0) and (active / n) or 0
   SUM.dom_type, SUM.dom_pct = nil, 0
   if dom_total > 0 then
     local best, best_v = nil, 0
@@ -603,7 +601,6 @@ local C_SUM = {
   PEAK   = C_LINE_EDPS,
   CRIT   = C_CRIT,
   VAL    = { r = 0.95, g = 0.90, b = 0.90 },
-  ACTIVE = { r = 0.92, g = 0.72, b = 0.60 },
   SHIELD = C_SHDPS,
 }
 
@@ -615,7 +612,6 @@ local function build_summary_text()
     string_format("|c%s%s|r |c%s%s|r", hexc(C_SUM.AVG),  GetString(VERMILION_SUMMARY_AVG),  vc, fmt_val(sm.avg)),
     string_format("|c%s%s|r |c%s%s|r", hexc(C_SUM.PEAK), GetString(VERMILION_SUMMARY_PEAK), vc, fmt_val(sm.peak)),
     string_format("|c%s%s|r |c%s%d%%|r", hexc(C_SUM.CRIT), GetString(VERMILION_SUMMARY_CRIT), vc, math_floor(sm.crit_rate * 100 + 0.5)),
-    string_format("|c%s%s|r |c%s%d%%|r", hexc(C_SUM.ACTIVE), GetString(VERMILION_SUMMARY_ACTIVE), vc, math_floor(sm.active_pct * 100 + 0.5)),
   }
   local out_total = sm.total_damage + sm.total_shield
   if sm.total_shield > 0 and out_total > 0 then
@@ -709,7 +705,6 @@ local function show_report_card()
   if sm.peak > 0 then
     add_row(GetString(VERMILION_REPORT_PEAK), fmt_secs(sm.peak_t_off), C_CARD_STAT)
   end
-  add_row(GetString(VERMILION_REPORT_ACTIVE), string_format("%d%%", math_floor(sm.active_pct * 100 + 0.5)), C_SUM.ACTIVE)
   local us = Vermilion.Ultimate and Vermilion.Ultimate.summary()
   if us and us.dur_ms > 0 and Vermilion.Ultimate.has_data() then
     add_row(GetString(VERMILION_REPORT_ULT_READY), string_format("%d%%", math_floor(us.ready_pct * 100 + 0.5)),
