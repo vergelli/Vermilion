@@ -157,7 +157,11 @@ return function(H)
   Vermilion.Metrics.reset()
   G.on_flush_click()
   G.on_record_click()
-  H.state.mouse_x, H.state.mouse_y = 400, 300
+  for _ = 1, 3 do
+    H.damage_out({ hit = 3000, ability_id = 7701, damage_type = DAMAGE_TYPE_FIRE })
+    H.advance(1000)
+  end
+  G.on_stop_click()
   while view_label._text ~= "CONTRIB" do G.next_view() end
   local tinted = 0
   for _, c in ipairs(H.controls) do
@@ -165,10 +169,12 @@ return function(H)
   end
   ok(tinted > 0, "the shared icon pool has objects to dirty")
   G.rerender()
+  local seen = 0
   for _, c in ipairs(H.controls) do
     if c._hidden == false and (c._name or ""):find("^VermilionContribIcon") then
+      seen = seen + 1
       ok(c._r == 1 and c._g == 1 and c._b == 1, "an icon keeps no tint left by another view")
     end
   end
-  G.on_stop_click()
+  ok(seen > 0, "the view drew its icons")
 end
