@@ -118,21 +118,7 @@
           <OnClicked>Vermilion.Settings.on_sample_click()</OnClicked>
         </Button>
 
-        <Label name="$(parent)SecRecording" font="ZoFontGameSmall"
-               horizontalAlignment="LEFT" verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="186"/>
-          <Dimensions x="200" y="12"/>
-        </Label>
-        <Texture name="$(parent)SepRecording">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="200"/>
-          <Dimensions x="272" y="1"/>
-        </Texture>
 
-        <Label name="$(parent)RecordingNote" font="ZoFontGameSmall"
-               horizontalAlignment="LEFT" verticalAlignment="TOP" wrapMode="ELLIPSIS">
-          <Anchor point="TOPLEFT" offsetX="14" offsetY="208"/>
-          <Dimensions x="272" y="50"/>
-        </Label>
 
         <Label name="$(parent)SecGeneral" font="ZoFontGameSmall"
                horizontalAlignment="LEFT" verticalAlignment="CENTER">

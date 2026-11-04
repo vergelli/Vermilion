@@ -13,7 +13,6 @@ return function(H)
   ok(panel.w == 600 and panel.h == 300, string.format("panel must be 600x300, got %dx%d", panel.w, panel.h))
   local left_col = {
     VermilionSettingsPanelSampleBtn,
-    VermilionSettingsPanelRecordingNote,
     VermilionSettingsPanelSliderTrackVPAlpha,
     VermilionSettingsPanelSliderTrackCritThresh,
   }
@@ -34,7 +33,7 @@ return function(H)
     ok(r.x + r.w <= panel.x + 590, (c._name or "?") .. " must stay inside the panel")
     ok(r.y + r.h <= panel.y + panel.h - 30, (c._name or "?") .. " must clear the reset row")
   end
-  for _, name in ipairs({ "SecGraph", "SecRecording", "SecGeneral" }) do
+  for _, name in ipairs({ "SecGraph", "SecGeneral" }) do
     local lbl = rawget(_G, "VermilionSettingsPanel" .. name)
     ok(lbl and type(lbl._text) == "string" and #lbl._text > 2, name .. " carries a section title")
   end

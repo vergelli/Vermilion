@@ -316,7 +316,6 @@ function M.init()
   controls.unknown_btn    = VermilionSettingsPanelUnknownBtn
   controls.unknown_label  = VermilionSettingsPanelUnknownLabel
   controls.logo_btn       = VermilionSettingsPanelLogoBtn
-  controls.rec_note       = VermilionSettingsPanelRecordingNote
   controls.sounds_btn     = VermilionSettingsPanelSoundsBtn
   controls.light_btn      = VermilionSettingsPanelLightBtn
   controls.kills_btn      = VermilionSettingsPanelKillsBtn
@@ -345,7 +344,6 @@ function M.init()
 
   local SEC = {
     { VermilionSettingsPanelSecGraph,     VermilionSettingsPanelSepGraph,     VERMILION_SETTINGS_SEC_GRAPH },
-    { VermilionSettingsPanelSecRecording, VermilionSettingsPanelSepRecording, VERMILION_SETTINGS_SEC_RECORDING },
     { VermilionSettingsPanelSecGeneral,   VermilionSettingsPanelSepGeneral,   VERMILION_SETTINGS_SEC_GENERAL },
   }
   for _, sec in ipairs(SEC) do
@@ -361,8 +359,6 @@ function M.init()
 
   controls.logo_btn:SetText(Vermilion.Logo.is_enabled()
     and GetString(VERMILION_SETTINGS_LOGO_ON) or GetString(VERMILION_SETTINGS_LOGO_OFF))
-  controls.rec_note:SetText(GetString(VERMILION_SETTINGS_RECORDING_NOTE))
-  controls.rec_note:SetColor(0.62, 0.62, 0.62, 1)
   controls.sounds_btn:SetText(sounds_label(sounds_on()))
   controls.light_btn:SetText(light_label(sv.settings.light_mode == true))
   controls.kills_btn:SetText(kills_label(M.kill_markers()))
