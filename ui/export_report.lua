@@ -39,7 +39,7 @@ local function header_section()
   local rate = head.cfg and head.cfg.sample_rate_ms or (Vermilion.SavedVars.temporal or {}).sample_rate_ms or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT
   return table_concat({
     string_format(GetString(VERMILION_EXPORT_HEAD), head.build or Vermilion.Constants.VERSION),
-    string_format(GetString(VERMILION_EXPORT_META), clean(head.zone), date, secs(dur), head.group_size or 0, 1000 / rate),
+    string_format(GetString(VERMILION_EXPORT_META), clean(head.zone), date, secs(dur), math.max(head.group_size or 0, 1), 1000 / rate),
     GetString(VERMILION_EXPORT_NOTE),
   }, "\n")
 end

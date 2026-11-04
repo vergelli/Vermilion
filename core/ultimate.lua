@@ -11,6 +11,8 @@ local STEP_CAP      = 4800
 local USED_CAP      = 100
 local ABIL_CAP      = 64
 local BARS          = 2
+local CAST_DROP     = 50
+local PRESS_LOOKBACK_MS = 2000
 
 local recording = false
 local t_start   = 0
@@ -29,6 +31,10 @@ local abil_t    = {}
 local abil_bar  = {}
 local abil_id   = {}
 local abil_cost = {}
+local n_casts   = 0
+local casts_seen = 1
+local cast_t    = {}
+local cast_bar  = {}
 local bar_id    = { 0, 0 }
 local bar_cost  = { 0, 0 }
 
@@ -124,6 +130,7 @@ function M.start_session(t)
   n_steps   = 0
   n_used    = 0
   n_abil    = 0
+  n_casts, casts_seen = 0, 1
   saw_power = false
   local api = Vermilion.zenimax.api
   local zc  = Vermilion.zenimax.constants
@@ -150,11 +157,36 @@ function M.reset()
   n_steps   = 0
   n_used    = 0
   n_abil    = 0
+  n_casts, casts_seen = 0, 1
   saw_power = false
 end
 
 function M.steps()      return step_t, step_v, n_steps end
 function M.used()       return used_t, used_bar, n_used end
+
+local function bar_of_press(t)
+  for i = n_used, 1, -1 do
+    local dt = t - used_t[i]
+    if dt >= 0 then
+      if dt <= PRESS_LOOKBACK_MS then return used_bar[i] end
+      break
+    end
+  end
+  return 1
+end
+
+function M.casts()
+  for i = casts_seen + 1, n_steps do
+    if step_v[i - 1] - step_v[i] >= CAST_DROP then
+      n_casts = n_casts + 1
+      cast_t[n_casts] = step_t[i]
+      cast_bar[n_casts] = bar_of_press(step_t[i])
+    end
+  end
+  if n_steps > casts_seen then casts_seen = n_steps end
+  return cast_t, cast_bar, n_casts
+end
+
 function M.abilities()  return abil_t, abil_bar, abil_id, abil_cost, n_abil end
 function M.has_data()   return saw_power and n_steps > 0 end
 function M.cost(b)      return bar_cost[b or active_bar()] end
@@ -230,11 +262,11 @@ local sum_scratch = { ready_ms = 0, dur_ms = 0, ready_pct = 0, casts = 0, mean_g
 
 function M.summary()
   local r = sum_scratch
-  r.ready_ms, r.dur_ms, r.ready_pct, r.casts, r.mean_gap_ms = 0, 0, 0, n_used, 0
+  local ct, _, cn = M.casts()
+  r.ready_ms, r.dur_ms, r.ready_pct, r.casts, r.mean_gap_ms = 0, 0, 0, cn, 0
   if n_steps == 0 then return r end
   local t_lo = (t_start > 0) and t_start or step_t[1]
   local t_hi = (t_end > 0) and t_end or step_t[n_steps]
-  if n_used > 0 and used_t[n_used] > t_hi then t_hi = used_t[n_used] end
   if t_hi <= t_lo then return r end
   r.dur_ms = t_hi - t_lo
   local ready = 0
@@ -252,8 +284,8 @@ function M.summary()
   end
   r.ready_ms  = ready
   r.ready_pct = ready / r.dur_ms
-  if n_used > 1 then
-    r.mean_gap_ms = (used_t[n_used] - used_t[1]) / (n_used - 1)
+  if cn > 1 then
+    r.mean_gap_ms = (ct[cn] - ct[1]) / (cn - 1)
   end
   return r
 end
