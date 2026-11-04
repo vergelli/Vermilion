@@ -283,7 +283,7 @@ end
 function M.init()
   Vermilion.Skin.panel(VermilionSettingsPanelBg)
   Vermilion.Skin.buttons({
-    VermilionSettingsPanelAboutBtn, VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
+    VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
     VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
   })
@@ -331,7 +331,6 @@ function M.init()
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)
   M.refresh_dev_button()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
-  VermilionSettingsPanelAboutBtn:SetText(GetString(VERMILION_ABOUT_TITLE))
   controls.sample_btn:SetText(sample_label(current_sample))
   M.refresh_unknown_count()
   controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)

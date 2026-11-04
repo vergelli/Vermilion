@@ -219,12 +219,6 @@
           <Dimensions x="1" y="214"/>
         </Texture>
 
-        <Button name="$(parent)AboutBtn" mouseEnabled="true" font="ZoFontGameSmall" inherits="ZO_DefaultButton">
-          <Anchor point="BOTTOMRIGHT" offsetX="-14" offsetY="-8"/>
-          <Dimensions x="272" y="22"/>
-          <OnClicked>Vermilion.About.toggle()</OnClicked>
-        </Button>
-
         <Button name="$(parent)ResetBtn"
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
