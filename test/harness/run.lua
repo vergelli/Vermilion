@@ -29,6 +29,7 @@ local CASES = {
   "cast_confirm",
   "fight_time",
   "pet_damage",
+  "screen_numbers",
   "session_store",
   "content_kind",
   "auto_record",

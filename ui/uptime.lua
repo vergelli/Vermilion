@@ -515,7 +515,7 @@ local function row_card(c, r, S, mx, my)
   if r.slot and r.iv_n >= STEADY_MIN then
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.steady, string_format("%s  ·  ±%s", PCT_TEXT[math_floor(r.steady * 100 + 0.5)] or "", c.fmt_secs(r.sd * 1000)), (r.steady >= 0.8) and C_IN or (r.steady >= 0.6) and C_GOLD or C_OUT
   end
-  if r.cost > 0 then
+  if M.priced(r) then
     nr = nr + 1; ROWS[nr][1], ROWS[nr][2], ROWS[nr][3] = S.lost, "-" .. c.fmt_val(r.cost), C_OUT
   end
   c.show_card(r.col, r.name, r.slot and S.skill or S.other, "", ROWS, nr, nil, mx, my)
