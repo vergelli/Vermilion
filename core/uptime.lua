@@ -28,7 +28,7 @@ local key_slot = {}
 local key_id = {}
 local nk = 0
 
-local o_key, o_unit, o_t0, o_end, o_press = {}, {}, {}, {}, {}
+local o_key, o_unit, o_t0, o_end, o_press, o_id = {}, {}, {}, {}, {}, {}
 local on = 0
 
 local s_key, s_unit, s_t0, s_t1 = {}, {}, {}, {}
@@ -65,6 +65,19 @@ local function scan_slotted()
         if name and name ~= "" then slotted_names[name] = true end
       end
     end
+  end
+end
+
+local friend_uid = {}
+
+local function drop_open(unit)
+  local i = on
+  while i >= 1 do
+    if o_unit[i] == unit then
+      o_key[i], o_unit[i], o_t0[i], o_end[i], o_press[i], o_id[i] = o_key[on], o_unit[on], o_t0[on], o_end[on], o_press[on], o_id[on]
+      on = on - 1
+    end
+    i = i - 1
   end
 end
 
@@ -122,25 +135,36 @@ local function close_slot(i, t)
     bump("uptime.spans_full")
   end
   remember_close(o_key[i], o_unit[i], t)
-  o_key[i], o_unit[i], o_t0[i], o_end[i], o_press[i] = o_key[on], o_unit[on], o_t0[on], o_end[on], o_press[on]
+  o_key[i], o_unit[i], o_t0[i], o_end[i], o_press[i], o_id[i] = o_key[on], o_unit[on], o_t0[on], o_end[on], o_press[on], o_id[on]
   on = on - 1
 end
 
-local function open_slot(k, unit, t, end_ms)
+local function open_slot(k, unit, t, end_ms, id)
   if on >= OPEN_CAP then bump("uptime.open_full") return end
   on = on + 1
-  o_key[on], o_unit[on], o_t0[on], o_end[on], o_press[on] = k, unit, t, end_ms, t
+  o_key[on], o_unit[on], o_t0[on], o_end[on], o_press[on], o_id[on] = k, unit, t, end_ms, t, id
 end
 
 function M.on_effect(changeType, abilityId, unitId, beginTime, endTime, now_ms, unitTag, effectType, name)
   if not recording then return end
   if not unitId or unitId == 0 then bump("uptime.no_unit") return end
-  if not is_enemy_tag(unitTag) then return end
+  if not is_enemy_tag(unitTag) then
+    if not friend_uid[unitId] then
+      friend_uid[unitId] = true
+      drop_open(unitId)
+    end
+    return
+  end
+  if friend_uid[unitId] then bump("uptime.on_friend") return end
   local zc = Vermilion.zenimax.constants
   if changeType == zc.EFFECT_RESULT_FADED then
     local k = name and key_of[name]
     if not k then return end
     local i = find_open(k, unitId)
+    if i and abilityId ~= o_id[i] and o_end[i] > now_ms then
+      bump("uptime.fade_other_id")
+      return
+    end
     if i then close_slot(i, now_ms); bump("uptime.faded") end
     return
   end
@@ -159,9 +183,18 @@ function M.on_effect(changeType, abilityId, unitId, beginTime, endTime, now_ms, 
   local k = key_for(name, abilityId)
   if not k then return end
   local i = find_open(k, unitId)
+  if i and abilityId ~= o_id[i] then
+    if end_ms > o_end[i] then o_end[i], o_id[i] = end_ms, abilityId end
+    bump("uptime.other_id")
+    return
+  end
   if changeType == zc.EFFECT_RESULT_UPDATED then
     if not i then
-      open_slot(k, unitId, now_ms, end_ms)
+      if end_ms <= now_ms then
+        bump("uptime.empty_update")
+        return
+      end
+      open_slot(k, unitId, now_ms, end_ms, abilityId)
       press(k, unitId, now_ms, 0, M.KIND_FRESH)
       bump("uptime.update_without_gain")
       return
@@ -174,6 +207,11 @@ function M.on_effect(changeType, abilityId, unitId, beginTime, endTime, now_ms, 
     press(k, unitId, now_ms, o_end[i] - now_ms, M.KIND_REFRESH)
     o_end[i], o_press[i] = end_ms, now_ms
     bump("uptime.refreshed")
+    return
+  end
+  if i and now_ms - o_press[i] < ECHO_MS then
+    o_end[i] = end_ms
+    bump("uptime.echo")
     return
   end
   if i then
@@ -190,7 +228,7 @@ function M.on_effect(changeType, abilityId, unitId, beginTime, endTime, now_ms, 
       bump("uptime.fresh")
     end
   end
-  open_slot(k, unitId, now_ms, end_ms)
+  open_slot(k, unitId, now_ms, end_ms, abilityId)
 end
 
 function M.on_unit_dead(unitId, now_ms)
@@ -216,6 +254,7 @@ end
 
 local function wipe()
   for k in pairs(key_of) do key_of[k] = nil end
+  for k in pairs(friend_uid) do friend_uid[k] = nil end
   nk, on, sn, pn, ln, l_head = 0, 0, 0, 0, 0, 0
 end
 

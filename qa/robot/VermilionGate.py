@@ -43,6 +43,26 @@ class VermilionGate:
             raise AssertionError("harness failed: " + last + "\n" + "\n".join(fails))
         return "%s cases passed (DEBUG=%s)" % (m.group(1), debug)
 
+    def traces_match_their_events(self, traces_dir=None):
+        traces = self._traces_dir(traces_dir)
+        if not os.path.isdir(traces):
+            return "no traces directory at %s, nothing audited" % traces
+        n = 0
+        failures = []
+        for f in sorted(os.listdir(traces)):
+            if not f.endswith(".lua") or f.startswith("harness_"):
+                continue
+            code, out = self._run([self.lua, "test/simlab/audit.lua", ".", os.path.join(traces, f)])
+            verdict = [l for l in out.splitlines() if l.startswith("AUDIT:")]
+            print("%s -> %s" % (f, verdict[0] if verdict else "no verdict"))
+            if code != 0 or not verdict or verdict[0] != "AUDIT: ok":
+                failures.append("%s: %s\n%s" % (f, verdict[0] if verdict else "no verdict", out[-1500:]))
+                continue
+            n += 1
+        if failures:
+            raise AssertionError("\n".join(failures))
+        return "%d traces match their raw events" % n
+
     def traces_replay_clean(self, traces_dir=None):
         traces = self._traces_dir(traces_dir)
         if not os.path.isdir(traces):

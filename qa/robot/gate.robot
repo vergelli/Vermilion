@@ -27,3 +27,11 @@ Real Traces Replay At Zero Divergence
     [Tags]    replay    numeric
     ${msg}=    Traces Replay Clean
     Log    ${msg}
+
+Numbers Match The Raw Events
+    [Documentation]    Replays recorded fights and recomputes the numbers from the raw events, without
+    ...                the addon: damage total, hits, skill shares, target and skill totals, uptime and
+    ...                debuff seconds per effect.
+    [Tags]    replay    numeric
+    ${msg}=    Traces Match Their Events
+    Log    ${msg}
