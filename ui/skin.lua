@@ -48,6 +48,13 @@ function M.close(b)
   if b.SetMouseOverBlendMode then b:SetMouseOverBlendMode(TEX_BLEND_MODE_ALPHA or 0) end
 end
 
+function M.icons(list)
+  for i = 1, #list do
+    local b = list[i]
+    if b and b.SetMouseOverBlendMode then b:SetMouseOverBlendMode(TEX_BLEND_MODE_ALPHA or 0) end
+  end
+end
+
 function M.buttons(list, lacquer)
   for i = 1, #list do M.button(list[i], lacquer) end
 end

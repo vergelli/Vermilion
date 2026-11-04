@@ -59,18 +59,18 @@
         <Button name="$(parent)ScrollUp" mouseEnabled="true" hidden="true" mouseOverBlendMode="ADD">
           <Anchor point="TOPRIGHT" relativeTo="$(parent)ListBg" relativePoint="TOPRIGHT" offsetX="-4" offsetY="4"/>
           <Dimensions x="16" y="16"/>
-          <Textures normal="EsoUI/Art/Buttons/scrollbox_upArrow_up.dds"
-                    pressed="EsoUI/Art/Buttons/scrollbox_upArrow_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/scrollbox_upArrow_over.dds"/>
+          <Textures normal="Vermilion/assets/skin/arrow_up_up.dds"
+                    pressed="Vermilion/assets/skin/arrow_up_down.dds"
+                    mouseOver="Vermilion/assets/skin/arrow_up_over.dds"/>
           <OnClicked>Vermilion.Library.on_scroll(1)</OnClicked>
         </Button>
 
         <Button name="$(parent)ScrollDown" mouseEnabled="true" hidden="true" mouseOverBlendMode="ADD">
           <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)ListBg" relativePoint="BOTTOMRIGHT" offsetX="-4" offsetY="-4"/>
           <Dimensions x="16" y="16"/>
-          <Textures normal="EsoUI/Art/Buttons/scrollbox_downArrow_up.dds"
-                    pressed="EsoUI/Art/Buttons/scrollbox_downArrow_down.dds"
-                    mouseOver="EsoUI/Art/Buttons/scrollbox_downArrow_over.dds"/>
+          <Textures normal="Vermilion/assets/skin/arrow_down_up.dds"
+                    pressed="Vermilion/assets/skin/arrow_down_down.dds"
+                    mouseOver="Vermilion/assets/skin/arrow_down_over.dds"/>
           <OnClicked>Vermilion.Library.on_scroll(-1)</OnClicked>
         </Button>
 
@@ -80,7 +80,7 @@
           <Dimensions x="8"/>
           <OnMouseUp>Vermilion.Library.on_track_click()</OnMouseUp>
           <Controls>
-            <Texture name="$(parent)Bg" textureFile="EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds">
+            <Texture name="$(parent)Bg" textureFile="Vermilion/assets/skin/scroll_track.dds">
               <AnchorFill/>
             </Texture>
             <Control name="$(parent)Thumb" mouseEnabled="true">
@@ -89,7 +89,7 @@
               <OnMouseDown>Vermilion.Library.on_thumb_down()</OnMouseDown>
               <OnMouseUp>Vermilion.Library.on_thumb_up()</OnMouseUp>
               <Controls>
-                <Texture name="$(parent)Tex" textureFile="EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds">
+                <Texture name="$(parent)Tex" textureFile="Vermilion/assets/skin/scroll_thumb.dds">
                   <AnchorFill/>
                 </Texture>
               </Controls>
@@ -144,7 +144,7 @@
           <Dimensions x="110" y="24"/>
           <OnClicked>Vermilion.Library.on_open_click()</OnClicked>
           <Controls>
-            <Texture name="$(parent)Icon" textureFile="EsoUI/Art/Buttons/rightArrow_up.dds">
+            <Texture name="$(parent)Icon" textureFile="Vermilion/assets/skin/arrow_right_up.dds">
               <Anchor point="LEFT" offsetX="10" offsetY="0"/>
               <Dimensions x="16" y="16"/>
             </Texture>
