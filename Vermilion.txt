@@ -83,6 +83,8 @@ ui/film/window.lua
 ui/widgets/fader.lua
 ui/widgets/hover_card.lua
 ui/widgets/slider.lua
+ui/widgets/radio.lua
+ui/record_panel.lua
 ui/film/columns.lua
 ui/film/overview.lua
 ui/film/bands.lua
