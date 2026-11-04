@@ -32,7 +32,7 @@ return function(H)
   ok(hit._hidden == false, "the chip hit-box must show with the chip")
   ok(VermilionGraphSummaryHelp._hidden == false, "the chip must wear its help icon")
   local chip = VermilionGraphSummaryLabel._text or ""
-  ok(chip:find("AVG") and chip:find("PEAK") and chip:find("CRIT") and chip:find("ACTIVE") and chip:find("SHIELD"),
+  ok(chip:find("AVG") and chip:find("PEAK") and chip:find("CRIT") and not chip:find("ACTIVE") and chip:find("SHIELD"),
      "the chip carries the session summary: " .. chip)
   ok(chip:find("|t14:14:Vermilion/assets/dtype/", 1, true) and chip:find("100%%"), "the chip ends with the dominant damage type icon and its share: " .. chip)
   hit._onOnMouseEnter(hit)
@@ -46,8 +46,7 @@ return function(H)
   ok(VermilionHoverCardRowName2._text == "Shields cracked" and (VermilionHoverCardRowVal2._text or ""):find("%%"), "row 2 is the shield share")
   ok(VermilionHoverCardRowName3._text == "Hits" and (VermilionHoverCardRowVal3._text or ""):find("^12"), "row 3 counts the hits: " .. tostring(VermilionHoverCardRowVal3._text))
   ok(VermilionHoverCardRowName4._text == "Peak at" and (VermilionHoverCardRowVal4._text or ""):find("s") ~= nil, "row 4 says when the peak was")
-  ok(VermilionHoverCardRowName5._text == "Time dealing damage" and (VermilionHoverCardRowVal5._text or ""):find("%%"), "row 5 is the active share")
-  ok(VermilionHoverCardRowName6._text == "Main damage type" and (VermilionHoverCardRowVal6._text or ""):find("100%%"), "row 6 names the main damage type, got " .. tostring(VermilionHoverCardRowVal6._text))
+  ok(VermilionHoverCardRowName5._text == "Main damage type" and (VermilionHoverCardRowVal5._text or ""):find("100%%"), "row 5 names the main damage type, got " .. tostring(VermilionHoverCardRowVal5._text))
   ok(VermilionHoverCard._draw_tier == DT_HIGH, "the card draws above every label")
   hit._onOnMouseExit(hit)
   ok(VermilionHoverCard._hidden == true, "leaving the chip closes the report")

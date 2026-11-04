@@ -201,7 +201,6 @@ function M.capture(cooperative)
   local sum_eos, peak_eos = 0, 0
   local sum_edps, peak_edps = 0, 0
   local sum_crit, sum_noncrit = 0, 0
-  local active = 0
   for i = 1, n_series do
     local s = TB.at(i)
     local eos = s.eDPS + s.ShDPS
@@ -211,7 +210,6 @@ function M.capture(cooperative)
     if s.eDPS > peak_edps then peak_edps = s.eDPS end
     sum_crit = sum_crit + (s.crit or 0)
     sum_noncrit = sum_noncrit + (s.noncrit or 0)
-    if s.eDPS > 0 then active = active + 1 end
     harvest(i, 0, s.eos_groups)
     harvest(i, 1, s.dtype_groups)
     harvest_abilities(i, 0, s.eos_abilities)
@@ -352,7 +350,6 @@ function M.capture(cooperative)
         avg_edps = math_floor(sum_edps / n_series + 0.5),
         peak_edps = math_floor(peak_edps + 0.5),
         crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0,
-        active_pct = active / n_series,
         total_damage = total_damage,
         total_shield = total_shield,
         total_crit = total_crit,
