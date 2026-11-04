@@ -457,6 +457,7 @@ function M.render()
   c.seg:ReleaseAllObjects()
   c.lbl:ReleaseAllObjects()
   if c.icon then c.icon:ReleaseAllObjects() end
+  if c.panels then c.panels:ReleaseAllObjects() end
   if c.line then c.line:ReleaseAllObjects() end
   if c.cd then c.cd:ReleaseAllObjects() end
   c.hit_reset()

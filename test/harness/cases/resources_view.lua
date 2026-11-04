@@ -110,7 +110,16 @@ return function(H)
   ok(r.ticks >= 1, "a starvation tick marks where magicka sat under 15% for two seconds or more, got " .. r.ticks)
   ok(r.band >= 2, "the 15% band is painted on both sides of the midline, got " .. r.band)
   ok(r.warn >= 2, "the 15 to 30% band and its line are yellow, got " .. r.warn)
-  ok(r.gold >= 20, "the picker, the two halves and the two lists wear gold frames, got " .. r.gold)
+  local panels = 0
+  for _, ctl in ipairs(H.controls) do
+    if ctl._hidden == false and (ctl._name or ""):find("^VermilionPanel") then panels = panels + 1 end
+  end
+  ok(panels >= 4, "the sections sit on skinned panels, got " .. panels)
+  local pills = 0
+  for _, ctl in ipairs(H.controls) do
+    if ctl._hidden == false and ctl._tex == Vermilion.Skin.SUBTAB then pills = pills + 1 end
+  end
+  ok(pills == 3, "the three pool tabs wear the subtle pill, got " .. pills)
   ok(r.faded == 0, "level columns are solid in BOTH")
   ok(r.warn_cols >= 1, "columns between 15 and 30% are yellow, got " .. r.warn_cols)
   ok(r.mag_bar >= 1, "the recovered list colours its bars by pool, got " .. r.mag_bar)

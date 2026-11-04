@@ -30,6 +30,7 @@ function S.box(c, x0, x1, y, h, col, a, lvl)
   seg:SetAnchor(TOPLEFT, c.canvas, TOPLEFT, x0, y)
   seg:SetWidth(math_max(1, x1 - x0))
   seg:SetHeight(math_max(1, h))
+  seg:SetPixelRoundingEnabled(h <= 1 or x1 - x0 <= 1)
   seg:SetDrawLevel(lvl or 2)
   seg:SetColor(col.r, col.g, col.b, a == nil and 1 or a)
   seg:SetHidden(false)
@@ -37,6 +38,10 @@ function S.box(c, x0, x1, y, h, col, a, lvl)
 end
 
 function S.frame(c, x0, y0, x1, y1, col, a, lvl)
+  if c.panel then
+    c.panel(x0, y0, x1, y1)
+    return
+  end
   local l = lvl or 6
   S.box(c, x0, x1, y0, 1, col, a, l)
   S.box(c, x0, x1, y1 - 1, 1, col, a, l)

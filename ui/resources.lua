@@ -227,6 +227,7 @@ local function box(c, canvas, x0, x1, y, h, col, a, lvl)
   seg:SetAnchor(TOPLEFT, canvas, TOPLEFT, x0, y)
   seg:SetWidth(math_max(1, x1 - x0))
   seg:SetHeight(math_max(1, h))
+  seg:SetPixelRoundingEnabled(h <= 1 or x1 - x0 <= 1)
   seg:SetDrawLevel(lvl)
   seg:SetColor(col.r, col.g, col.b, a)
   seg:SetHidden(false)
@@ -234,10 +235,7 @@ local function box(c, canvas, x0, x1, y, h, col, a, lvl)
 end
 
 local function frame(c, canvas, x0, y0, x1, y1)
-  box(c, canvas, x0, x1, y0, 1, C_GOLD, 0.38, 6)
-  box(c, canvas, x0, x1, y1 - 1, 1, C_GOLD, 0.38, 6)
-  box(c, canvas, x0, x0 + 1, y0, y1 - y0, C_GOLD, 0.38, 6)
-  box(c, canvas, x1 - 1, x1, y0, y1 - y0, C_GOLD, 0.38, 6)
+  c.panel(x0, y0, x1, y1)
 end
 
 local function label(c, canvas, text, x, y, w, h, align, col, a)
@@ -580,26 +578,32 @@ local function draw_dumbbells(c, canvas, x, y, w, h, S)
 end
 
 local function draw_picker(c, canvas, top, S)
-  local x = LANE_X + 4
+  local x = LANE_X + 2
   pick_hit.y0, pick_hit.y1 = top, top + PICK_H
   for i = 1, 3 do
     local on = (pick == i)
     local col = (i == PICK_MAG) and c.mag or (i == PICK_STA) and c.sta or C_TEXT
     local lbl = c.lbl:AcquireObject()
-    local w = lbl:GetStringWidth(S.pick[i]) + 12
+    local w = lbl:GetStringWidth(S.pick[i]) + 18
+    local pill = c.icon:AcquireObject()
+    pill:ClearAnchors()
+    pill:SetTexture(Vermilion.Skin.SUBTAB)
+    pill:SetDimensions(w, PICK_H)
+    pill:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, top)
+    if on then pill:SetColor(col.r, col.g, col.b, 1) else pill:SetColor(C_DIM.r, C_DIM.g, C_DIM.b, 0.55) end
+    pill:SetHidden(false)
     lbl:ClearAnchors()
     lbl:SetText(S.pick[i])
     lbl:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     lbl:SetMaxLineCount(1)
     lbl:SetDimensions(w, PICK_H)
     lbl:SetAnchor(TOPLEFT, canvas, TOPLEFT, x, top)
-    if on then lbl:SetColor(col.r, col.g, col.b, 1) else lbl:SetColor(C_DIM.r, C_DIM.g, C_DIM.b, 0.8) end
+    lbl:SetDrawLevel(5)
+    if on then lbl:SetColor(1, 1, 1, 1) else lbl:SetColor(C_TEXT.r, C_TEXT.g, C_TEXT.b, 0.85) end
     lbl:SetHidden(false)
-    if on then box(c, canvas, x + 4, x + w - 4, top + PICK_H - 3, 1, col, 0.9, 4) end
     pick_hit[i].x0, pick_hit[i].x1 = x, x + w
-    x = x + w + 6
+    x = x + w + 4
   end
-  frame(c, canvas, LANE_X, top, x - 2, top + PICK_H)
 end
 
 local function draw_time(c, canvas)
@@ -796,6 +800,7 @@ function M.render()
   c.rim:ReleaseAllObjects()
   c.lbl:ReleaseAllObjects()
   if c.icon then c.icon:ReleaseAllObjects() end
+  if c.panels then c.panels:ReleaseAllObjects() end
   if c.line then c.line:ReleaseAllObjects() end
   c.hit_reset()
   row_hit.n = 0

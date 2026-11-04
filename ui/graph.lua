@@ -432,6 +432,7 @@ local function release_all_pools()
     controls.pool_c_seg:ReleaseAllObjects()
     controls.pool_c_rim:ReleaseAllObjects()
     controls.pool_c_icon:ReleaseAllObjects()
+    controls.pool_panel:ReleaseAllObjects()
     controls.pool_c_lbl:ReleaseAllObjects()
   end
   if controls.pool_d_seg then
@@ -1464,6 +1465,7 @@ function render_current_view()
     controls.pool_c_seg:ReleaseAllObjects()
     controls.pool_c_rim:ReleaseAllObjects()
     controls.pool_c_icon:ReleaseAllObjects()
+    controls.pool_panel:ReleaseAllObjects()
     controls.pool_c_lbl:ReleaseAllObjects()
   end
   if current_view == VIEW_BY_SKILL then
@@ -2236,6 +2238,19 @@ function M.init()
       fill_factory(c)
       c:SetDrawLevel(3)
     end, fill_reset)
+  controls.pool_panel = Pool.new("VermilionPanel", controls.canvas, zc.CT_BACKDROP,
+    function(c)
+      Vermilion.Skin.section(c)
+      c:SetDrawLevel(1)
+    end,
+    function(c) c:SetHidden(true) end)
+  local function section_panel(x0, y0, x1, y1)
+    local p = controls.pool_panel:AcquireObject()
+    p:ClearAnchors()
+    p:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x0, y0)
+    p:SetDimensions(x1 - x0, y1 - y0)
+    p:SetHidden(false)
+  end
   controls.pool_c_icon = Pool.new("VermilionContribIcon", controls.canvas, CT_TEXTURE,
     function(c) c:SetPixelRoundingEnabled(false) end,
     function(c)
@@ -2582,6 +2597,7 @@ function M.init()
     function(cd) cd:SetDrawLevel(5) end,
     function(cd) cd:SetHidden(true); cd:ClearAnchors() end)
   Vermilion.ResourcesView.attach({
+    panel = section_panel, panels = controls.pool_panel,
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, sub = controls.pool_t_sub, rim = controls.pool_t_rim, lbl = controls.pool_t_lbl,
     line = controls.pool_viz_line,
@@ -2603,6 +2619,7 @@ function M.init()
     rerender = function() render_current_view() end,
   })
   Vermilion.UptimeView.attach({
+    panel = section_panel, panels = controls.pool_panel,
     canvas = controls.canvas, grid = controls.grid, no_data = controls.no_data,
     seg = controls.pool_t_seg, lbl = controls.pool_t_lbl, icon = controls.pool_c_icon, line = controls.pool_viz_line,
     cd = controls.pool_viz_cd, ring_tex = "Vermilion/assets/ring.dds", dot_tex = "Vermilion/assets/dot.dds",

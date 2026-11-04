@@ -24,6 +24,7 @@ local LACQUER = {
   down = BASE .. "lacq_down.dds", disabled = BASE .. "lacq_disabled.dds",
 }
 M.PLAIN, M.LACQUER = PLAIN, LACQUER
+M.SUBTAB = BASE .. "subtab.dds"
 M.CLOSE = { up = BASE .. "close_up.dds", over = BASE .. "close_over.dds", down = BASE .. "close_down.dds" }
 
 function M.button(b, lacquer)
@@ -70,6 +71,15 @@ function M.panel(backdrop)
   M.frame(backdrop)
   if backdrop.SetCenterTexture then backdrop:SetCenterTexture(M.CHROME) end
   if backdrop.SetCenterColor then backdrop:SetCenterColor(1, 1, 1, 0.97) end
+end
+
+function M.section(backdrop)
+  if not backdrop or not backdrop.SetEdgeTexture then return end
+  backdrop:SetEdgeTexture(BASE .. "panel_edge.dds", 128, 16, EDGE_SIZE)
+  backdrop:SetEdgeColor(1, 1, 1, 1)
+  backdrop:SetCenterTexture(BASE .. "panel_center.dds")
+  backdrop:SetCenterColor(1, 1, 1, 1)
+  if backdrop.SetInsets then backdrop:SetInsets(1, 1, -1, -1) end
 end
 
 function M.chrome(tex)
