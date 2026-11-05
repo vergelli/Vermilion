@@ -40,7 +40,7 @@ local function header_section()
   return table_concat({
     string_format(GetString(VERMILION_EXPORT_HEAD), head.build or Vermilion.Constants.VERSION),
     string_format(GetString(VERMILION_EXPORT_META), clean(head.zone), date, secs(dur), math.max(head.group_size or 0, 1), 1000 / rate),
-    GetString(VERMILION_EXPORT_NOTE),
+    GetString(Vermilion.Metrics.exact() and VERMILION_EXPORT_NOTE or VERMILION_EXPORT_NOTE_OLD),
   }, "\n")
 end
 

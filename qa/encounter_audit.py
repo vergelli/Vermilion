@@ -503,6 +503,10 @@ def run_saved(log_path, sv_path):
             ts, dur, total, fight = int(head[0]), int(head[1]), int(head[2]), int(float(head[5]))
             zone = head[6][:22]
             first_gap = int(float(head[8])) if len(head) > 8 else -1
+            if len(head) > 9 and head[9] == '1' and fight <= 0:
+                skipped += 1
+                print('%s  %-22s %s hit, no fight to compare' % (name[:3], zone, head[3]))
+                continue
             if fight <= 0 or first_gap < 0:
                 older += 1
                 print('%s  %-22s recorded before the fight time, not compared' % (name[:3], zone))
