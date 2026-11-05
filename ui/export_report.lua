@@ -37,11 +37,14 @@ local function header_section()
   local dur = head.dur_ms or (TB.at(n).t - TB.at(1).t)
   local date = api.GetDateStringFromTimestamp and head.ts and api.GetDateStringFromTimestamp(head.ts) or "?"
   local rate = head.cfg and head.cfg.sample_rate_ms or (Vermilion.SavedVars.temporal or {}).sample_rate_ms or Vermilion.Constants.TEMPORAL.SAMPLE_RATE_DEFAULT
-  return table_concat({
-    string_format(GetString(VERMILION_EXPORT_HEAD), head.build or Vermilion.Constants.VERSION),
-    string_format(GetString(VERMILION_EXPORT_META), clean(head.zone), date, secs(dur), math.max(head.group_size or 0, 1), 1000 / rate),
-    GetString(Vermilion.Metrics.exact() and VERMILION_EXPORT_NOTE or VERMILION_EXPORT_NOTE_OLD),
-  }, "\n")
+  local lines = { string_format(GetString(VERMILION_EXPORT_HEAD), head.build or Vermilion.Constants.VERSION) }
+  local title = Vermilion.SessionStore.title(head)
+  if title ~= head.zone and title ~= "?" then
+    lines[#lines + 1] = string_format(GetString(VERMILION_EXPORT_FIGHT_NAME), clean(title))
+  end
+  lines[#lines + 1] = string_format(GetString(VERMILION_EXPORT_META), clean(head.zone), date, secs(dur), math.max(head.group_size or 0, 1), 1000 / rate)
+  lines[#lines + 1] = GetString(Vermilion.Metrics.exact() and VERMILION_EXPORT_NOTE or VERMILION_EXPORT_NOTE_OLD)
+  return table_concat(lines, "\n")
 end
 
 local function summary_section()
