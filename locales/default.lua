@@ -75,6 +75,8 @@ ZO_CreateStringId("VERMILION_GRAPH_NO_DATA", "No data. Press |t14:14:Vermilion/a
 
 ZO_CreateStringId("VERMILION_LIB_SAVED",     "Recording saved to the library: %s, %s. Open it with /vermilion lib.")
 
+ZO_CreateStringId("VERMILION_LIB_SKIPPED",   "Recording not saved, the fight lasted under %d s. The save button still keeps it.")
+
 ZO_CreateStringId("VERMILION_KIND_DUNGEON", "Dungeon")
 ZO_CreateStringId("VERMILION_KIND_TRIAL",   "Trial")
 ZO_CreateStringId("VERMILION_KIND_ARENA",   "Arena")

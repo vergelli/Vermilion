@@ -459,6 +459,11 @@ function M.on_session_stop()
   end_ms = api.GetGameTimeMilliseconds()
   local sv = Vermilion.SavedVars
   if not (sv and sv.settings and sv.settings.session_autosave) then return end
+  local min_ms = sv.settings.session_min_fight_ms or Vermilion.Constants.SESSION.MIN_FIGHT_MS
+  if Vermilion.Metrics.fight_ms() < min_ms then
+    d("[Vm] " .. string.format(GetString(VERMILION_LIB_SKIPPED), min_ms / 1000))
+    return
+  end
   manual_pending = false
   begin_capture()
 end
