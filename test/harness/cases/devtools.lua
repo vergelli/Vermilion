@@ -75,6 +75,13 @@ return function(H)
   end
   ok(H.chat_contains("encounter log ON"), "the toggle reports the new state in chat")
 
+  local world = H.state.world
+  H.state.world = "PTS"
+  ok(EL.status_line():find("\\pts\\Logs", 1, true), "on the PTS the file hint points at the pts folder")
+  H.state.world = "NA Megaserver"
+  ok(EL.status_line():find("\\live\\Logs", 1, true), "on a live server it points at the live folder")
+  H.state.world = world
+
   slash("elog off")
   ok(not EL.is_enabled(), "elog off switches it off")
   slash("elog status")
