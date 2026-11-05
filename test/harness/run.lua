@@ -5,7 +5,6 @@ dofile(HARNESS_ROOT .. "/test/harness/mock_eso.lua")
 dofile(HARNESS_ROOT .. "/test/harness/loader.lua")
 
 HARNESS.fire(EVENT_ADD_ON_LOADED, "Vermilion")
-Vermilion.SavedVars.settings.session_min_fight_ms = 0
 
 local CASES = {
   "boot",
@@ -33,7 +32,7 @@ local CASES = {
   "screen_numbers",
   "exact_tables",
   "unknown_after_reload",
-  "short_sessions",
+  "empty_sessions",
   "session_store",
   "content_kind",
   "auto_record",
