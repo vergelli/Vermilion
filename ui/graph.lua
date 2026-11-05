@@ -1925,7 +1925,10 @@ local function attach_shares(series, sess, vsf)
       local key = (r.key ~= nil) and gkeys[r.key + 1] or nil
       local c
       if r.ch == 0 then
-        key = key or SC.group_of(r.id)
+        if not key or key == "other" then
+          local now_group = SC.group_of(r.id)
+          key = key or now_group
+        end
         c = SC.group_color(key)
       elseif r.ch == 2 then
         key = "shield"
