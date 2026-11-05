@@ -35,6 +35,7 @@ local CASES = {
   "empty_sessions",
   "pool_window",
   "session_names",
+  "summary_after_load",
   "session_store",
   "content_kind",
   "auto_record",

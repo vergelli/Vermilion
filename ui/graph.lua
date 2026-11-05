@@ -2016,7 +2016,6 @@ function M.load_session(sess)
     Vermilion.Kills.reset()
   end
   hover_key = nil
-  summary_text = build_summary_text()
   local SS = Vermilion.SessionStore
   controls.loaded_idx = nil
   for i = 1, SS.count() do
@@ -2032,6 +2031,8 @@ function M.load_session(sess)
   controls.loaded_sum = sess.head.sum
   Vermilion.Metrics.set_fight_ms((sess.head.sum and sess.head.sum.fight_ms) or sess.head.dur_ms or 0, sess.head.sum and sess.head.sum.fight_t0, sess.head.sum and sess.head.sum.exact)
   controls.loaded_head = sess.head
+  Vermilion.DamageNames.invalidate()
+  summary_text = build_summary_text()
   controls.no_data:SetHidden(true)
   Vermilion.Visibility.set("graph", true)
   refresh_button_colors()
