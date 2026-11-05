@@ -31,6 +31,7 @@ local CASES = {
   "pet_damage",
   "screen_numbers",
   "exact_tables",
+  "unknown_after_reload",
   "session_store",
   "content_kind",
   "auto_record",
