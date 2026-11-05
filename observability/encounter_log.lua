@@ -6,7 +6,10 @@ local M = Vermilion.EncounterLog
 
 local api = Vermilion.zenimax.api
 
-M.FILE_HINT = "Documents\\Elder Scrolls Online\\live\\Logs\\Encounter.log"
+function M.file_hint()
+  local folder = (api.GetWorldName and api.GetWorldName() == "PTS") and "pts" or "live"
+  return "Documents\\Elder Scrolls Online\\" .. folder .. "\\Logs\\Encounter.log"
+end
 
 function M.available()
   return api.SetEncounterLogEnabled ~= nil and api.IsEncounterLogEnabled ~= nil
@@ -35,5 +38,5 @@ function M.status_line()
   if not M.available() then return "encounter log: not available on this client" end
   return "encounter log " .. (M.is_enabled() and "ON" or "OFF")
     .. "  format v" .. tostring(M.version())
-    .. "  -> " .. M.FILE_HINT
+    .. "  -> " .. M.file_hint()
 end

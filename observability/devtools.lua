@@ -28,7 +28,7 @@ local GuiRoot = zc.GuiRoot
 local ACTIONS = {
   { section = "Encounter log (engine file)" },
   { label = "Encounter log on/off", cmd = "elog", status = "elog",
-    tip = "Toggles the game's own combat log. While ON the client appends every event around you to\n" .. Vermilion.EncounterLog.FILE_HINT .. "\nIt switches itself off at logout." },
+    tip = "Toggles the game's own combat log. While ON the client appends every event around you to\n" .. Vermilion.EncounterLog.file_hint() .. "\nIt switches itself off at logout." },
   { label = "Mark this moment", cmd = "mark",
     tip = "Writes an MK line with the wall-clock epoch and the game clock into the running trace and echoes it to chat, so the trace and Encounter.log can be aligned." },
 

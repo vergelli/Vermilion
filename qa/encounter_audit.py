@@ -454,8 +454,8 @@ def run(log_path, trace_path, slice_to=None, quiet=False):
     return 0
 
 
-def locate(hits, end, dur, span, total):
-    near = [h for h in hits if end - dur - 15000 <= h[0] <= end + 15000]
+def locate(hits, end, span, total):
+    near = [h for h in hits if h[0] <= end + 15000]
     best = None
     i, acc = 0, 0
     for j, h in enumerate(near):
@@ -464,7 +464,7 @@ def locate(hits, end, dur, span, total):
             acc -= near[i][1]
             i += 1
         gap = abs(acc - total)
-        if best is None or gap < best[0]:
+        if best is None or gap <= best[0]:
             best = (gap, near[i][0], h[0])
     return best
 
@@ -509,10 +509,10 @@ def run_saved(log_path, sv_path):
                 continue
             found = None
             for rows, epoch, hits in blocks:
-                best = locate(hits, ts * 1000 - epoch, dur, fight, total)
-                if best and (found is None or best[0] < found[0]):
+                best = locate(hits, ts * 1000 - epoch, fight, total)
+                if best and (found is None or best[0] <= found[0]):
                     found = (best[0], rows, best[1], best[2])
-            if not found or found[0] > 0.02 * total:
+            if not found or found[0] > 0.02 * total or found[3] - found[2] < fight - 5000:
                 skipped += 1
                 print('%s  %-22s %d damage, no fight in this log comes close' % (name[:3], zone, total))
                 continue
@@ -541,7 +541,7 @@ def self_check(log_path, trace_path):
         if off is None:
             print('AUDIT: FAIL no alignment')
             return 1
-        ts = (int(rows[0][2]) + max(int(h[0]) for h in dump['HIT']) + off) // 1000 + 3
+        ts = (int(rows[0][2]) + max(int(h[0]) for h in dump['HIT']) + off) // 1000 + 60
         with open(sv, encoding='utf-8', errors='surrogateescape', newline='') as f:
             text = f.read()
         with open(sv, 'w', encoding='utf-8', errors='surrogateescape', newline='') as f:
