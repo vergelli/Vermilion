@@ -96,9 +96,13 @@ local function note_fight(t)
   if not t then return end
   if not fight_first or t < fight_first then fight_first = t end
   if not fight_last or t > fight_last then fight_last = t end
+  local R = Vermilion.Resources
+  if R then R.note_hit(t) end
 end
 
 function M.set_fight_ms(ms, first, exact) fight_loaded, fight_loaded_first, ex_loaded = ms, first, exact end
+
+function M.is_loaded() return fight_loaded ~= nil end
 
 function M.exact()
   if fight_loaded then return ex_loaded end
@@ -112,6 +116,7 @@ function M.exact_copy()
     for k, v in pairs(t) do c[k] = v end
     out[name] = c
   end
+  out.pool = Vermilion.Resources.flow_copy()
   return out
 end
 

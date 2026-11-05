@@ -7,14 +7,22 @@ end
 return function(out_path, sess, hits)
   local w = assert(io.open(out_path, "wb"))
   local sum = sess.head.sum
-  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1, sum.exact and 1 or 0)
+  line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1, sum.exact and 1 or 0, sum.exact and sum.exact.pool and 1 or 0)
   for _, h in ipairs(hits or {}) do line(w, "HIT", h[1], h[2], h[3], h[4]) end
 
+  local first_t, last_t
+  if Vermilion.Resources.exact_flow() then first_t, last_t = Vermilion.Metrics.fight_bounds() end
   local t, id, pool, cost, n, tick = Vermilion.Casts.records()
-  for i = 1, n do line(w, "CAST", t[i], id[i], pool[i], cost[i], tick[i] or 0, GetAbilityName(id[i]) or "") end
+  for i = 1, n do
+    if not last_t or t[i] <= last_t then
+      line(w, "CAST", t[i], id[i], pool[i], cost[i], tick[i] or 0, GetAbilityName(id[i]) or "")
+    end
+  end
 
-  local _, rid, rp, ra, rn = Vermilion.Restores.records()
-  for i = 1, rn do line(w, "REST", rid[i], rp[i], ra[i]) end
+  local rt, rid, rp, ra, rn = Vermilion.Restores.records()
+  for i = 1, rn do
+    if not last_t or (rt[i] >= first_t and rt[i] <= last_t) then line(w, "REST", rid[i], rp[i], ra[i]) end
+  end
 
   local rs = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
   line(w, "POOL", 1, rs.mag_in, rs.mag_out)

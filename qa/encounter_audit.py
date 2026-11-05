@@ -165,6 +165,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
     sec = sections_of(export)
     head = dump['HEAD'][0]
     exact = len(head) > 9 and head[9] == '1'
+    clipped = len(head) > 10 and head[10] == '1'
     if window:
         lo, hi = window
     else:
@@ -182,6 +183,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
     hits = []
     shields = []
     energize = collections.Counter()
+    energy = []
     kills = set()
     overkill = 0
     live_name = {}
@@ -198,6 +200,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
                 shields.append((int(r[0]), int(r[5]), r[2], r[3], nm(int(r[8])), live_name.get(tgt, tgt)))
             elif r[2] == 'POWER_ENERGIZE' and (tgt in me or (r[9] in me and tgt == '*')):
                 energize[r[4]] += int(r[5])
+                energy.append((int(r[0]), r[4], int(r[5])))
             elif r[2] in KILL and r[9] in mine:
                 kills.add(tgt)
     if not hits:
@@ -331,7 +334,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
 
     casts = collections.defaultdict(set)
     for r in rows:
-        if len(r) > 6 and r[1] == 'BEGIN_CAST' and r[6] in me and rlo <= int(r[0]) <= rhi:
+        if len(r) > 6 and r[1] == 'BEGIN_CAST' and r[6] in me and rlo <= int(r[0]) <= (t1 + 100 if clipped else rhi):
             casts[nm(int(r[5]))].add(r[4])
     per = collections.Counter()
     drains = collections.Counter()
@@ -356,8 +359,13 @@ def audit(rows, dump, export, c, window=None, recording=None):
     rest = collections.Counter()
     for x in dump['REST']:
         rest[x[1]] += int(x[2])
-    c.add('restored magicka', energize[FLAG_MAG], rest['1'], energize[FLAG_MAG] == rest['1'])
-    c.add('restored stamina', energize[FLAG_STA], rest['2'], energize[FLAG_STA] == rest['2'])
+    for label, flag, pool in (('restored magicka', FLAG_MAG, '1'), ('restored stamina', FLAG_STA, '2')):
+        if clipped:
+            least = sum(x[2] for x in energy if x[1] == flag and t0 <= x[0] <= t1)
+            most = sum(x[2] for x in energy if x[1] == flag and t0 - 100 <= x[0] <= t1 + 100)
+            c.add(label, least, rest[pool], least <= rest[pool] <= most, 'first hit to last hit')
+        else:
+            c.add(label, energize[flag], rest[pool], energize[flag] == rest[pool])
 
     open_, spans = {}, collections.defaultdict(list)
     shared = set()

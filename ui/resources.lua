@@ -170,10 +170,12 @@ local function aggregate()
   dmg_by_name, dmg_total = Vermilion.DamageNames.by_name(Vermilion.TemporalBuffer)
   order[SEC_SPENT].n, order[SEC_REC].n = 0, 0
   totals.spend, totals.casts, totals.regained, totals.energized = 0, 0, 0, 0
-  local _, cid, cpool, ccost, n, ctick = Vermilion.Casts.records()
+  local first_t, last_t
+  if Vermilion.Resources.exact_flow() then first_t, last_t = Vermilion.Metrics.fight_bounds() end
+  local ct, cid, cpool, ccost, n, ctick = Vermilion.Casts.records()
   for i = 1, n do
     local p, cost = cpool[i], ccost[i]
-    if p > 0 and cost > 0 and wants(p) then
+    if p > 0 and cost > 0 and wants(p) and (not last_t or ct[i] <= last_t) then
       local rec = rec_for(SEC_SPENT, cid[i])
       add(rec, p, cost)
       totals.spend = totals.spend + cost
@@ -202,10 +204,10 @@ local function aggregate()
   local R = Vermilion.Restores
   local em, es = 0, 0
   if R then
-    local _, rid, rpool, ramt, rn = R.records()
+    local rt, rid, rpool, ramt, rn = R.records()
     for i = 1, rn do
       local p = rpool[i]
-      if p > 0 and wants(p) then
+      if p > 0 and wants(p) and (not last_t or (rt[i] >= first_t and rt[i] <= last_t)) then
         add(rec_for(SEC_REC, rid[i]), p, ramt[i])
         if p == MAG then em = em + ramt[i] else es = es + ramt[i] end
       end
