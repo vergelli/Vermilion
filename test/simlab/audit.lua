@@ -232,6 +232,11 @@ for _, name in ipairs(names) do
   end
 end
 print(string.format("EFFECT_GAP worst uptime %.1f s, worst debuff %.1f s", umax, dmax))
+if T.hits < 2 then
+  local same = sm.hits == T.hits and math.abs(rel(sm.total_damage, T.dmg)) <= 0.001
+  print(same and "AUDIT: ok" or "AUDIT: FAIL hit count")
+  os.exit(same and 0 or 1)
+end
 local bad = {}
 if math.abs(rel(sm.total_damage, T.dmg)) > 0.001 then bad[#bad + 1] = "damage total" end
 if sm.hits ~= T.hits then bad[#bad + 1] = "hit count" end

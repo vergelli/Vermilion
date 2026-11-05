@@ -104,8 +104,8 @@ return function(H)
   hit._onOnMouseEnter(hit)
   H.advance(200)
   ok(VermilionHoverCardName._text == "Big Hit", "hovering the first row must name the skill, got " .. tostring(VermilionHoverCardName._text))
-  ok(VermilionHoverCardStat._text and VermilionHoverCardStat._text:find("%d+%%") and VermilionHoverCardStat._text:find("estimated", 1, true),
-     "row hover must show share and the estimate note, got " .. tostring(VermilionHoverCardStat._text))
+  ok(VermilionHoverCardStat._text and VermilionHoverCardStat._text:find("%d+%%") and VermilionHoverCardStat._text:find("counted hit by hit", 1, true),
+     "row hover must show share and say it is counted, got " .. tostring(VermilionHoverCardStat._text))
   ok(VermilionHoverCardStat._text:find(Vermilion.DamageTypeColors.name(DAMAGE_TYPE_FIRE), 1, true), "row hover names the damage type, got " .. tostring(VermilionHoverCardStat._text))
   ok(VermilionHoverCardSwatch._tex == "Vermilion/assets/dtype/fire.dds", "the card swatch is the damage-type icon, got " .. tostring(VermilionHoverCardSwatch._tex))
   ok(VermilionHoverCardStat._text:find("2 parts", 1, true), "row hover must count the merged ability ids, got " .. tostring(VermilionHoverCardStat._text))

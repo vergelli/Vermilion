@@ -2,6 +2,7 @@
   <Controls>
 
     <TopLevelControl name="VermilionAbout"
+                     tier="HIGH"
                      hidden="true"
                      clampedToScreen="true"
                      movable="true"

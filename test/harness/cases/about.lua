@@ -20,6 +20,17 @@ return function(H)
   ok(r.film >= TB.capacity() * 1990, "the film counts its empty slots")
   ok(r.heap > 0, "the heap is read")
 
+  for _, file in ipairs({ "about", "export" }) do
+    local text = assert(io.open(HARNESS_ROOT .. "/ui/" .. file .. ".xml")):read("*a")
+    ok(text:find('tier="HIGH"', 1, true), file .. " draws above the main window")
+  end
+
+  sv.graph = sv.graph or {}
+  sv.graph.visible = true
+  Vermilion.Visibility.set("graph", true)
+  Vermilion.Visibility.init()
+  ok(Vermilion.Visibility.get("graph") == false, "the main window starts closed even if it was open")
+
   Vermilion.Visibility.set("graph", true)
   ok(VermilionAbout._hidden == true, "About starts closed")
   ok(rawget(_G, "VermilionSettingsPanelAboutBtn") == nil, "About left the settings panel")

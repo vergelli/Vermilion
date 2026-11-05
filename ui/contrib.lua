@@ -48,6 +48,7 @@ local function strings()
     more     = GetString(VERMILION_CONTRIB_MORE),
     scrolled = GetString(VERMILION_CONTRIB_SCROLLED),
     est      = GetString(VERMILION_CONTRIB_TIP_EST),
+    exact    = GetString(VERMILION_CONTRIB_TIP_EXACT),
     parts    = GetString(VERMILION_CONTRIB_PARTS),
   }
   return str
@@ -365,7 +366,7 @@ function M.hover(mx, my)
             (abs_disp > 0 and e.ch ~= CH_SHIELD) and string_format("  ·  |c%02x%02x%02x%s %s|r",
               math_floor(C_SHIELD.r * 255 + 0.5), math_floor(C_SHIELD.g * 255 + 0.5), math_floor(C_SHIELD.b * 255 + 0.5),
               c.fmt_val(e.abs), S.absorbed) or "",
-            S.est,
+            Vermilion.Metrics.exact() and S.exact or S.est,
             (e.n > 1) and string_format(S.parts, e.n) or "")
         end
         c.show_card(e, e.name, e.hov, totals.span, mx, my, c.type_icon and c.type_icon(e.ch) or nil)

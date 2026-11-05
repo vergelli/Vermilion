@@ -40,19 +40,11 @@ local function apply()
   end
 end
 
-local function persist()
-  local sv = Vermilion.SavedVars
-  if not sv then return end
-  sv.graph = sv.graph or {}
-  sv.graph.visible = user_visible.graph
-end
-
 function M.set(key, visible)
   if user_visible[key] == visible then return end
   log:info("set", key, "->", visible and "visible" or "hidden")
   user_visible[key] = visible
   apply()
-  persist()
 end
 
 function M.get(key) return user_visible[key] or false end
@@ -62,10 +54,7 @@ function M.master_toggle()
 end
 
 function M.init()
-  local sv = Vermilion.SavedVars
-  if sv then
-    user_visible.graph = (sv.graph and sv.graph.visible) or false
-  end
+  user_visible.graph = false
 
   Scene.register_callback("SceneStateChanged",
     function(scene, oldState, newState)
