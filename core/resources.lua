@@ -25,6 +25,13 @@ local deaths_t = {}
 local deaths_end = {}
 local n_deaths = 0
 local DEATH_CAP = 256
+local tot_in, tot_out = { 0, 0 }, { 0, 0 }
+local first_in = { 0, 0 }
+local hit_in, hit_out = { 0, 0 }, { 0, 0 }
+local first_hit_t, last_hit_t = nil, nil
+local frame_t = nil
+local frame_in = { 0, 0 }
+local flow_now = { mag_in = 0, mag_out = 0, sta_in = 0, sta_out = 0 }
 
 local function bump(key) Vermilion.Diagnostics.bump(key) end
 
@@ -39,6 +46,11 @@ end
 function M.on_power(p, value, powerMax, effectiveMax)
   bump("res.power_updates")
   value = value or 0
+  local now = now_ms()
+  if now ~= frame_t then
+    frame_t = now
+    frame_in[MAG], frame_in[STA] = tot_in[MAG], tot_in[STA]
+  end
   local mx = max[p]
   if effectiveMax and effectiveMax > 0 then mx = effectiveMax
   elseif powerMax and powerMax > 0 then mx = powerMax end
@@ -49,15 +61,19 @@ function M.on_power(p, value, powerMax, effectiveMax)
   if seen[p] and not dead then
     local d = value - cur[p]
     if d < 0 then
-      local t = now_ms()
-      local cast = Vermilion.Casts.on_drop(p, -d, t)
+      local cast = Vermilion.Casts.on_drop(p, -d, now)
       if value == 0 and not cast and -d >= mx * DEATH_DROP then
-        grace[p] = t + GRACE_MS
+        grace[p] = now + GRACE_MS
       else
         spent[p] = spent[p] - d
+        tot_out[p] = tot_out[p] - d
       end
-    elseif d > 0 and now_ms() >= grace[p] then
+    elseif d > 0 and now >= grace[p] then
       gained[p] = gained[p] + d
+      tot_in[p] = tot_in[p] + d
+    end
+    if now == last_hit_t then
+      hit_in[p], hit_out[p] = tot_in[p], tot_out[p]
     end
   end
   cur[p] = value
@@ -69,6 +85,54 @@ end
 local function flow(v)
   if v > FLOW_CAP then return FLOW_CAP end
   return v
+end
+
+local function clear_flow()
+  tot_in[MAG], tot_in[STA], tot_out[MAG], tot_out[STA] = 0, 0, 0, 0
+  first_in[MAG], first_in[STA] = 0, 0
+  hit_in[MAG], hit_in[STA], hit_out[MAG], hit_out[STA] = 0, 0, 0, 0
+  first_hit_t, last_hit_t = nil, nil
+  frame_t = nil
+  frame_in[MAG], frame_in[STA] = 0, 0
+end
+
+function M.note_hit(t)
+  if not recording then return end
+  if not first_hit_t then
+    first_hit_t = t
+    if frame_t == t then
+      first_in[MAG], first_in[STA] = frame_in[MAG], frame_in[STA]
+    else
+      first_in[MAG], first_in[STA] = tot_in[MAG], tot_in[STA]
+    end
+  end
+  last_hit_t = t
+  hit_in[MAG], hit_in[STA] = tot_in[MAG], tot_in[STA]
+  hit_out[MAG], hit_out[STA] = tot_out[MAG], tot_out[STA]
+end
+
+local function live_flow()
+  flow_now.mag_in = hit_in[MAG] - first_in[MAG]
+  flow_now.sta_in = hit_in[STA] - first_in[STA]
+  flow_now.mag_out = hit_out[MAG]
+  flow_now.sta_out = hit_out[STA]
+  return flow_now
+end
+
+function M.exact_flow()
+  local Me = Vermilion.Metrics
+  if Me.is_loaded() then
+    local ex = Me.exact()
+    return ex and ex.pool or nil
+  end
+  if not last_hit_t then return nil end
+  return live_flow()
+end
+
+function M.flow_copy()
+  if not last_hit_t then return nil end
+  local f = live_flow()
+  return { mag_in = f.mag_in, mag_out = f.mag_out, sta_in = f.sta_in, sta_out = f.sta_out }
 end
 
 function M.sample_into(slot)
@@ -130,6 +194,7 @@ function M.start_session()
   grace[MAG], grace[STA] = 0, 0
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
+  clear_flow()
   local zc = Vermilion.zenimax.constants
   seed(MAG, zc.POWERTYPE_MAGICKA)
   seed(STA, zc.POWERTYPE_STAMINA)
@@ -148,6 +213,7 @@ function M.reset()
   grace[MAG], grace[STA] = 0, 0
   seen[MAG], seen[STA] = false, false
   gained[MAG], gained[STA], spent[MAG], spent[STA] = 0, 0, 0, 0
+  clear_flow()
 end
 
 function M.saw() return saw_any end
@@ -195,6 +261,11 @@ function M.summary(TB)
   end
   r.n = n
   r.damage = Vermilion.Metrics.output_total() or r.damage
+  local flow = M.exact_flow()
+  if flow then
+    r.mag_in, r.mag_out = flow.mag_in, flow.mag_out
+    r.sta_in, r.sta_out = flow.sta_in, flow.sta_out
+  end
   if mag_known then r.mag_low = r.mag_low + mag_zero end
   if sta_known then r.sta_low = r.sta_low + sta_zero end
   if inside > 0 then
