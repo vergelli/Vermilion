@@ -34,10 +34,6 @@ Vermilion.Constants = {
     AUTOSAVE_COOLDOWN_MS = 30000,
   },
 
-  SESSION = {
-    MIN_FIGHT_MS = 10000,
-  },
-
   TEMPORAL = {
     UPDATE_NAME          = "VermilionTemporalSample",
     SAMPLE_RATE_DEFAULT  = 1000,

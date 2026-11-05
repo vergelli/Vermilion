@@ -1415,6 +1415,8 @@ function M.save_available()
   local TB = Vermilion.TemporalBuffer
   local n = TB.count()
   if TB.is_recording() or n == 0 or controls.save_locked then return false end
+  local damage, shield = Vermilion.Metrics.totals()
+  if damage + shield <= 0 then return false end
   return not (controls.saved_start == recording_start_ms and controls.saved_count == n)
 end
 

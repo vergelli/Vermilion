@@ -37,7 +37,7 @@ All notable changes to Vermilion are documented here. This project follows
 - An empty pool now reads as starved in Resources
 - Fixed: the skill, damage type and target tables were worked out from samples of the rolling window and could miss the total by a percent or two. They now add every hit, and also stay whole in a fight longer than the sample buffer. Saved sessions from before this keep the old way
 - Fixed: after a reload, opening a session did not list its grey skills in Unknown Contributions, so they could not be assigned until the skill was recorded again
-- Automatic saving skips a fight under 10 s and a recording with no damage, the save button still keeps them
+- A recording with no damage is not saved, however long it ran
 - The main window always starts closed, it no longer reopens the way you left it
 - Fixed: About and Export could open behind the main window
 - The export shows overkill on its own line, what a killing hit had left past the target's health
