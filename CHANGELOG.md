@@ -38,6 +38,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the skill, damage type and target tables were worked out from samples of the rolling window and could miss the total by a percent or two. They now add every hit, and also stay whole in a fight longer than the sample buffer. Saved sessions from before this keep the old way
 - Fixed: after a reload, opening a session did not list its grey skills in Unknown Contributions, so they could not be assigned until the skill was recorded again
 - Fixed: Gained and Spent kept counting after the last hit, and Gained before the first one, so a recording stopped late looked better sustained than the fight was. A cast pressed before the first hit stays in Spent. Saved sessions from before this keep the old way
+- Fixed: opening a session showed the average, the crit and the main damage type of the session opened before it in the header of the graph
 - Sessions are named after the boss, or after the enemy that took the most damage, in the library, the status line and the export. A name you give still wins, and fights against players stay with the zone
 - A recording with no damage is not saved, however long it ran
 - The main window always starts closed, it no longer reopens the way you left it
