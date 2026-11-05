@@ -138,6 +138,34 @@ end
 
 local YIELD_EVERY = 40
 
+local function plain_name(raw)
+  return (raw:gsub("%^.*$", ""))
+end
+
+local function fight_names(exact)
+  local bosses = {}
+  for name in pairs(Vermilion.AutoRecord.session_bosses()) do bosses[plain_name(name)] = true end
+  local player = Vermilion.zenimax.constants.COMBAT_UNIT_TYPE_OTHER
+  local by_name = {}
+  for id, amount in pairs(exact.targets) do
+    local raw = exact.target_names[id]
+    if raw and raw ~= "" and exact.target_types[id] ~= player then
+      local name = plain_name(raw)
+      by_name[name] = (by_name[name] or 0) + amount
+    end
+  end
+  local boss, boss_v, top, top_v = nil, 0, nil, 0
+  for name, amount in pairs(by_name) do
+    if amount > top_v then top, top_v = name, amount end
+    if bosses[name] and amount > boss_v then boss, boss_v = name, amount end
+  end
+  return boss, top
+end
+
+function M.title(head)
+  return head.label or head.boss or head.top or head.zone or "?"
+end
+
 function M.capture(cooperative)
   local ye = cooperative and YIELD_EVERY or nil
   local coroutine_yield = coroutine.yield
@@ -333,9 +361,13 @@ function M.capture(cooperative)
   local temporal = sv and sv.temporal or {}
   local C = Vermilion.Constants
 
+  local exact = Vermilion.Metrics.exact_copy()
+  local boss_name, top_name = fight_names(exact)
   local session = {
     v = 1,
     head = {
+      boss = boss_name,
+      top = top_name,
       ts = api.GetTimeStamp(),
       zone = (start_zone ~= "") and start_zone or (api.GetUnitZone("player") or ""),
       dur_ms = t_end - t0,
@@ -359,7 +391,7 @@ function M.capture(cooperative)
         hits = hits,
         crit_hits = crit_hits,
         overkill = overkill,
-        exact = Vermilion.Metrics.exact_copy(),
+        exact = exact,
         fight_ms = Vermilion.Metrics.fight_ms(),
         fight_t0 = (function()
           local lo = Vermilion.Metrics.fight_bounds()

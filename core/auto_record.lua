@@ -138,7 +138,29 @@ function M.on_combat_state(inCombat)
   evaluate()
 end
 
+local session_bosses = {}
+
+local function note_session_bosses()
+  local api = Vermilion.zenimax.api
+  local zc  = Vermilion.zenimax.constants
+  for i = zc.BOSS_RANK_ITERATION_BEGIN, zc.BOSS_RANK_ITERATION_END do
+    local tag = "boss" .. i
+    if api.DoesUnitExist(tag) then
+      local name = api.GetUnitName(tag)
+      if name and name ~= "" then session_bosses[name] = true end
+    end
+  end
+end
+
+function M.on_session_start()
+  for k in pairs(session_bosses) do session_bosses[k] = nil end
+  note_session_bosses()
+end
+
+function M.session_bosses() return session_bosses end
+
 function M.on_bosses_changed()
+  if Vermilion.TemporalBuffer.is_recording() then note_session_bosses() end
   local found, name = scan_bosses()
   bump("autorec.bosses_changed")
   if found ~= boss_present then

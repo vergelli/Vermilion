@@ -240,7 +240,7 @@ function M.refresh()
     row.bg:SetColor(1, 1, 1, (shown % 2 == 0) and 0.04 or 0.02)
     row.sel:SetHidden(shown ~= selected)
     row.pip:SetColor(pc.r, pc.g, pc.b, 1)
-    row.name:SetText(h.label or h.zone or "?")
+    row.name:SetText(SS.title(h))
     row.name:SetColor(C_NAME.r, C_NAME.g, C_NAME.b, 1)
     row.stats:SetText(string_format(
       "|cf28c7a%s|r  |cffe0b0%s|r  |c%s%d%%|r  |c9e9490%s|r",

@@ -34,6 +34,7 @@ local CASES = {
   "unknown_after_reload",
   "empty_sessions",
   "pool_window",
+  "session_names",
   "session_store",
   "content_kind",
   "auto_record",

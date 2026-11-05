@@ -1602,6 +1602,7 @@ function M.on_record_click()
   controls.no_data:SetHidden(false)
   Vermilion.TemporalBuffer.start_recording()
   Vermilion.SessionStore.on_session_start()
+  Vermilion.AutoRecord.on_session_start()
   Vermilion.Trace.on_record(Vermilion.SavedVars)
   recording_start_ms = GetGameTimeMilliseconds()
   Vermilion.DebuffTracker.start_session(recording_start_ms)
@@ -2021,7 +2022,9 @@ function M.load_session(sess)
   for i = 1, SS.count() do
     if SS.get(i) == sess then controls.loaded_idx = i break end
   end
-  local status = string_format(GetString(VERMILION_LIB_LOADED), sess.head.zone or "?")
+  local title = SS.title(sess.head)
+  local zone_name = sess.head.zone
+  local status = string_format(GetString(VERMILION_LIB_LOADED), (zone_name and zone_name ~= title) and (title .. "  ·  " .. zone_name) or title)
   if controls.loaded_idx then status = string_format("%s  ·  %d/%d", status, controls.loaded_idx, SS.count()) end
   controls.status:SetText(status)
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
@@ -2061,9 +2064,9 @@ local function wire_save_hooks()
   end
   SS.on_saved = function(session)
     d("[Vm] " .. string_format(GetString(VERMILION_LIB_SAVED),
-      session.head.zone or "?", fmt_secs(session.head.dur_ms or 0)))
+      SS.title(session.head), fmt_secs(session.head.dur_ms or 0)))
     controls.saved_start, controls.saved_count = recording_start_ms, Vermilion.TemporalBuffer.count()
-    controls.status:SetText(string_format(GetString(VERMILION_SAVE_STATUS), session.head.zone or "?"))
+    controls.status:SetText(string_format(GetString(VERMILION_SAVE_STATUS), SS.title(session.head)))
     controls.status:SetColor(0.65, 0.65, 0.65, 1)
     if session.head.manual then Sound.play("save") end
     refresh_button_colors()
