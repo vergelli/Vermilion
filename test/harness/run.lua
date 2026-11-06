@@ -82,6 +82,7 @@ local CASES = {
   "median_line",
   "zoom_local_scale",
   "live_equals_reopened",
+  "hover_leaves_no_trace",
   "basic_attacks",
   "devtools",
   "trace_cap",
