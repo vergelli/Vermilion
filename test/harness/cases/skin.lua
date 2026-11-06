@@ -11,6 +11,7 @@ return function(H)
     for path in f:read("*a"):gmatch("Vermilion/assets/skin/[%w_]+%.dds") do paths[#paths + 1] = path end
     f:close()
   end
+  for _, p in ipairs(Skin.lab_paths()) do paths[#paths + 1] = p end
   local function le32(s, at)
     local a, b, c, d = s:byte(at, at + 3)
     return a + b * 256 + c * 65536 + d * 16777216

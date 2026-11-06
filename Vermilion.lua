@@ -53,6 +53,10 @@ local function on_slash(input)
       Vermilion.Graph.set_pixel_grid(on)
       d("[Vm] pixel grid: " .. (on and "on" or "off"))
       return
+    elseif cmd == "surface" or cmd == "bucket" or cmd == "light" then
+      local value = string_match(input, "^%s*%S+%s+(%d+)")
+      d("[Vm] " .. Vermilion.Skin["lab_" .. cmd](value))
+      return
     elseif cmd == "sessions" then
       for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
       return
@@ -233,6 +237,7 @@ local function on_addon_loaded()
   Vermilion.About.init()
   Vermilion.Export.init()
   Vermilion.Visibility.init()
+  Vermilion.Skin.lab_apply()
 
   Vermilion.slash = on_slash
   SLASH_COMMANDS[C.SLASH_COMMAND] = on_slash
