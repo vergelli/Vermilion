@@ -115,7 +115,9 @@ return function(H)
   G.on_title_double_click()
   local w1, h1 = VermilionGraphWindow:GetDimensions()
   ok(w1 == Vermilion.Constants.GRAPH_DEFAULT_W and h1 == Vermilion.Constants.GRAPH_DEFAULT_H, "a double click on the title restores the default size")
-  ok(w1 == 755 and h1 == 441, "and that size is a comfortable one, not the minimum, got " .. tostring(w1) .. "x" .. tostring(h1))
+  ok(w1 == 718 and h1 == 472, "and that size is a comfortable one, not the minimum, got " .. tostring(w1) .. "x" .. tostring(h1))
+  local xml_w, xml_h = xml:match('name="VermilionGraphWindow".-<Dimensions x="(%d+)" y="(%d+)"/>')
+  ok(tonumber(xml_w) == w1 and tonumber(xml_h) == h1, "a new install opens at that same size, got " .. tostring(xml_w) .. "x" .. tostring(xml_h))
 
   local status = VermilionGraphWindowStatusLabel
   local left = tonumber(xml:match('StatusLabel".-offsetX="(%d+)"'))
@@ -123,10 +125,13 @@ return function(H)
   local export_room = tonumber(export_off) + tonumber(export_w)
   ok(status._wrap == TEXT_WRAP_MODE_ELLIPSIS and status._max_lines == 1, "a long status is cut on one line")
   ok(left + status._max_x <= w1 - export_room, "after the double click it stops before the export button, got " .. tostring(status._max_x))
-  for _, width in ipairs({ 440, 600, 1000 }) do
+  local min_w = Vermilion.Constants.GRAPH_MIN_W
+  ok(min_w > 440 and min_w < 600, "the minimum width grew a little, got " .. tostring(min_w))
+  ok(VermilionGraphWindow._min_x == min_w, "and the window enforces it, got " .. tostring(VermilionGraphWindow._min_x))
+  for _, width in ipairs({ min_w, 600, 1000 }) do
     VermilionGraphWindow:SetDimensions(width, 312)
     G.on_resize_stop()
-    ok(status._max_x > 0 and left + status._max_x <= width - export_room, "at " .. width .. " wide the status stays inside the row, got " .. tostring(status._max_x))
+    ok(status._max_x >= 80 and left + status._max_x <= width - export_room, "at " .. width .. " wide the status stays inside the row with room to read, got " .. tostring(status._max_x))
   end
   VermilionGraphWindow:SetDimensions(600, 312)
   G.on_resize_start()
@@ -134,7 +139,47 @@ return function(H)
   VermilionGraphWindow._onOnUpdate(VermilionGraphWindow)
   ok(left + status._max_x <= 500 - export_room, "the cut follows the window during the drag, got " .. tostring(status._max_x))
   G.on_resize_stop()
+  local function tab_rows()
+    local rows, labels = {}, { "SKILL", "TYPE", "PRESSURE", "CRIT", "CONTRIB", "DEBUFFS", "RESOURCES", "UPTIME" }
+    for v = 1, #labels do
+      local hitbox = rawget(_G, "VermilionGraphTab" .. v)
+      local label = rawget(_G, "VermilionGraphTab" .. v .. "Label")
+      rows[v] = { x = hitbox._anchor_list[1].ox, w = hitbox._w, lw = label._w, lx = label._anchor_list[1].ox, text = #labels[v] * 7 }
+    end
+    return rows
+  end
+  for _, width in ipairs({ min_w, 560, 718, 1000 }) do
+    local strip_w = width - 40
+    VermilionGraphWindow:SetDimensions(width, 312)
+    VermilionGraphWindowTabs:SetWidth(strip_w)
+    G.on_resize_stop()
+    local rows = tab_rows()
+    local x = 0
+    for v, r in ipairs(rows) do
+      ok(r.x == x, "at " .. width .. " tab " .. v .. " starts where the last ended, got " .. tostring(r.x) .. " not " .. tostring(x))
+      ok(r.w >= r.text + 6, "at " .. width .. " tab " .. v .. " fits its label, got " .. tostring(r.w) .. " for " .. tostring(r.text))
+      ok(r.lw == r.w and r.lx == r.x, "its label follows it")
+      x = x + r.w
+    end
+    ok(x <= strip_w and x > strip_w - 9, "at " .. width .. " the tabs fill the strip, got " .. tostring(x) .. " of " .. tostring(strip_w))
+  end
+  VermilionGraphWindow:SetDimensions(718, 312)
+  VermilionGraphWindowTabs:SetWidth(678)
+  G.on_resize_stop()
+  local even = tab_rows()
+  for v = 2, #even do
+    ok(even[v].w == even[1].w, "with room to spare the tabs are all the same width, got " .. tostring(even[v].w) .. " and " .. tostring(even[1].w))
+  end
+  local zero = H.string_width_zero
+  H.string_width_zero = true
+  G.on_resize_stop()
+  H.string_width_zero = zero
+  local blind = tab_rows()
+  for v = 2, #blind do
+    ok(blind[v].w == blind[1].w, "if the font cannot be measured the tabs stay even")
+  end
   VermilionGraphWindow:SetDimensions(w0, h0)
+  VermilionGraphWindowTabs._w = nil
   G.on_resize_stop()
   H.state.mouse_x, H.state.mouse_y = 400, 300
 

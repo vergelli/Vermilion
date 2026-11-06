@@ -23,7 +23,7 @@
                      mouseEnabled="true"
                      resizeHandleSize="8">
 
-      <Dimensions x="440" y="312"/>
+      <Dimensions x="718" y="472"/>
       <OnMouseDoubleClick>Vermilion.Graph.on_title_double_click()</OnMouseDoubleClick>
       <OnMoveStart>Vermilion.Graph.on_move_start()</OnMoveStart>
       <OnMoveStop>Vermilion.Graph.on_move_stop()</OnMoveStop>

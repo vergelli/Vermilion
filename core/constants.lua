@@ -11,8 +11,10 @@ Vermilion.Constants = {
   DEBUG         = false,
 
   PIXEL_GRID      = true,
-  GRAPH_DEFAULT_W = 755,
-  GRAPH_DEFAULT_H = 441,
+  GRAPH_DEFAULT_W = 718,
+  GRAPH_DEFAULT_H = 472,
+  GRAPH_MIN_W     = 500,
+  GRAPH_MIN_H     = 240,
 
   SV_TABLE   = "VermilionSavedVars",
   SV_VERSION = 1,

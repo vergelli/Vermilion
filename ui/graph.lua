@@ -1503,7 +1503,7 @@ local function persist_view()
   if sv then sv.graph = sv.graph or {} ; sv.graph.view_idx = current_view end
 end
 
-local TAB_FLARE, TAB_H, TAB_CAP = 6, 26, 14
+local TAB_FLARE, TAB_H, TAB_CAP, TAB_PAD = 6, 26, 14, 8
 
 local function style_tabs()
   local tabs = controls.tabs
@@ -1517,16 +1517,46 @@ local function style_tabs()
   end
 end
 
+local function fit_tab_widths(tabs, w, n)
+  local scale = Vermilion.zenimax.api.GetUIGlobalScale()
+  for v = 1, n do
+    local t = tabs[v]
+    local text = t.label:GetStringWidth(VIEW_LABELS[v]) / scale
+    t.need = (text > 0) and (math_floor(text + 0.999) + TAB_PAD) or 0
+    t.fixed = false
+  end
+  local free, open = w, n
+  local again = true
+  while again and open > 0 do
+    again = false
+    local share = free / open
+    for v = 1, n do
+      local t = tabs[v]
+      if not t.fixed and t.need > share then
+        t.fixed = true
+        free, open = free - t.need, open - 1
+        again = true
+      end
+    end
+  end
+  local share = (open > 0) and math_floor(free / open) or 0
+  for v = 1, n do
+    local t = tabs[v]
+    t.tw = t.fixed and t.need or share
+  end
+end
+
 local function layout_tabs()
   local tabs = controls.tabs
   if not tabs then return end
   local strip = tabs.strip
   local n = #VIEW_LABELS
-  local w = strip:GetWidth()
-  local tw = math_floor(w / n)
+  fit_tab_widths(tabs, strip:GetWidth(), n)
+  local next_x = 0
   for v = 1, n do
     local t = tabs[v]
-    local x = (v - 1) * tw
+    local x, tw = next_x, t.tw
+    next_x = x + tw
     t.hit:ClearAnchors()
     t.hit:SetAnchor(TOPLEFT, strip, TOPLEFT, x, 0)
     t.hit:SetDimensions(tw, 24)
@@ -2158,10 +2188,11 @@ function M.init()
     controls.window:ClearAnchors()
     controls.window:SetAnchor(CENTER, GuiRoot, TOPLEFT, sv.graph.x, sv.graph.y)
   end
+  local C = Vermilion.Constants
   if sv.graph.w then
-    controls.window:SetDimensions(sv.graph.w, sv.graph.h)
+    controls.window:SetDimensions(math_max(sv.graph.w, C.GRAPH_MIN_W), math_max(sv.graph.h, C.GRAPH_MIN_H))
   end
-  controls.window:SetDimensionConstraints(440, 240, 1000, 700)
+  controls.window:SetDimensionConstraints(C.GRAPH_MIN_W, C.GRAPH_MIN_H, 1000, 700)
 
   VermilionGraphWindowBg:SetCenterColor(0, 0, 0, 0)
   local Skin = Vermilion.Skin
