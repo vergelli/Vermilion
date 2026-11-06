@@ -139,25 +139,26 @@ return function(H)
   ok(SS.set_label(5, " "), "labels can be cleared")
   ok(SS.get(5).head.label == nil, "a blank label clears")
 
-  for i = 1, 30 do
+  ok(SS.cap() == 100, "the library keeps a hundred sessions, got " .. SS.cap())
+  for i = 1, 130 do
     SS.store({ head = { locked = false, zone = "Filler" .. i, dur_ms = 1,
                         group_size = 0, sum = { avg = 0, peak = 0 } },
                streams = {} })
   end
-  ok(SS.count() == 24, "ring must cap at 24, got " .. SS.count())
+  ok(SS.count() == 100, "ring must cap at 100, got " .. SS.count())
 
   SS.set_locked(1, true)
   local locked_zone = SS.get(1).head.zone
-  for i = 1, 30 do
+  for i = 1, 130 do
     SS.store({ head = { locked = false, zone = "More" .. i, dur_ms = 1,
                         group_size = 0, sum = { avg = 0, peak = 0 } },
                streams = {} })
   end
-  ok(SS.count() == 24, "ring must stay capped, got " .. SS.count())
+  ok(SS.count() == 100, "ring must stay capped, got " .. SS.count())
   ok(SS.get(1).head.zone == locked_zone, "locked session must survive eviction")
 
   ok(SS.delete(2), "delete must work")
-  ok(SS.count() == 23, "delete must shrink the ring")
+  ok(SS.count() == 99, "delete must shrink the ring")
   ok(#SS.report_lines() >= 2, "the report lists the library")
 
   sv.settings.session_autosave = false

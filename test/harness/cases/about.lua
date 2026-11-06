@@ -52,7 +52,7 @@ return function(H)
   ok(VermilionAboutName._text:find(Vermilion.Constants.VERSION, 1, true), "it names the version")
   ok(VermilionAboutAuthor._text:find("Federico Vergelli", 1, true), "it names the author")
   ok(VermilionAboutCredit1._text ~= nil and VermilionAboutCredit1._text ~= "", "it lists the credits")
-  ok(VermilionAboutSessionsValue._text:find("/24", 1, true), "it shows the library use, got " .. tostring(VermilionAboutSessionsValue._text))
+  ok(VermilionAboutSessionsValue._text:find("/100", 1, true), "it shows the library use, got " .. tostring(VermilionAboutSessionsValue._text))
   ok(VermilionAboutSessionsFill._hidden == false, "a used section draws its bar")
   if HARNESS_DEBUG then
     ok(VermilionAboutDiagnosticsFill._w > 0, "diagnostics draw too")
