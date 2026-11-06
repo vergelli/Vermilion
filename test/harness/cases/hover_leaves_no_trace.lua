@@ -30,6 +30,7 @@ return function(H)
 
   local canvas, hit = VermilionGraphWindowViewportCanvas, VermilionGraphHit
   local lists = {
+    { "PRESSURE", Vermilion.TargetsView },
     { "CONTRIB", Vermilion.ContribView },
     { "DEBUFFS", Vermilion.DebuffsView },
     { "RESOURCES", Vermilion.ResourcesView },
