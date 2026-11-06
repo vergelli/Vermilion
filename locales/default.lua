@@ -25,7 +25,7 @@ ZO_CreateStringId("VERMILION_LOGO_HINT",              "Logo hidden. Bind a key t
 
 -- Unknown-contributions assignment window
 ZO_CreateStringId("VERMILION_ASSIGN_TITLE",  "Unknown Contributions")
-ZO_CreateStringId("VERMILION_ASSIGN_PICK",   "pick category")
+ZO_CreateStringId("VERMILION_ASSIGN_PICK",   "Pick Category")
 ZO_CreateStringId("VERMILION_ASSIGN_EMPTY",  "Nothing to classify — every contribution has a color.")
 ZO_CreateStringId("VERMILION_ASSIGN_DONE",   "Assign")
 ZO_CreateStringId("VERMILION_ASSIGN_MORE",   "+ %d more — assign some to reveal the rest")

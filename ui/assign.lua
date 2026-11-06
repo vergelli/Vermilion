@@ -69,6 +69,7 @@ local function row_factory(row, counter)
   local pick = CreateControlFromVirtual(nm .. "Pick", row, "ZO_DefaultButton")
   pick:SetDimensions(130, 24)
   pick:SetAnchor(RIGHT, row, RIGHT, 0, 0)
+  Vermilion.Skin.button(pick)
   pick:SetHandler("OnClicked", function() open_flyout_for(row) end)
   row.vm_pick = pick
 
