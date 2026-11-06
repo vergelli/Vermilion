@@ -272,7 +272,8 @@ local MOCKC = {
     elseif k == "SetHidden" then fn = function(s, h) s._hidden = h and true or false end
     elseif k == "IsHidden" or k == "IsControlHidden" then fn = function(s) return s._hidden == true end
     elseif k == "SetColor" then fn = function(s, r, g, b, a) s._r, s._g, s._b, s._a = r, g, b, a; s._vpts = nil end
-    elseif k == "SetVertexColors" then fn = function(s, pts, r, g, b, a) s._vpts, s._va = pts, a end
+    elseif k == "SetVertexColors" then fn = function(s, pts, r, g, b, a) s._vpts, s._va = pts, a; s._vtop = r end
+    elseif k == "SetTextureCoords" then fn = function(s, l, r, t, b) s._uv = { l, r, t, b } end
     elseif k == "SetAlpha" then fn = function(s, a) s._alpha = a end
     elseif k == "SetTexture" then fn = function(s, path) s._tex = path end
     elseif k == "HasFocus" then fn = function(s) return s._has_focus == true end

@@ -41,6 +41,7 @@ local CASES = {
   "alive_average",
   "fight_stats",
   "dead_band",
+  "chrome_surface",
   "session_store",
   "content_kind",
   "auto_record",

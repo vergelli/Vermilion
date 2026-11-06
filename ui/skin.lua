@@ -5,6 +5,11 @@ local M = Vermilion.Skin
 local BASE = "Vermilion/assets/skin/"
 local END_CAP = 9
 local EDGE_SIZE = 8
+local SURFACE_PX = 512
+local TONE = 0.76
+local INSET = 2
+local CHROME_TOP = 100
+local CHROME_SIDE = 14
 
 M.CHROME = BASE .. "chrome.dds"
 M.TAB_ON = BASE .. "tab_on.dds"
@@ -70,7 +75,8 @@ function M.panel(backdrop)
   if not backdrop then return end
   M.frame(backdrop)
   if backdrop.SetCenterTexture then backdrop:SetCenterTexture(M.CHROME) end
-  if backdrop.SetCenterColor then backdrop:SetCenterColor(1, 1, 1, 0.97) end
+  if backdrop.SetCenterColor then backdrop:SetCenterColor(TONE, TONE, TONE, 0.97) end
+  if backdrop.SetInsets then backdrop:SetInsets(INSET, INSET, -INSET, -INSET) end
 end
 
 function M.section(backdrop)
@@ -85,5 +91,21 @@ end
 function M.chrome(tex)
   if not tex then return end
   tex:SetTexture(M.CHROME)
-  tex:SetColor(1, 1, 1, 0.97)
+  tex:SetColor(TONE, TONE, TONE, 0.97)
+end
+
+function M.chrome_light(tex)
+  tex:SetVertexColors(VERTEX_POINTS_TOPLEFT, 1, 1, 1, 0.97)
+  tex:SetVertexColors(VERTEX_POINTS_TOPRIGHT, 1, 1, 1, 0.97)
+end
+
+local function slice(tex, x0, x1, y0, y1)
+  tex:SetTextureCoords(x0 / SURFACE_PX, x1 / SURFACE_PX, y0 / SURFACE_PX, y1 / SURFACE_PX)
+end
+
+function M.fit_chrome(top, bottom, left, right, w, h)
+  slice(top, INSET, w - INSET, INSET, CHROME_TOP)
+  slice(bottom, INSET, w - INSET, h - CHROME_SIDE, h - INSET)
+  slice(left, INSET, CHROME_SIDE, CHROME_TOP, h - CHROME_SIDE)
+  slice(right, w - CHROME_SIDE, w - INSET, CHROME_TOP, h - CHROME_SIDE)
 end
