@@ -1143,6 +1143,16 @@ FB.bind({
 })
 local draw_kills, draw_ult_band, draw_bands_at = FB.draw_kills, FB.draw_ult_band, FB.draw_bands_at
 
+function VIS.scale_top(whole, with_shield)
+  VIS.scale_is_local = false
+  if not Vermilion.Settings.zoom_local_scale() or not Vermilion.FilmWindow.is_zoomed()
+     or Vermilion.TemporalBuffer.is_recording() then return whole end
+  local top = FC.visible_peak(with_shield)
+  if top <= 0 then return whole end
+  VIS.scale_is_local = true
+  return top
+end
+
 function VIS.avg_line(with_shield, max_v, ch_plot)
   local line = controls.avg_line
   if not line or max_v <= 0 or not Vermilion.Settings.average_line() then return end
@@ -1163,6 +1173,7 @@ function VIS.avg_line(with_shield, max_v, ch_plot)
     end
     value = value / n
   end
+  if VIS.scale_is_local and value > max_v then return end
   local h = math_floor(ch_plot * value / max_v + 0.5) + TIME_STRIP_H
   line:ClearAnchors()
   line:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, 0, -h)
@@ -1210,6 +1221,7 @@ local function render_by_skill()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
+  max_eos = VIS.scale_top(max_eos, true)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(true, max_eos, ch_plot)
   VIS.median_line(true, max_eos, ch_plot)
@@ -1290,6 +1302,7 @@ local function render_by_type()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
+  max_edps = VIS.scale_top(max_edps, true)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
   VIS.median_line(false, max_edps, ch_plot)
@@ -1370,6 +1383,7 @@ local function render_by_crit()
   VIS.shield.on, VIS.shield.max = true, max_sh
   local ch_plot = math_max(4, ch - TIME_STRIP_H - CHIP.H - top_inset())
   local m, num_cols, col_w, bar_gap = decimate(cw)
+  max_edps = VIS.scale_top(max_edps, false)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
   VIS.median_line(false, max_edps, ch_plot)

@@ -80,6 +80,7 @@ local CASES = {
   "stop_closes_session",
   "hover_value_colors",
   "median_line",
+  "zoom_local_scale",
   "basic_attacks",
   "devtools",
   "trace_cap",

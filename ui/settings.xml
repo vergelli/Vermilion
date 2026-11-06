@@ -124,6 +124,15 @@
           <OnMouseUp>Vermilion.Settings.on_unknown_click()</OnMouseUp>
         </Label>
 
+        <Button name="$(parent)ZoomScaleBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="222"/>
+          <Dimensions x="272" y="22"/>
+          <OnClicked>Vermilion.Settings.on_zoom_scale_click()</OnClicked>
+        </Button>
+
         <Button name="$(parent)LogoBtn"
                 mouseEnabled="true"
                 font="ZoFontGameSmall"

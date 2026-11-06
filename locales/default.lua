@@ -120,6 +120,8 @@ ZO_CreateStringId("VERMILION_SETTINGS_AVG_ON",   "Average line: On")
 ZO_CreateStringId("VERMILION_SETTINGS_AVG_OFF",  "Average line: Off")
 ZO_CreateStringId("VERMILION_SETTINGS_MEDIAN_ON",  "Median line: On")
 ZO_CreateStringId("VERMILION_SETTINGS_MEDIAN_OFF", "Median line: Off")
+ZO_CreateStringId("VERMILION_SETTINGS_ZOOM_WHOLE",   "Zoom scale: Whole fight")
+ZO_CreateStringId("VERMILION_SETTINGS_ZOOM_VISIBLE", "Zoom scale: Visible part")
 
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GRAPH",      "GRAPH")
 ZO_CreateStringId("VERMILION_SETTINGS_SEC_GENERAL",    "GENERAL")
