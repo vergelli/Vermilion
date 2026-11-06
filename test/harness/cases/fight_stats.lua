@@ -89,6 +89,7 @@ return function(H)
     VermilionGraphSummaryHit._onOnMouseExit()
     return seen
   end
+  ok(GetString(VERMILION_REPORT_P90) == "P90" and GetString(VERMILION_REPORT_MEDIAN) == "Median" and GetString(VERMILION_REPORT_P10) == "P10", "the card uses the plain names")
   ok(card_shows(VERMILION_REPORT_P90), "the card names the good stretches")
   ok(card_shows(VERMILION_REPORT_MEDIAN), "the median")
   ok(s.p10 > 0 and card_shows(VERMILION_REPORT_P10), "and the low stretches when there are any")
