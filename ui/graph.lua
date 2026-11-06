@@ -468,14 +468,14 @@ local function show_card(band, col, mx, my, elapsed_ms)
       if ab and ab.key == band.key then matched = matched + 1 end
     end
     for a = 1, n do
-      if shown >= CARD_MAX_ROWS then break end
+      if shown >= HC.LIST_MAX_ROWS then break end
       local ab = list[a]
       if ab and ab.key == band.key then
         shown = shown + 1
         local row = card.rows[shown]
-        if shown == CARD_MAX_ROWS and matched > CARD_MAX_ROWS then
+        if shown == HC.LIST_MAX_ROWS and matched > HC.LIST_MAX_ROWS then
           row.icon:SetHidden(true)
-          row.name:SetText(string_format("+%d more", matched - (CARD_MAX_ROWS - 1)))
+          row.name:SetText(string_format("+%d more", matched - (HC.LIST_MAX_ROWS - 1)))
           row.name:SetColor(C_CARD_TIME.r, C_CARD_TIME.g, C_CARD_TIME.b, 1.0)
           row.name:SetHidden(false)
           row.val:SetText("")
@@ -611,6 +611,9 @@ local C_SUM = {
   CRIT   = C_CRIT,
   VAL    = { r = 0.95, g = 0.90, b = 0.90 },
   SHIELD = C_SHDPS,
+  P90    = { r = 0.93, g = 0.76, b = 0.38 },
+  MEDIAN = { r = 0.52, g = 0.80, b = 0.88 },
+  P10    = { r = 0.66, g = 0.62, b = 0.86 },
 }
 
 local function build_summary_text()
@@ -710,6 +713,12 @@ local function show_report_card()
     add_row(GetString(VERMILION_REPORT_AVG_ALL), fmt_val(sm.avg), C_CARD_STAT)
     add_row(GetString(VERMILION_REPORT_DEAD),
       string_format("%d  ·  %s  ·  %d%%", sm.deaths, fmt_secs(sm.dead_ms), math_floor(sm.dead_ms / sm.fight_ms * 100 + 0.5)), C_CRIT_BELOW)
+  end
+  local st = Vermilion.FightStats.compute(Vermilion.TemporalBuffer)
+  if st.n > 0 then
+    add_row(GetString(VERMILION_REPORT_P90), fmt_val(st.p90), C_SUM.P90)
+    add_row(GetString(VERMILION_REPORT_MEDIAN), fmt_val(st.p50), C_SUM.MEDIAN)
+    if st.p10 > 0 then add_row(GetString(VERMILION_REPORT_P10), fmt_val(st.p10), C_SUM.P10) end
   end
   if Vermilion.Kills and Vermilion.Kills.count() > 0 then
     add_row(GetString(VERMILION_REPORT_KILLS), tostring(Vermilion.Kills.count()), C_CRIT)

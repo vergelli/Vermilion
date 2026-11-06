@@ -13,6 +13,7 @@ CRIT = {'CRITICAL_DAMAGE', 'DOT_TICK_CRITICAL'}
 KILL = {'DIED', 'DIED_XP', 'KILLING_BLOW'}
 FLAG_MAG, FLAG_STA = '1', '4'
 LOW = 0.15
+STRETCH_ROOM = 0.06
 
 
 def read_log(path):
@@ -322,6 +323,7 @@ def audit(rows, dump, export, c, window=None, recording=None):
             health.append((int(r[0]), r[4]))
     health.sort(key=lambda s: s[0])
     dead_ms, n_dead, began = 0, 0, None
+    dead_spans = []
     for at, hp in health:
         if '/' not in hp:
             continue
@@ -332,9 +334,11 @@ def audit(rows, dump, export, c, window=None, recording=None):
             a, b = max(began, t0), min(at, t1)
             if b > a:
                 dead_ms, n_dead = dead_ms + (b - a), n_dead + 1
+                dead_spans.append((a, b))
             began = None
     if began is not None and t1 > max(began, t0):
         dead_ms, n_dead = dead_ms + (t1 - max(began, t0)), n_dead + 1
+        dead_spans.append((max(began, t0), t1))
     v = cell(sec.get('Summary'), 'Time dead') or 0
     logged = dead_ms / 1000
     c.add('time dead s', round(logged, 1), v, logged - 0.7 * n_dead <= v <= logged + 0.3 * n_dead, 'the log only shows a revive at the next row with health, so it reads late')
@@ -342,6 +346,29 @@ def audit(rows, dump, export, c, window=None, recording=None):
         alive = all_output / (fight - logged)
         a = cell(sec.get('Summary'), 'Alive average')
         c.add('alive average', round(alive), a, a is not None and abs(a / alive - 1) <= 0.7 * n_dead / (fight - logged) + 0.001)
+
+    if not shield_total:
+        windows = []
+        tau = t0 + 5000
+        while tau <= t1:
+            if not any(a <= tau <= b for a, b in dead_spans):
+                i = bisect.bisect_right(ts, tau - 5000)
+                j = bisect.bisect_right(ts, tau)
+                windows.append((cum[j] - cum[i]) / 5)
+            tau += 500
+        if len(windows) >= 12:
+            windows.sort()
+
+            def stretch(p):
+                k = (len(windows) - 1) * p
+                i = int(k)
+                j = min(i + 1, len(windows) - 1)
+                return windows[i] + (windows[j] - windows[i]) * (k - i)
+            for label, name, p in (('P90 output', 'P90 of the windows', 0.9), ('Median output', 'median of the windows', 0.5), ('P10 output', 'P10 of the windows', 0.1)):
+                v = cell(sec.get('Summary'), label)
+                truth = stretch(p)
+                room = (STRETCH_ROOM + 6 / max(1, fight - dead_ms / 1000)) * max(truth, all_output / fight)
+                c.add(name, round(truth), v, v is not None and close(v, truth, room), 'samples against a 500 ms grid')
 
     def share_of(field, test):
         under = whole = 0

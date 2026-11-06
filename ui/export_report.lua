@@ -67,6 +67,12 @@ local function summary_section()
     lines[#lines + 1] = GetString(VERMILION_EXPORT_DEAD) .. ";" .. secs(sm.dead_ms)
     lines[#lines + 1] = GetString(VERMILION_EXPORT_DEATHS) .. ";" .. int(sm.deaths)
   end
+  local st = Vermilion.FightStats.compute(Vermilion.TemporalBuffer)
+  if st.n > 0 then
+    lines[#lines + 1] = GetString(VERMILION_EXPORT_P90) .. ";" .. int(st.p90)
+    lines[#lines + 1] = GetString(VERMILION_EXPORT_MEDIAN) .. ";" .. int(st.p50)
+    lines[#lines + 1] = GetString(VERMILION_EXPORT_P10) .. ";" .. int(st.p10)
+  end
   if sm.overkill then
     lines[#lines + 1] = GetString(VERMILION_EXPORT_OVERKILL) .. ";" .. int(sm.overkill)
   end

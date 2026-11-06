@@ -18,7 +18,8 @@ local log = Vermilion.Log.for_module("hover_card")
 
 local CARD_W, CARD_H = 210, 56
 local CARD_ROW_H     = 16
-local CARD_MAX_ROWS  = 16
+local CARD_MAX_ROWS  = 19
+local LIST_MAX_ROWS  = 13
 local CARD_ROWS_Y0   = 54
 local C_CARD_BG     = { r = 0.10, g = 0.04, b = 0.05, a = 0.96 }
 local C_CARD_ACCENT = { r = 0.88, g = 0.24, b = 0.18, a = 1.0 }
@@ -27,6 +28,7 @@ local C_CARD_NAME   = { r = 1.00, g = 0.90, b = 0.88, a = 1.0 }
 local C_CARD_TIME   = { r = 0.72, g = 0.64, b = 0.62, a = 1.0 }
 
 M.CARD_W, M.CARD_H, M.ROW_H, M.MAX_ROWS, M.ROWS_Y0 = CARD_W, CARD_H, CARD_ROW_H, CARD_MAX_ROWS, CARD_ROWS_Y0
+M.LIST_MAX_ROWS = LIST_MAX_ROWS
 M.C_STAT, M.C_NAME, M.C_TIME = C_CARD_STAT, C_CARD_NAME, C_CARD_TIME
 
 local C_GOLD = { r = 0.80, g = 0.68, b = 0.40 }
