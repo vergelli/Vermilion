@@ -73,6 +73,14 @@ return function(H)
   ok(second ~= first, "another fight reads its own median, got " .. tostring(second))
   ok(FS.median(TB, false) < second, "and the views without shields read without them, got " .. tostring(FS.median(TB, false)) .. " and " .. tostring(second))
 
+  S.on_avg_click()
+  local skill_med, skill_avg = line._anchor_list[1].oy, avg._anchor_list[1].oy
+  while VermilionGraphWindowViewLabel._text ~= "TYPE" do G.next_view() end
+  ok(line._anchor_list[1].oy == skill_med, "TYPE stacks shields in its bars, so its median counts them too, got " .. tostring(line._anchor_list[1].oy) .. " and " .. tostring(skill_med))
+  ok(avg._anchor_list[1].oy == skill_avg, "and so does its average, got " .. tostring(avg._anchor_list[1].oy) .. " and " .. tostring(skill_avg))
+  while VermilionGraphWindowViewLabel._text ~= "SKILL" do G.next_view() end
+  S.on_avg_click()
+
   S.on_median_click()
   ok(S.median_line() == false and line._hidden == true, "a second click removes it")
 
