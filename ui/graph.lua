@@ -353,6 +353,7 @@ local function release_all_pools()
     controls.pool_ult:ReleaseAllObjects()
     controls.pool_ult_icon:ReleaseAllObjects()
     controls.pool_kill:ReleaseAllObjects()
+    controls.pool_dead:ReleaseAllObjects()
     controls.pool_res:ReleaseAllObjects()
     controls.pool_res_lbl:ReleaseAllObjects()
   end
@@ -1242,6 +1243,7 @@ local function render_by_skill()
 
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
+  FB.draw_dead(m, num_cols, cw, CHIP.H + top_inset(), ch - TIME_STRIP_H)
 end
 
 local function render_by_type()
@@ -1320,6 +1322,7 @@ local function render_by_type()
 
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
+  FB.draw_dead(m, num_cols, cw, CHIP.H + top_inset(), ch - TIME_STRIP_H)
 end
 
 local function render_by_crit()
@@ -1382,6 +1385,7 @@ local function render_by_crit()
 
   draw_ult_band(span_ms, n)
   draw_kills(span_ms, n)
+  FB.draw_dead(m, num_cols, cw, CHIP.H + top_inset(), ch - TIME_STRIP_H)
 end
 
 function render_current_view()
@@ -2182,6 +2186,12 @@ function M.init()
     function(c)
       if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
       c:SetDrawLevel(9)
+    end,
+    function(c) c:SetHidden(true) end)
+  controls.pool_dead         = Pool.new("VermilionDeadBand", controls.canvas, CT_TEXTURE,
+    function(c)
+      if c.SetPixelRoundingEnabled then c:SetPixelRoundingEnabled(false) end
+      c:SetDrawLevel(1)
     end,
     function(c) c:SetHidden(true) end)
   controls.pool_c_seg = Pool.new("VermilionContribSeg", controls.canvas, CT_TEXTURE,
