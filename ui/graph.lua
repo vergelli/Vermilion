@@ -2504,9 +2504,9 @@ function M.init()
   end)
   hit_layer:SetHandler("OnMouseExit", function()
     stop_hover_poll(); hide_hover_ui()
-    local CV, DV, RV, UV = Vermilion.ContribView, Vermilion.DebuffsView, Vermilion.ResourcesView, Vermilion.UptimeView
-    local row = CV.hovered() or DV.hovered() or RV.hovered() or UV.hovered()
-    CV.clear_hover(); DV.clear_hover(); RV.clear_hover(); UV.clear_hover()
+    local CV, DV, RV, UV, TV = Vermilion.ContribView, Vermilion.DebuffsView, Vermilion.ResourcesView, Vermilion.UptimeView, Vermilion.TargetsView
+    local row = CV.hovered() or DV.hovered() or RV.hovered() or UV.hovered() or TV.hovered()
+    CV.clear_hover(); DV.clear_hover(); RV.clear_hover(); UV.clear_hover(); TV.clear_hover()
     if hover_key ~= nil or row ~= nil then hover_key = nil; render_current_view() end
   end)
   controls.hit = hit_layer
