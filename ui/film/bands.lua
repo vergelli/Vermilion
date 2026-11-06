@@ -218,6 +218,38 @@ local function draw_kills_at(t0, span, x_left, bw, y)
   end
 end
 
+local function dead_box(x0, x1, y0, y1)
+  local box = controls.pool_dead:AcquireObject()
+  box:ClearAnchors()
+  box:SetAnchor(TOPLEFT, controls.canvas, TOPLEFT, x0, y0)
+  box:SetDimensions(x1 - x0, y1 - y0)
+  box:SetColor(0.62, 0.62, 0.66, 0.17)
+  box:SetHidden(false)
+end
+
+local function draw_dead(m, num_cols, cw, y0, y1)
+  controls.pool_dead:ReleaseAllObjects()
+  local dts, dn, dte = Vermilion.Resources.deaths()
+  if dn == 0 or y1 <= y0 then return end
+  local dec = FC.cols
+  local d = 1
+  local run_x0, run_x1 = nil, nil
+  for i = 1, m do
+    local col = dec[i]
+    local t = col.t
+    while d <= dn and dte[d] > 0 and dte[d] < t do d = d + 1 end
+    local left, right = FC.rect(col.c, num_cols, cw)
+    if d <= dn and t >= dts[d] then
+      if not run_x0 then run_x0 = left end
+      run_x1 = right
+    elseif run_x0 then
+      dead_box(run_x0, run_x1, y0, y1)
+      run_x0 = nil
+    end
+  end
+  if run_x0 then dead_box(run_x0, run_x1, y0, y1) end
+end
+
 local function draw_kills(span_ms, n)
   if n == 0 then controls.pool_kill:ReleaseAllObjects() return end
   local t_last = FC.view_last_t()
@@ -317,6 +349,7 @@ local function draw_ult_band(span_ms, n)
   draw_bands_at(t_last - span, span, x_left, controls.canvas:GetWidth() - x_left, t_last)
 end
 
+M.draw_dead = draw_dead
 M.draw_kills = draw_kills
 M.draw_ult_band = draw_ult_band
 M.draw_bands_at = draw_bands_at
