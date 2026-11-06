@@ -449,7 +449,7 @@ local function show_card(band, col, mx, my, elapsed_ms)
   card.name:SetText(hover_label(band))
   local pct = math_floor((band.share or 0) * 100 + 0.5)
   local val = (band.share or 0) * total
-  card.stat:SetText(string_format("%s DPS  ·  %d%%", fmt_readout(val), pct))
+  card.stat:SetText(string_format(GetString(VERMILION_CARD_RATE), fmt_readout(val), pct))
   card.time:SetText("t  " .. fmt_secs(elapsed_ms or 0))
 
   clear_card_rows(card)
@@ -1851,6 +1851,10 @@ function M.prev_view()
   set_view(v)
 end
 
+function M.saved_view(idx)
+  return VIEW_LABELS[idx] and idx or nil
+end
+
 function M.next_view()
   local v = current_view + 1
   if v > VIEW_BY_UPTIME then v = VIEW_BY_SKILL end
@@ -2129,10 +2133,7 @@ function M.init()
 
   local sv = Vermilion.SavedVars
   sv.graph = sv.graph or {}
-  if sv.graph.view_idx and sv.graph.view_idx >= VIEW_BY_SKILL
-     and sv.graph.view_idx <= VIEW_BY_RES then
-    current_view = sv.graph.view_idx
-  end
+  current_view = M.saved_view(sv.graph.view_idx) or current_view
   if sv.graph.x then
     controls.window:ClearAnchors()
     controls.window:SetAnchor(CENTER, GuiRoot, TOPLEFT, sv.graph.x, sv.graph.y)

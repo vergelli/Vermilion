@@ -203,7 +203,7 @@ return function(H)
   local ret = RV.returns()
   ok(ret.n > 0, "the fight has skills to rank")
   local drawn = false
-  for _, ctl in ipairs(H.controls) do if ctl._hidden == false and ctl._text == "BEST RETURN" then drawn = true end end
+  for _, ctl in ipairs(H.controls) do if ctl._hidden == false and ctl._text == "BEST RETURN, ESTIMATED" then drawn = true end end
   ok(drawn, "the best return box is drawn")
   for i = 2, ret.n do ok(ret[i - 1].ret >= ret[i].ret, "best return is ranked by score") end
   for i = 1, ret.n do ok(ret[i].dmg > 0, "only skills with attributed damage rank") end
