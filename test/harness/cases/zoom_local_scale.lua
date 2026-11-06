@@ -43,28 +43,27 @@ return function(H)
   local btn, label = VermilionSettingsPanelZoomScaleBtn, VermilionGridYMax
   local n = TB.count()
   local whole = label._text
-  ok(S.zoom_local_scale() == false, "zoom keeps the scale of the whole fight by default")
-  ok(btn._text == "Zoom scale: Whole fight", "the button names its state, got " .. tostring(btn._text))
+  ok(S.zoom_local_scale() == true, "zoom follows the part in view by default")
+  ok(btn._text == "Zoom scale: Visible part", "the button names its state, got " .. tostring(btn._text))
 
   for _ = 1, 40 do
     if not W.zoom(-1, 0, n) then break end
   end
   G.rerender()
   ok(W.is_zoomed() and cols.last < 25, "the view sits on the silence before the first hit, got " .. tostring(cols.last))
-  ok(label._text == whole, "by default the scale does not move, got " .. tostring(label._text))
-
-  S.on_zoom_scale_click()
-  ok(S.zoom_local_scale() == true and btn._text == "Zoom scale: Visible part", "one click follows the visible part, got " .. tostring(btn._text))
   ok(label._text == whole, "a stretch with nothing in it keeps the scale of the fight, got " .. tostring(label._text))
 
   W.center_on(0.45, n)
-  S.on_zoom_scale_click()
-  ok(label._text == whole, "off, a quiet stretch keeps the scale of the fight")
-  local quiet = tallest()
-  S.on_zoom_scale_click()
-  ok(label._text ~= whole, "on, the top of the scale is the top of this stretch, got " .. tostring(label._text))
+  G.rerender()
+  ok(label._text ~= whole, "on a quiet stretch the top of the scale is the top of this stretch, got " .. tostring(label._text))
   local grown = tallest()
-  ok(grown > quiet * 2, "so its bars grow, got " .. tostring(quiet) .. " to " .. tostring(grown))
+  S.on_zoom_scale_click()
+  ok(S.zoom_local_scale() == false and btn._text == "Zoom scale: Whole fight", "one click keeps the whole fight, got " .. tostring(btn._text))
+  ok(label._text == whole, "and the quiet stretch takes the scale of the fight again")
+  local quiet = tallest()
+  ok(grown > quiet * 2, "so its bars were taller on their own scale, got " .. tostring(quiet) .. " to " .. tostring(grown))
+  S.on_zoom_scale_click()
+  ok(label._text ~= whole, "a second click follows the part in view again")
   local top_here = 0
   for i = cols.first, cols.last do
     local s = TB.at(i)
@@ -89,10 +88,14 @@ return function(H)
   S.on_avg_click()
 
   W.zoom(-1, 0.45, n)
-  G.rerender()
+  for _ = 1, 40 do
+    if not W.zoom(-1, 0.45, n) then break end
+  end
+  S.on_zoom_scale_click()
+  ok(label._text == whole, "on the whole fight the label is the fight peak")
   S.on_reset_click()
-  ok(S.zoom_local_scale() == false and btn._text == "Zoom scale: Whole fight", "Reset goes back to the whole fight")
-  ok(label._text == whole, "and redraws, got " .. tostring(label._text))
+  ok(S.zoom_local_scale() == true and btn._text == "Zoom scale: Visible part", "Reset goes back to the default")
+  ok(label._text ~= whole, "and redraws, got " .. tostring(label._text))
 
   W.reset()
   G.on_flush_click()

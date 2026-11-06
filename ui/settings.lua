@@ -221,7 +221,7 @@ end
 
 function M.zoom_local_scale()
   local sv = Vermilion.SavedVars
-  return (sv and sv.settings and sv.settings.zoom_local_scale == true) or false
+  return not (sv and sv.settings and sv.settings.zoom_local_scale == false)
 end
 
 function M.on_zoom_scale_click()
@@ -317,7 +317,7 @@ function M.on_reset_click()
     controls.avg_btn:SetText(avg_label(false))
     sv.settings.median_line = nil
     sv.settings.zoom_local_scale = nil
-    controls.zoom_scale_btn:SetText(zoom_scale_label(false))
+    controls.zoom_scale_btn:SetText(zoom_scale_label(true))
     controls.median_btn:SetText(median_label(false))
     M.forget_dock()
     Vermilion.Library.forget_dock()
