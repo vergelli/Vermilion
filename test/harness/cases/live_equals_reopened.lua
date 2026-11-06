@@ -78,6 +78,28 @@ return function(H)
   ok(U.has_data() == true, "and keeps it after reopening")
   ok(report() == with_ult, "the report reads the same, got\n" .. report() .. "\nwas\n" .. with_ult)
 
+  local function peak_line()
+    for _, section in ipairs(Vermilion.ExportReport.SECTIONS) do
+      local line = (section() or ""):match("Peak at s;[^\n]+")
+      if line then return line end
+    end
+  end
+  G.on_flush_click()
+  H.advance(30000)
+  G.on_record_click()
+  H.advance(2500)
+  H.damage_out({ hit = 1000, ability_id = 31, target_unit_id = 900 })
+  H.advance(100)
+  G.on_stop_click()
+  ok(Vermilion.TemporalBuffer.count() >= 2 and G.export_summary().peak == 0, "stopping right after the first hit leaves no sample with damage")
+  ok(G.export_summary().peak_t_off == 0, "and no peak means no peak time, got " .. tostring(G.export_summary().peak_t_off))
+  local short = peak_line()
+  ok(short == nil or not short:find("-", 1, true), "the export has no negative time, got " .. tostring(short))
+  G.on_save_click()
+  H.advance(400)
+  ok(G.load_session(SS.get(SS.count())), "the saved fight opens")
+  ok(peak_line() == short, "and reads the same, got " .. tostring(peak_line()) .. " was " .. tostring(short))
+
   G.on_flush_click()
   Vermilion.Visibility.set("graph", false)
   M.reset()

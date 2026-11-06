@@ -554,7 +554,7 @@ local function session_summary()
   end
   SUM.avg = (n > 0) and (sum_eos / n) or 0
   SUM.peak = peak
-  SUM.peak_t_off = peak_t - first_t
+  SUM.peak_t_off = (peak > 0) and (peak_t - first_t) or 0
   SUM.crit_pct = (sum_crit + sum_noncrit) > 0 and (sum_crit / (sum_crit + sum_noncrit)) or 0
   SUM.dom_type, SUM.dom_pct = nil, 0
   local ex = Vermilion.Metrics.exact()
