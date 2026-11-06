@@ -129,6 +129,26 @@ local function scan_bar_ids(nk, names)
   end
 end
 
+local function scan_cast_ids(nk, names)
+  local need = false
+  for k = 1, nk do
+    if rows[k].slot and rows[k].id == 0 then need = true break end
+  end
+  if not need then return end
+  local _, cast_id, _, _, n = Vermilion.Casts.records()
+  local tried = {}
+  for i = 1, n do
+    local id = cast_id[i]
+    if id and id > 0 and not tried[id] then
+      tried[id] = true
+      local nm = Vermilion.zenimax.api.GetAbilityName(id)
+      for k = 1, nk do
+        if names[k] == nm and rows[k].slot and rows[k].id == 0 then rows[k].id = id end
+      end
+    end
+  end
+end
+
 local function dress(r)
   if r.id > 0 and r.icon == nil then
     local SC = Vermilion.SkillColors
@@ -204,6 +224,7 @@ local function build(TB, t_hi)
   end
   local dmg, _ = Vermilion.DamageNames.by_name(TB)
   scan_bar_ids(nk, names)
+  scan_cast_ids(nk, names)
   for k = 1, nk do
     local r = rows[k]
     if r.id == 0 and ids and (ids[k] or 0) > 0 then r.id = ids[k] end
