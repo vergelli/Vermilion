@@ -74,6 +74,17 @@ class VermilionGate:
             raise AssertionError(chr(10).join(failures))
         return "%d %s" % (n, done)
 
+    def differences_with_the_reference_are_explained(self):
+        script = os.path.abspath(os.path.join(self.root, "..", "tools", "reference_compare", "invariants.py"))
+        if not os.path.isfile(script):
+            return "no frozen reference fights here, nothing checked"
+        code, out = self._run([sys.executable, script])
+        verdict = [l for l in out.splitlines() if l.startswith("REFERENCE:")]
+        print("\n".join(verdict))
+        if code != 0:
+            raise AssertionError(out[-3000:])
+        return verdict[0] if verdict else "no verdict"
+
     def traces_match_their_events(self, traces_dir=None):
         traces = self._traces_dir(traces_dir)
         if not os.path.isdir(traces):

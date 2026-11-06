@@ -44,6 +44,15 @@ Fights Match The Game Log
     ${msg}=    Fights Match The Game Log
     Log    ${msg}
 
+Differences With The Reference Are Explained
+    [Documentation]    A reference tool measures some things differently on purpose: other windows, the
+    ...                pool lost when dying, hits of pure overkill. Frozen results of that tool, next to
+    ...                the same recorded fights, must differ from ours by exactly what we can explain.
+    ...                They stay outside the repository; without them this test checks nothing.
+    [Tags]    replay    numeric
+    ${msg}=    Differences With The Reference Are Explained
+    Log    ${msg}
+
 Saved Sessions Match The Game Log
     [Documentation]    Each replayed fight is saved to a library file and read back the way a tester's
     ...                SavedVariables are, then compared with the same log without any trace.
