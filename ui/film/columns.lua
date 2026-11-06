@@ -166,6 +166,17 @@ function M.window_extent(n)
   return max_eos, (t_last - t_first), max_sh
 end
 
+function M.visible_peak(with_shield)
+  local TB = Vermilion.TemporalBuffer
+  local top = 0
+  for i = cols.first, cols.last do
+    local s = TB.at(i)
+    local v = with_shield and (s.eDPS + s.ShDPS) or s.eDPS
+    if v > top then top = v end
+  end
+  return top
+end
+
 function M.samples_in(t0, span, n)
   local TB = Vermilion.TemporalBuffer
   local t1 = t0 + span
