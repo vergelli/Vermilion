@@ -74,6 +74,7 @@ function M.shield_window_seconds() return W_SHIELD_MS / 1000 end
 local tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
 
 local fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
+local session_closed = false
 
 local ex_skills, ex_skills_abs, ex_shields = {}, {}, {}
 local ex_tg, ex_tg_abs, ex_tg_name, ex_tg_type = {}, {}, {}, {}
@@ -90,7 +91,10 @@ function M.session_mark()
   ex_loaded = nil
   tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
   fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
+  session_closed = false
 end
+
+function M.close_session() session_closed = true end
 
 local function note_fight(t)
   if not t then return end
@@ -156,7 +160,7 @@ end
 
 function M.ingest_damage_out(ev)
   local amt = ev.amount
-  if amt > 0 then
+  if amt > 0 and not session_closed then
     tot_damage = tot_damage + amt
     tot_hits   = tot_hits + 1
     tot_overkill = tot_overkill + (ev.overflow or 0)
@@ -179,7 +183,7 @@ end
 
 function M.ingest_shield_out(ev)
   local amt = ev.amount
-  if amt > 0 then
+  if amt > 0 and not session_closed then
     tot_shield = tot_shield + amt
     note_fight(ev.t)
     local aid = ev.attack_id or 0
