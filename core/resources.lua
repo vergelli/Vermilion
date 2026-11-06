@@ -9,7 +9,7 @@ local log = Vermilion.Log.for_module("resources")
 local MAG, STA = 1, 2
 local FLOW_CAP = 65535
 local LOW = 0.15
-local GRACE_MS = 3000
+local GRACE_MS = 200
 local DEATH_DROP = 0.1
 
 local recording = false
