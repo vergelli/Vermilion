@@ -106,6 +106,20 @@ def align(rows, dump, mine):
     return votes.most_common(1)[0][0] * 50 + 25
 
 
+def exact_offset(rows, dump, mine, rough):
+    want = collections.defaultdict(list)
+    for h in dump['HIT']:
+        want[(h[1], h[2])].append(int(h[0]))
+    votes = collections.Counter()
+    for r in rows:
+        if len(r) > 9 and r[1] == 'COMBAT_EVENT' and r[9] in mine and r[2] in DMG:
+            for t in want.get((r[8], r[5]), []):
+                d = int(r[0]) - t
+                if abs(d - rough) <= 60:
+                    votes[d] += 1
+    return votes.most_common(1)[0][0] if votes else rough
+
+
 def union(spans):
     total, a, b = 0, None, None
     for x, y in sorted(spans):
@@ -175,6 +189,8 @@ def audit(rows, dump, export, c, window=None, recording=None):
             return
         trace_hits = [int(h[0]) for h in dump['HIT']]
         lo, hi = min(trace_hits) + off - 400, max(trace_hits) + off + 400
+        if dump['REC']:
+            lo = max(lo, int(dump['REC'][0][0]) + exact_offset(rows, dump, mine, off))
 
     rlo, rhi = lo, hi
     if recording:
@@ -369,26 +385,25 @@ def audit(rows, dump, export, c, window=None, recording=None):
 
     open_, spans = {}, collections.defaultdict(list)
     shared = set()
+    hidden = {r[2] for r in rows if len(r) > 5 and r[1] == 'EFFECT_INFO' and r[5] == 'NEVER'}
     for r in rows:
         if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and lo <= int(r[0]) <= hi:
             if r[6] not in me or r[16] == '*' or r[16] in me:
                 shared.add(nm(int(r[5])))
-        if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and r[6] in me and r[16] != '*' and r[16] not in me:
+        if len(r) > 16 and r[1] == 'EFFECT_CHANGED' and r[6] in me and r[16] != '*' and r[16] not in me and r[5] not in hidden:
             t = int(r[0])
             k = (nm(int(r[5])), r[5], r[16])
             if r[2] == 'GAINED' and k not in open_:
                 open_[k] = t
             elif r[2] == 'FADED' and k in open_:
                 a0 = open_.pop(k)
-                if a0 <= hi and t >= lo:
-                    spans[k[0]].append((a0, t))
-    up = collections.defaultdict(list)
-    for x in dump['SPAN']:
-        up[x[0]].append((int(x[1]), int(x[2])))
+                if max(a0, t0) < min(t, t1):
+                    spans[k[0]].append((max(a0, t0), min(t, t1)))
+    up = {x[0]: float(x[1]) for x in dump['COVER']}
     for n, val in sorted(spans.items()):
         tr = union(val) / 1000
         if n in up and n not in shared:
-            a = union(up[n]) / 1000
+            a = up[n] / 1000
             c.add('uptime s ' + n, round(tr, 1), round(a, 1), close(a, tr, max(1.2, 0.015 * tr, 0.45 * len(val))))
     for x in dump['DEBUFF']:
         n = x[0]

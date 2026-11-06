@@ -77,7 +77,7 @@ Vermilion.Visibility.set("graph", true)
 if events[1].t > H.now() then H.advance(events[1].t - H.now()) end
 G.on_record_click()
 
-local hits = {}
+local hits = { start = events[1].t }
 local ult_costs = {}
 local ULT_SLOT = ACTION_BAR_ULTIMATE_SLOT_INDEX + 1
 

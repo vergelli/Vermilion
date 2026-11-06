@@ -196,12 +196,14 @@ local function union(list)
   table.sort(list, function(a, b) return a[1] < b[1] end)
   local cov, a, b = 0, nil, nil
   for _, raw in ipairs(list) do
-    local s = { raw[1], raw[2] > tb_last and tb_last or raw[2] }
-    if a and s[1] <= b then
-      if s[2] > b then b = s[2] end
-    else
-      if a then cov = cov + (b - a) end
-      a, b = s[1], s[2]
+    local s = { math.max(raw[1], T.first or raw[1]), math.min(raw[2], T.last or raw[2], tb_last) }
+    if s[2] > s[1] then
+      if a and s[1] <= b then
+        if s[2] > b then b = s[2] end
+      else
+        if a then cov = cov + (b - a) end
+        a, b = s[1], s[2]
+      end
     end
   end
   if a then cov = cov + (b - a) end
