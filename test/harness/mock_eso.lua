@@ -276,6 +276,7 @@ local MOCKC = {
     elseif k == "SetTextureCoords" then fn = function(s, l, r, t, b) s._uv = { l, r, t, b } end
     elseif k == "SetAlpha" then fn = function(s, a) s._alpha = a end
     elseif k == "SetTexture" then fn = function(s, path) s._tex = path end
+    elseif k == "SetNormalTexture" then fn = function(s, path) s._normal = path end
     elseif k == "HasFocus" then fn = function(s) return s._has_focus == true end
     elseif k == "SetMaxLineCount" then fn = function(s, n) s._max_lines = n end
     elseif k == "StartFixedCooldown" then
