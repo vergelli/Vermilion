@@ -14,9 +14,14 @@ return function(H)
   local left_col = {
     VermilionSettingsPanelSampleBtn,
     VermilionSettingsPanelSliderTrackVPAlpha,
-  }
-  local right_col = {
     VermilionSettingsPanelUnknownBtn,
+  }
+  local bucket = H.layout(VermilionSettingsPanelUnknownBtn)
+  ok(bucket.w == 64 and bucket.h == 64, "the bucket has presence, got " .. bucket.w)
+  ok(bucket.y + bucket.h <= panel.y + panel.h - 30, "and clears the reset row")
+  local settings_xml = assert(io.open(HARNESS_ROOT .. "/ui/settings.xml")):read("*a")
+  ok(settings_xml:find("Vermilion/assets/skin/bucket_up.dds", 1, true), "it wears our own bucket")
+  local right_col = {
     VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn,
     VermilionSettingsPanelLightBtn,
