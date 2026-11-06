@@ -1500,6 +1500,8 @@ local function persist_view()
   if sv then sv.graph = sv.graph or {} ; sv.graph.view_idx = current_view end
 end
 
+local TAB_FLARE, TAB_H, TAB_CAP = 6, 26, 14
+
 local function style_tabs()
   local tabs = controls.tabs
   if not tabs then return end
@@ -1507,9 +1509,8 @@ local function style_tabs()
     local t = tabs[v]
     local on = (v == current_view)
     t.label:SetColor(on and 0.98 or 0.66, on and 0.90 or 0.58, on and 0.88 or 0.56, 1)
-    t.line:SetHidden(not on)
-    t.line:SetColor(Vermilion.Skin.GOLD.r, Vermilion.Skin.GOLD.g, Vermilion.Skin.GOLD.b, 0.95)
-    t.band:SetHidden(not on)
+    t.band:SetNormalTexture(on and Vermilion.Skin.TAB_ON or Vermilion.Skin.TAB_IDLE)
+    t.band:SetDrawLevel(on and 3 or 2)
   end
 end
 
@@ -1525,16 +1526,13 @@ local function layout_tabs()
     local x = (v - 1) * tw
     t.hit:ClearAnchors()
     t.hit:SetAnchor(TOPLEFT, strip, TOPLEFT, x, 0)
-    t.hit:SetDimensions(tw, 20)
+    t.hit:SetDimensions(tw, 24)
     t.label:ClearAnchors()
-    t.label:SetAnchor(TOPLEFT, strip, TOPLEFT, x, 0)
+    t.label:SetAnchor(TOPLEFT, strip, TOPLEFT, x, 6)
     t.label:SetDimensions(tw, 18)
-    t.line:ClearAnchors()
-    t.line:SetAnchor(TOPLEFT, strip, TOPLEFT, x + 4, 18)
-    t.line:SetDimensions(tw - 8, 2)
     t.band:ClearAnchors()
-    t.band:SetAnchor(TOPLEFT, strip, TOPLEFT, x + 2, 1)
-    t.band:SetDimensions(tw - 4, 17)
+    t.band:SetAnchor(TOPLEFT, strip, TOPLEFT, x - TAB_FLARE, 0)
+    t.band:SetDimensions(tw + TAB_FLARE * 2, TAB_H)
   end
 end
 
@@ -2170,7 +2168,7 @@ function M.init()
   Skin.frame(VermilionGraphWindowBg)
   VermilionGraphWindowBg:SetDrawLevel(2)
   M.fit_chrome()
-  VermilionGraphWindowViewportBg:SetEdgeColor(Skin.GOLD.r, Skin.GOLD.g, Skin.GOLD.b, 0.35)
+  Skin.viewport(VermilionGraphWindowViewportBg)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
 
@@ -2310,21 +2308,18 @@ function M.init()
   for v = 1, #VIEW_LABELS do
     local hit_c = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v, strip, zc.CT_CONTROL)
     hit_c:SetMouseEnabled(true)
-    hit_c:SetDrawLevel(3)
+    hit_c:SetDrawLevel(5)
     local label = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v .. "Label", strip, CT_LABEL)
     label:SetFont("ZoFontGameSmall")
     label:SetHorizontalAlignment(TEXT_ALIGN_CENTER)
     label:SetVerticalAlignment(TEXT_ALIGN_CENTER)
     label:SetText(VIEW_LABELS[v])
-    label:SetDrawLevel(2)
-    local line = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v .. "Line", strip, CT_TEXTURE)
-    line:SetTexture(FILL_TEXTURE)
-    line:SetTextureCoords(0, 1, 0, 0.05)
-    line:SetDrawLevel(2)
-    local band = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v .. "Band", strip, CT_TEXTURE)
-    band:SetTexture(Vermilion.Skin.TAB_ON)
-    band:SetDrawLevel(1)
-    band:SetColor(1, 1, 1, 1)
+    label:SetDrawLevel(4)
+    local band = WINDOW_MANAGER:CreateControl("VermilionGraphTab" .. v .. "Band", strip, zc.CT_BUTTON)
+    band:SetMouseEnabled(false)
+    band:SetEndCapWidth(TAB_CAP)
+    band:SetNormalTexture(Vermilion.Skin.TAB_IDLE)
+    band:SetDrawLevel(2)
     local view = v
     hit_c:SetHandler("OnMouseUp", function(_, _, upInside)
       if upInside == false or view == current_view then return end
@@ -2334,11 +2329,12 @@ function M.init()
     end)
     hit_c:SetHandler("OnMouseEnter", function()
       label:SetColor(1, 1, 1, 1)
+      if view ~= current_view then band:SetNormalTexture(Vermilion.Skin.TAB_OVER) end
     end)
     hit_c:SetHandler("OnMouseExit", function()
       style_tabs()
     end)
-    controls.tabs[v] = { hit = hit_c, label = label, line = line, band = band }
+    controls.tabs[v] = { hit = hit_c, label = label, band = band }
   end
   layout_tabs()
   style_tabs()

@@ -35,6 +35,8 @@ local strips, panels = {}, {}
 local lit
 
 M.TAB_ON = BASE .. "tab_on.dds"
+M.TAB_IDLE = BASE .. "tab_idle.dds"
+M.TAB_OVER = BASE .. "tab_over.dds"
 M.RADIO_ON = BASE .. "radio_on.dds"
 M.RADIO_OFF = BASE .. "radio_off.dds"
 M.CARET = BASE .. "caret.dds"
@@ -149,6 +151,12 @@ function M.panel(backdrop)
   panels[#panels + 1] = backdrop
   paint_panel(backdrop)
   if backdrop.SetInsets then backdrop:SetInsets(INSET, INSET, -INSET, -INSET) end
+end
+
+function M.viewport(backdrop)
+  backdrop:SetEdgeTexture(BASE .. "viewport_edge.dds", 128, 16, EDGE_SIZE)
+  backdrop:SetEdgeColor(1, 1, 1, 1)
+  backdrop:SetInsets(2, 2, -2, -2)
 end
 
 function M.section(backdrop)

@@ -18,13 +18,27 @@ return function(H)
     ok(H.last_tooltip == nil, "tab " .. v .. " shows no tooltip")
     hit._onOnMouseExit(hit)
   end
-  ok(VermilionGraphTab1Line._hidden == false and VermilionGraphTab3Line._hidden == true, "only the active tab wears the line")
+  local Skin = Vermilion.Skin
+  ok(VermilionGraphTab1Band._normal == Skin.TAB_ON and VermilionGraphTab3Band._normal == Skin.TAB_IDLE, "the active tab stands out, the others keep a quiet silhouette")
+  ok(VermilionGraphTab1Band._draw_level > VermilionGraphTab3Band._draw_level, "the active tab draws over its neighbours")
+  VermilionGraphTab3._onOnMouseEnter(VermilionGraphTab3)
+  ok(VermilionGraphTab3Band._normal == Skin.TAB_OVER, "hover lights an idle tab")
+  VermilionGraphTab3._onOnMouseExit(VermilionGraphTab3)
+  ok(VermilionGraphTab3Band._normal == Skin.TAB_IDLE, "and it goes back")
+  VermilionGraphTab1._onOnMouseEnter(VermilionGraphTab1)
+  ok(VermilionGraphTab1Band._normal == Skin.TAB_ON, "hover leaves the active tab alone")
+  VermilionGraphTab1._onOnMouseExit(VermilionGraphTab1)
+  local xml = assert(io.open(HARNESS_ROOT .. "/ui/graph.xml")):read("*a")
+  local body = xml:match('name="%$%(parent%)Tabs".-</Control>')
+  local tabs_y, tabs_h = tonumber(body:match('offsetY="(%d+)"')), tonumber(body:match('<Dimensions y="(%d+)"'))
+  local view_y = tonumber(xml:match('name="%$%(parent%)Viewport".-offsetY="(%d+)"'))
+  ok(tabs_y + tabs_h == view_y, "the tabs sit on the viewport, got " .. (tabs_y + tabs_h) .. " and " .. view_y)
 
   H.sounds = {}
   VermilionGraphTab3._onOnMouseUp(VermilionGraphTab3, nil, true)
   ok(view_label._text == "PRESSURE", "clicking a tab switches the view, got " .. tostring(view_label._text))
   ok(H.sounds[#H.sounds] == ("sound:" .. Vermilion.Sound.name("page")), "switching a view turns a page")
-  ok(VermilionGraphTab3Line._hidden == false and VermilionGraphTab1Line._hidden == true, "the line follows the active tab")
+  ok(VermilionGraphTab3Band._normal == Skin.TAB_ON and VermilionGraphTab1Band._normal == Skin.TAB_IDLE, "the highlight follows the active tab")
 
   H.sounds = {}
   VermilionGraphTab3._onOnMouseUp(VermilionGraphTab3, nil, true)
@@ -35,7 +49,7 @@ return function(H)
   VermilionGraphTab8._onOnMouseUp(VermilionGraphTab8, nil, true)
   ok(view_label._text == "UPTIME", "the last tab reaches UPTIME")
   G.next_view()
-  ok(view_label._text == "SKILL" and VermilionGraphTab1Line._hidden == false, "arrow navigation still updates the tabs")
+  ok(view_label._text == "SKILL" and VermilionGraphTab1Band._normal == Skin.TAB_ON, "arrow navigation still updates the tabs")
   ok(G.step_view(1) == true and view_label._text == "TYPE", "the keybind steps forward")
   ok(G.step_view(-1) == true and view_label._text == "SKILL", "the keybind steps back")
 
