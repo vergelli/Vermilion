@@ -497,6 +497,8 @@ local function show_card(band, col, mx, my, elapsed_ms)
         local av = (ab.share or 0) * total
         local ap = math_floor((ab.share or 0) * 100 + 0.5)
         row.val:SetText(string_format("%s · %d%%", fmt_readout(av), ap))
+        local vc = ((ab.id or 0) > 0) and C_LINE_EDPS or C_SHDPS
+        row.val:SetColor(vc.r, vc.g, vc.b, 1.0)
         row.val:SetHidden(false)
       end
     end
