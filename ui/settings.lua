@@ -215,6 +215,25 @@ function M.average_line()
   return (sv and sv.settings and sv.settings.average_line == true) or false
 end
 
+local function median_label(on)
+  return on and GetString(VERMILION_SETTINGS_MEDIAN_ON) or GetString(VERMILION_SETTINGS_MEDIAN_OFF)
+end
+
+function M.median_line()
+  local sv = Vermilion.SavedVars
+  return (sv and sv.settings and sv.settings.median_line == true) or false
+end
+
+function M.on_median_click()
+  local sv = Vermilion.SavedVars
+  sv.settings = sv.settings or {}
+  local now = not M.median_line()
+  sv.settings.median_line = now
+  controls.median_btn:SetText(median_label(now))
+  Sound.play(now and "on" or "off")
+  if Vermilion.Graph and Vermilion.Graph.rerender then Vermilion.Graph.rerender() end
+end
+
 function M.on_avg_click()
   local sv = Vermilion.SavedVars
   sv.settings = sv.settings or {}
@@ -277,6 +296,8 @@ function M.on_reset_click()
     controls.kills_btn:SetText(kills_label(true))
     sv.settings.average_line = nil
     controls.avg_btn:SetText(avg_label(false))
+    sv.settings.median_line = nil
+    controls.median_btn:SetText(median_label(false))
     M.forget_dock()
     Vermilion.Library.forget_dock()
     sv.settings.background = nil
@@ -286,6 +307,7 @@ function M.on_reset_click()
   end
   current_lighta = LIGHTA_DEFAULT
   refresh_all_sliders()
+  if Vermilion.Graph and Vermilion.Graph.rerender then Vermilion.Graph.rerender() end
 end
 
 function M.snapshot()
@@ -314,7 +336,7 @@ function M.init()
   Vermilion.Skin.buttons({
     VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
-    VermilionSettingsPanelAvgBtn, VermilionSettingsPanelBackgroundBtn, VermilionSettingsPanelResetBtn,
+    VermilionSettingsPanelAvgBtn, VermilionSettingsPanelMedianBtn, VermilionSettingsPanelBackgroundBtn, VermilionSettingsPanelResetBtn,
   })
   Vermilion.Skin.close(VermilionSettingsPanelCloseBtn)
   local sv = Vermilion.SavedVars
@@ -343,6 +365,7 @@ function M.init()
   controls.light_btn      = VermilionSettingsPanelLightBtn
   controls.kills_btn      = VermilionSettingsPanelKillsBtn
   controls.avg_btn        = VermilionSettingsPanelAvgBtn
+  controls.median_btn     = VermilionSettingsPanelMedianBtn
   controls.title_lighta   = VermilionSettingsPanelLightAlphaTitle
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
@@ -377,6 +400,7 @@ function M.init()
   controls.light_btn:SetText(light_label(sv.settings.light_mode == true))
   controls.kills_btn:SetText(kills_label(M.kill_markers()))
   controls.avg_btn:SetText(avg_label(M.average_line()))
+  controls.median_btn:SetText(median_label(M.median_line()))
   current_lighta = sv.settings.light_alpha_pct or LIGHTA_DEFAULT
 
   for _, k in ipairs({ "vpalpha", "lighta" }) do
