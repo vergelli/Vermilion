@@ -172,8 +172,12 @@ return function(H)
   ok(VermilionLibrary._onOnUpdate == nil, "releasing the thumb disarms the update handler")
   L.on_scroll(-1)
   ok(VermilionLibraryRow1Name._text == "Scroll13", "the chevron path still steps one row")
+  local name_box = VermilionLibraryLabelBox
+  ok(name_box._edge_tex == Vermilion.Skin.FRAME_EDGE, "the name box wears the gold frame, got " .. tostring(name_box._edge_tex))
   L.on_label_focus(true)
+  ok(name_box._er == 1 and name_box._eg == 1 and name_box._eb == 1 and name_box._ea == 1, "focus shows the gold at full strength")
   L.on_label_focus(false)
+  ok(name_box._er == 1 and name_box._eg == 1 and name_box._eb == 1 and name_box._ea < 1 and name_box._ea > 0, "without focus it stays gold, only quieter")
   L.hide()
 
   ok(L.on_key == nil, "the library never takes the keyboard")
