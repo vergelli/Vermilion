@@ -42,28 +42,28 @@
 
         <!-- Chrome donut: 4 strips around the viewport. Anchors mirror the
              Viewport's (top=50, bottom=-14, left=14, right=-14). -->
-        <Texture name="$(parent)ChromeTop"
+        <Texture name="$(parent)ChromeTop" addressMode="WRAP" autoAdjustTextureCoords="false"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
-          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"  offsetX="6"  offsetY="6"/>
-          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="TOPRIGHT" offsetX="-6" offsetY="100"/>
+          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"  offsetX="2"  offsetY="2"/>
+          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="TOPRIGHT" offsetX="-2" offsetY="100"/>
         </Texture>
 
-        <Texture name="$(parent)ChromeBottom"
+        <Texture name="$(parent)ChromeBottom" addressMode="WRAP" autoAdjustTextureCoords="false"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
-          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="BOTTOMLEFT"  offsetX="6"  offsetY="-14"/>
-          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-6" offsetY="-6"/>
+          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="BOTTOMLEFT"  offsetX="2"  offsetY="-14"/>
+          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-2" offsetY="-2"/>
         </Texture>
 
-        <Texture name="$(parent)ChromeLeft"
+        <Texture name="$(parent)ChromeLeft" addressMode="WRAP" autoAdjustTextureCoords="false"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
-          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"    offsetX="6"  offsetY="100"/>
+          <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPLEFT"    offsetX="2"  offsetY="100"/>
           <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMLEFT" offsetX="14" offsetY="-14"/>
         </Texture>
 
-        <Texture name="$(parent)ChromeRight"
+        <Texture name="$(parent)ChromeRight" addressMode="WRAP" autoAdjustTextureCoords="false"
                  textureFile="EsoUI/Art/Tooltips/UI-TooltipCenter.dds">
           <Anchor point="TOPLEFT"     relativeTo="$(parent)" relativePoint="TOPRIGHT"    offsetX="-14" offsetY="100"/>
-          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-6"  offsetY="-14"/>
+          <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-2"  offsetY="-14"/>
         </Texture>
 
         <!-- Brand mark: small logo at the left of the title bar. Identity /

@@ -1734,7 +1734,14 @@ function M.on_move_stop()
   sv.graph.y = y
 end
 
+function M.fit_chrome()
+  local w, h = controls.window:GetDimensions()
+  Vermilion.Skin.fit_chrome(VermilionGraphWindowChromeTop, VermilionGraphWindowChromeBottom,
+    VermilionGraphWindowChromeLeft, VermilionGraphWindowChromeRight, w, h)
+end
+
 function M.on_resize_stop()
+  M.fit_chrome()
   local sv = Vermilion.SavedVars
   if sv then
     sv.graph = sv.graph or {}
@@ -2153,7 +2160,10 @@ function M.init()
   Skin.chrome(VermilionGraphWindowChromeBottom)
   Skin.chrome(VermilionGraphWindowChromeLeft)
   Skin.chrome(VermilionGraphWindowChromeRight)
+  Skin.chrome_light(VermilionGraphWindowChromeTop)
   Skin.frame(VermilionGraphWindowBg)
+  VermilionGraphWindowBg:SetDrawLevel(2)
+  M.fit_chrome()
   VermilionGraphWindowViewportBg:SetEdgeColor(Skin.GOLD.r, Skin.GOLD.g, Skin.GOLD.b, 0.35)
   local sv_a = (sv.graph and sv.graph.viewport_alpha_pct) or 30
   VermilionGraphWindowViewportBg:SetCenterColor(C_VIEWPORT.r, C_VIEWPORT.g, C_VIEWPORT.b, sv_a / 100)
