@@ -253,6 +253,7 @@ local MOCKC = {
     elseif k == "GetText" then fn = function(s) return s._text or "" end
     elseif k == "GetStringWidth" then
       fn = function(s, text)
+        if H.string_width_zero then return 0 end
         local t = tostring(text or ""):gsub("|c%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|t.-|t", "")
         return #t * 7
       end

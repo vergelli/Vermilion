@@ -48,7 +48,8 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: damage landing after Stop, such as a bleed still ticking, kept adding to the session. The chart ended at Stop, but the totals, the average and the fight length kept growing until you saved, so a late save could store a much lower average
 - Fixed: the values in the hover of a bar and in the damage report kept the colours of the last card you opened, so a skill could read as magicka or stamina. Damage now reads in the damage colour and shields in theirs
 - The session name in the top row is cut with dots when it does not fit, instead of spilling out of the window
-- A double click on the title bar now sets a comfortable working size instead of nearly the minimum
+- A double click on the title bar now sets a comfortable working size instead of nearly the minimum, and a new install opens at that size. A size you choose is still remembered
+- The window can no longer get quite so narrow, and when it is narrow the view tabs take the width their names need, so RESOURCES and PRESSURE are no longer cut
 - The session name box in the library has the gold frame, brighter while you type
 - The film strip no longer opens a tooltip over the chart
 - The film strip has a handle on each end of its window: hover it and the cursor offers to stretch, drag it to choose exactly what the chart shows, without a mouse wheel
