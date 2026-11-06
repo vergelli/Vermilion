@@ -7,7 +7,7 @@ local M = Vermilion.SessionStore
 local math_floor = math.floor
 local table_remove = table.remove
 
-local CAP = 24
+local CAP = 100
 
 local DESC = {
   spans = {
