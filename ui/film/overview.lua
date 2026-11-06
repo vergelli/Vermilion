@@ -244,7 +244,8 @@ function M.attach(view, canv, changed)
   for i = 1, 2 do
     grips[i] = texture("VermilionFilmStripGrip" .. i, 6, C_GRIP.r, C_GRIP.g, C_GRIP.b, 0.75)
   end
-  zui.tooltip(strip, VERMILION_TIP_FILM_STRIP, TOP, start_hover, stop_hover)
+  strip:SetHandler("OnMouseEnter", function() start_hover() end)
+  strip:SetHandler("OnMouseExit", function() stop_hover() end)
   strip:SetHandler("OnMouseDown", function(_, button) M.mouse_down(button) end)
   strip:SetHandler("OnMouseUp", function() M.mouse_up() end)
   strip:SetHandler("OnMouseWheel", function(_, delta) M.wheel(delta) end)

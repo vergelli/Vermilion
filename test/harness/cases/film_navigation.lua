@@ -109,6 +109,7 @@ return function(H)
 
   strip_at(0.5)
   strip._onOnMouseEnter(strip)
+  ok(H.last_tooltip == nil, "the strip shows no tooltip, got " .. tostring(H.last_tooltip))
   H.advance(40)
   ok(H.cursor ~= MOUSE_CURSOR_RESIZE_EW and grip_l._h == rest_h, "in the middle nothing offers to stretch")
   strip_at(0.001)
