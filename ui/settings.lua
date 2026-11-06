@@ -341,7 +341,6 @@ function M.init()
   controls.window         = VermilionSettingsPanel
   controls.window:SetHidden(true)
   Scene.register_top_level(controls.window)
-  VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   controls.sample_btn     = VermilionSettingsPanelSampleBtn
   controls.title_vpalpha  = VermilionSettingsPanelVPAlphaTitle
   controls.label_vpalpha  = VermilionSettingsPanelVPAlphaLabel

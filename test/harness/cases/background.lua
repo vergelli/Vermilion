@@ -8,6 +8,9 @@ return function(H)
   ok(Skin.background() == "piano", "Piano is the default, got " .. tostring(Skin.background()))
   ok(top._tex == Skin.background_path("piano"), "the window shows the background in use")
   ok(VermilionAboutBg._center_tex == top._tex, "the other windows show the same one")
+  for _, frame in ipairs({ VermilionSettingsPanelBg, VermilionAssignPanelBg, VermilionAssignConfirmBg, VermilionAboutBg, VermilionLibraryBg, VermilionExportBg }) do
+    ok(frame._er == 1 and frame._eg == 1 and frame._eb == 1, "every window keeps the gold of its frame untinted")
+  end
   ok(VermilionAboutBg._center_interval == 512 and VermilionAboutBg._center_mode == TEX_MODE_WRAP, "they repeat it at real scale instead of squeezing it")
 
   Skin.load_background("no_such_background")
