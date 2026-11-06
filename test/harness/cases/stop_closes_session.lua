@@ -47,6 +47,22 @@ return function(H)
   ok(sum.fight_ms == fight, "with the fight it recorded, got " .. tostring(sum.fight_ms))
 
   G.on_flush_click()
+  local TB = Vermilion.TemporalBuffer
+  H.damage_out({ hit = 50000, ability_id = 31, target_unit_id = 900 })
+  H.advance(1000)
+  G.on_record_click()
+  H.advance(2500)
+  ok(TB.count() >= 2, "the recording has samples, got " .. TB.count())
+  for i = 1, TB.count() do
+    ok(TB.at(i).eDPS == 0, "a hit from before Record is not in the chart, sample " .. i .. " reads " .. tostring(TB.at(i).eDPS))
+  end
+  H.damage_out({ hit = 1000, ability_id = 31, target_unit_id = 900 })
+  H.advance(2000)
+  G.on_stop_click()
+  ok(Vermilion.Graph.export_summary().peak_t_off >= 0, "and the peak is not before the fight, got " .. tostring(Vermilion.Graph.export_summary().peak_t_off))
+  G.on_flush_click()
+  H.damage_out({ hit = 50000, ability_id = 31, target_unit_id = 900 })
+  G.on_flush_click()
   H.shield_out({ hit = 400 })
   H.advance(60000)
   G.on_record_click()

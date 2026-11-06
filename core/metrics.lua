@@ -93,6 +93,8 @@ function M.session_mark()
   tot_damage, tot_shield, tot_crit, tot_hits, tot_crit_hits, tot_overkill = 0, 0, 0, 0, 0, 0
   fight_first, fight_last, fight_loaded, fight_loaded_first = nil, nil, nil, nil
   session_closed = false
+  damage_out_buf:reset()
+  shield_out_buf:reset()
 end
 
 function M.close_session() session_closed = true end
