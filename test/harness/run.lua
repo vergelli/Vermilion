@@ -83,6 +83,7 @@ local CASES = {
   "zoom_local_scale",
   "live_equals_reopened",
   "hover_leaves_no_trace",
+  "film_strip_redraw",
   "basic_attacks",
   "devtools",
   "trace_cap",

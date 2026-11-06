@@ -2093,6 +2093,7 @@ function M.load_session(sess)
   release_all_pools()
   hide_grid(controls.grid)
   Vermilion.TemporalBuffer.load_session(series)
+  Vermilion.FilmOverview.forget()
   VIS.res.on = RES.present()
   local steps = (sess.streams.steps and sess.desc.steps) and vsf.unpack(sess.streams.steps, sess.desc.steps) or nil
   Vermilion.DebuffTracker.load_session(sess.debuffs or {}, steps or {}, 0, sess.head.dur_ms or 0)
