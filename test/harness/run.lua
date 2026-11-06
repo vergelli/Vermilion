@@ -74,6 +74,7 @@ local CASES = {
   "self_damage",
   "assign_flyout",
   "background",
+  "unknown_recovery",
   "basic_attacks",
   "devtools",
   "trace_cap",

@@ -474,7 +474,7 @@ local function dress(rec, S)
     rec.name = SC.ability_name(rec.id)
     local icon = SC.ability_icon(rec.id) or ""
     rec.icon = (icon ~= "" and not icon:lower():find("icon_missing", 1, true)) and icon or nil
-    local col = skill_col(rec.id)
+    local col = (rec.sec == SEC_REC) and SC.group_color(SC.group_of_quiet(rec.id)) or skill_col(rec.id)
     rec.r, rec.g, rec.b = col.r, col.g, col.b
   else
     rec.name = S.recovery
