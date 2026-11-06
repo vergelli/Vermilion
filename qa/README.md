@@ -50,5 +50,16 @@ one into `../traces/<date>_<zone>_<world>_<events>_sv.lua`, skips the ones alrea
 runs the suite. `/vermilion trace` shows how many are staged; `/vermilion trace clear` empties
 the ring once they are ingested.
 
+## Random user sessions
+
+The recorded fights all follow one path: record, stop, compare. Most of the bugs that got through lived between actions, or between two views of the same fight. `test/simlab/monkey.lua` fires random sequences of what a player does with a fixed seed, and checks rules after each step: the totals agree with a ledger of what was really fired, nothing moves after Stop, a fight reads the same before saving and after reopening, and a session looks the same whatever was opened before it.
+
+```
+lua test/simlab/monkey.lua . <seed> <steps> [0|1]     one session, a failure prints the seed, the step and the last actions
+python qa/monkey_mutants.py                           puts each known bug back in a copy of the code, the sessions must find it
+```
+
+When a new bug appears, fix it with its own test and add it to the list in `qa/monkey_mutants.py`. If the sessions do not find it, they are missing a rule or a kind of fight.
+
 Nothing under `qa/` or `test/` ships: the release workflow copies an allowlist of runtime
 directories and neither is in it.

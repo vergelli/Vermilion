@@ -22,6 +22,38 @@ class VermilionGate:
         traces = traces_dir or os.path.join(self.root, "..", "traces")
         return os.path.abspath(traces)
 
+    def random_sessions_hold_the_rules(self, seeds=40, steps=400):
+        expected = [
+            "export_stays_after_the_end", "fight_inside_recording", "fight_matches_ledger", "hover_rows_add_up",
+            "hover_rows_have_share", "hover_rows_named", "hover_value_colour", "lines_agree_across_views",
+            "new_is_empty", "no_damage_before_the_fight", "no_median_while_recording", "nothing_moves_after_the_end",
+            "opening_changes_nothing", "report_stays_after_the_end", "round_trip_chip", "round_trip_export",
+            "round_trip_report", "round_trip_screen", "same_session_same_screen", "saved_fight_matches",
+            "saved_matches_recorded", "saved_shield_matches", "shields_match_ledger", "skills_add_up",
+            "stopped_stays_still", "totals_match_ledger", "uptime_icon_matches_name",
+        ]
+        totals = {}
+        runs = 0
+        for mode in ("0", "1"):
+            for seed in range(1, int(seeds) + 1):
+                rc, out = self._run([self.lua, "test/simlab/monkey.lua", ".", str(seed), str(steps), mode])
+                if rc != 0:
+                    raise AssertionError(out[-1800:])
+                runs += 1
+                line = re.search(r"^RULES (.*)$", out, re.M)
+                for name, count in re.findall(r"(\w+)=(\d+)", line.group(1) if line else ""):
+                    totals[name] = totals.get(name, 0) + int(count)
+        idle = [name for name in expected if totals.get(name, 0) == 0]
+        if idle:
+            raise AssertionError("rules that never ran: " + ", ".join(idle))
+        return "%d random sessions, %d rule checks" % (runs, sum(totals.values()))
+
+    def random_sessions_catch_the_known_bugs(self):
+        rc, out = self._run([sys.executable, "qa/monkey_mutants.py"], timeout=900)
+        if rc != 0:
+            raise AssertionError(out[-1800:])
+        return out.strip().splitlines()[-1]
+
     def every_lua_file_parses(self):
         bad = []
         for dirpath, dirnames, filenames in os.walk(self.root):
