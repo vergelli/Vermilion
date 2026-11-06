@@ -164,6 +164,21 @@ function M.on_death(is_dead)
 end
 
 function M.deaths() return deaths_t, n_deaths, deaths_end end
+
+function M.dead_ms(lo, hi)
+  local total, count = 0, 0
+  for i = 1, n_deaths do
+    local a, b = deaths_t[i], deaths_end[i]
+    if b == 0 then b = hi end
+    if a < lo then a = lo end
+    if b > hi then b = hi end
+    if b > a then
+      total = total + (b - a)
+      count = count + 1
+    end
+  end
+  return total, count
+end
 function M.is_dead() return dead end
 
 function M.load_session(recs)
