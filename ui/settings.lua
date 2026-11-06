@@ -67,6 +67,11 @@ function M.refresh_unknown_count()
   local text = GetString(VERMILION_SETTINGS_UNKNOWN)
   if n > 0 then text = text .. " (" .. n .. ")" end
   controls.unknown_label:SetText(text)
+  if n > 0 then
+    controls.unknown_label:SetColor(0.93, 0.76, 0.38, 1)
+  else
+    controls.unknown_label:SetColor(0.62, 0.62, 0.62, 1)
+  end
 end
 
 local function dock_window()
@@ -319,7 +324,6 @@ function M.init()
   controls.reset_btn:SetText(GetString(VERMILION_SETTINGS_RESET))
   controls.sample_btn:SetText(sample_label(current_sample))
   M.refresh_unknown_count()
-  controls.unknown_label:SetColor(0.80, 0.80, 0.80, 1)
 
   local SEC = {
     { VermilionSettingsPanelSecGraph,     VermilionSettingsPanelSepGraph,     VERMILION_SETTINGS_SEC_GRAPH },

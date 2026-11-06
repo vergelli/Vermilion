@@ -104,22 +104,22 @@
         </Texture>
 
         <Button name="$(parent)UnknownBtn" mouseEnabled="true"
-                mouseOverBlendMode="ADD" inherits="ZO_ButtonBehaviorClickSound">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="68"/>
-          <Dimensions x="28" y="28"/>
-          <Textures normal="EsoUI/Art/Dye/dyes_toolIcon_fill_up.dds"
-                    pressed="EsoUI/Art/Dye/dyes_toolIcon_fill_down.dds"
-                    mouseOver="EsoUI/Art/Dye/dyes_toolIcon_fill_over.dds"/>
+                mouseOverBlendMode="ALPHA" inherits="ZO_ButtonBehaviorClickSound">
+          <Anchor point="TOPLEFT" offsetX="14" offsetY="146"/>
+          <Dimensions x="64" y="64"/>
+          <Textures normal="Vermilion/assets/skin/bucket_up.dds"
+                    pressed="Vermilion/assets/skin/bucket_down.dds"
+                    mouseOver="Vermilion/assets/skin/bucket_over.dds"/>
           <OnClicked>Vermilion.Settings.on_unknown_click()</OnClicked>
         </Button>
 
         <Label name="$(parent)UnknownLabel"
-               font="ZoFontGameSmall"
+               font="ZoFontGame"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER"
                mouseEnabled="true">
           <Anchor point="LEFT" relativeTo="$(parent)UnknownBtn" relativePoint="RIGHT" offsetX="10" offsetY="0"/>
-          <Dimensions x="220" y="28"/>
+          <Dimensions x="196" y="64"/>
           <OnMouseUp>Vermilion.Settings.on_unknown_click()</OnMouseUp>
         </Label>
 
@@ -127,7 +127,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="102"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="68"/>
           <Dimensions x="272" y="22"/>
           <OnClicked>Vermilion.Settings.on_logo_click()</OnClicked>
         </Button>
@@ -136,7 +136,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="130"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="96"/>
           <Dimensions x="272" y="22"/>
           <OnClicked>Vermilion.Settings.on_sounds_click()</OnClicked>
         </Button>
@@ -145,7 +145,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="158"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="124"/>
           <Dimensions x="272" y="22"/>
           <OnClicked>Vermilion.Settings.on_light_click()</OnClicked>
         </Button>
@@ -154,7 +154,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="186"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="152"/>
           <Dimensions x="134" y="22"/>
           <OnClicked>Vermilion.Settings.on_kills_click()</OnClicked>
         </Button>
@@ -163,7 +163,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="452" offsetY="186"/>
+          <Anchor point="TOPLEFT" offsetX="452" offsetY="152"/>
           <Dimensions x="134" y="22"/>
           <OnClicked>Vermilion.Settings.on_avg_click()</OnClicked>
         </Button>
@@ -172,18 +172,18 @@
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="214"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="180"/>
           <Dimensions x="160" y="12"/>
         </Label>
         <Label name="$(parent)LightAlphaLabel"
                font="ZoFontGameSmall"
                horizontalAlignment="RIGHT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="506" offsetY="214"/>
+          <Anchor point="TOPLEFT" offsetX="506" offsetY="180"/>
           <Dimensions x="80" y="12"/>
         </Label>
         <Control name="$(parent)SliderTrackLightAlpha" mouseEnabled="true">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="229"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="195"/>
           <Dimensions x="272" y="14"/>
         </Control>
 
