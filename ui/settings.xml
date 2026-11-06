@@ -155,8 +155,8 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="152"/>
-          <Dimensions x="134" y="22"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="190"/>
+          <Dimensions x="272" y="22"/>
           <OnClicked>Vermilion.Settings.on_kills_click()</OnClicked>
         </Button>
 
@@ -164,27 +164,36 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="452" offsetY="152"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="218"/>
           <Dimensions x="134" y="22"/>
           <OnClicked>Vermilion.Settings.on_avg_click()</OnClicked>
+        </Button>
+
+        <Button name="$(parent)MedianBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="452" offsetY="218"/>
+          <Dimensions x="134" y="22"/>
+          <OnClicked>Vermilion.Settings.on_median_click()</OnClicked>
         </Button>
 
         <Label name="$(parent)LightAlphaTitle"
                font="ZoFontGameSmall"
                horizontalAlignment="LEFT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="180"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="152"/>
           <Dimensions x="160" y="12"/>
         </Label>
         <Label name="$(parent)LightAlphaLabel"
                font="ZoFontGameSmall"
                horizontalAlignment="RIGHT"
                verticalAlignment="CENTER">
-          <Anchor point="TOPLEFT" offsetX="506" offsetY="180"/>
+          <Anchor point="TOPLEFT" offsetX="506" offsetY="152"/>
           <Dimensions x="80" y="12"/>
         </Label>
         <Control name="$(parent)SliderTrackLightAlpha" mouseEnabled="true">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="195"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="167"/>
           <Dimensions x="272" y="14"/>
         </Control>
 
@@ -192,7 +201,7 @@
                 mouseEnabled="true"
                 font="ZoFontGameSmall"
                 inherits="ZO_DefaultButton">
-          <Anchor point="TOPLEFT" offsetX="314" offsetY="218"/>
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="246"/>
           <Dimensions x="272" y="22"/>
           <OnClicked>Vermilion.Settings.on_background_click()</OnClicked>
         </Button>
@@ -203,7 +212,7 @@
 
         <Texture name="$(parent)SepColumns">
           <Anchor point="TOPLEFT" offsetX="300" offsetY="46"/>
-          <Dimensions x="1" y="214"/>
+          <Dimensions x="1" y="222"/>
         </Texture>
 
         <Button name="$(parent)ResetBtn"

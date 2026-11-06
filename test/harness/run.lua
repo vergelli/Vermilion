@@ -79,6 +79,7 @@ local CASES = {
   "own_skill_ids",
   "stop_closes_session",
   "hover_value_colors",
+  "median_line",
   "basic_attacks",
   "devtools",
   "trace_cap",

@@ -1170,6 +1170,24 @@ function VIS.avg_line(with_shield, max_v, ch_plot)
   line:SetHidden(false)
 end
 
+function VIS.hide_lines()
+  if controls.avg_line then controls.avg_line:SetHidden(true) end
+  if controls.median_line then controls.median_line:SetHidden(true) end
+end
+
+function VIS.median_line(with_shield, max_v, ch_plot)
+  local line = controls.median_line
+  local TB = Vermilion.TemporalBuffer
+  if not line or max_v <= 0 or TB.is_recording() or not Vermilion.Settings.median_line() then return end
+  local value = Vermilion.FightStats.median(TB, with_shield)
+  if value <= 0 or value > max_v then return end
+  local h = math_floor(ch_plot * value / max_v + 0.5) + TIME_STRIP_H
+  line:ClearAnchors()
+  line:SetAnchor(BOTTOMLEFT, controls.canvas, BOTTOMLEFT, 0, -h)
+  line:SetAnchor(BOTTOMRIGHT, controls.canvas, BOTTOMRIGHT, 0, -h)
+  line:SetHidden(false)
+end
+
 local function render_by_skill()
   controls.pool_eos_segments:ReleaseAllObjects()
   controls.pool_edps:ReleaseAllObjects()
@@ -1194,6 +1212,7 @@ local function render_by_skill()
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_eos, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(true, max_eos, ch_plot)
+  VIS.median_line(true, max_eos, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -1273,6 +1292,7 @@ local function render_by_type()
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
+  VIS.median_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   local hk = hover_key
@@ -1352,6 +1372,7 @@ local function render_by_crit()
   local m, num_cols, col_w, bar_gap = decimate(cw)
   draw_grid(controls.grid, canvas, max_edps, axis_span(span_ms), nil, true, CHIP.H + top_inset())
   VIS.avg_line(false, max_edps, ch_plot)
+  VIS.median_line(false, max_edps, ch_plot)
   local bwu = dec_cols.bw or math_max(1, math_floor(col_w) - bar_gap)
   local capture = not Vermilion.TemporalBuffer.is_recording()
   if capture then hit_begin(m) end
@@ -1392,7 +1413,7 @@ local function render_by_crit()
 end
 
 function render_current_view()
-  if controls.avg_line then controls.avg_line:SetHidden(true) end
+  VIS.hide_lines()
   local TB_film = Vermilion.TemporalBuffer
   Vermilion.FilmOverview.sync((current_view == VIEW_BY_SKILL or current_view == VIEW_BY_TYPE or current_view == VIEW_BY_CRIT)
     and not TB_film.is_recording() and TB_film.count() >= 2)
@@ -1658,6 +1679,7 @@ function M.on_record_click()
   Vermilion.Metrics.session_mark()
   release_all_pools()
   hide_grid(controls.grid)
+  VIS.hide_lines()
   controls.no_data:SetHidden(false)
   Vermilion.TemporalBuffer.start_recording()
   Vermilion.SessionStore.on_session_start()
@@ -1742,6 +1764,7 @@ function M.on_flush_click()
   controls.saved_start, controls.saved_count = nil, nil
   release_all_pools()
   hide_grid(controls.grid)
+  VIS.hide_lines()
   refresh_button_colors()
   controls.status:SetText("")
   controls.status:SetColor(0.65, 0.65, 0.65, 1)
@@ -2442,6 +2465,12 @@ function M.init()
   avg_line:SetDrawLevel(14)
   avg_line:SetHidden(true)
   controls.avg_line = avg_line
+  local median_line = WINDOW_MANAGER:CreateControl("VermilionGraphMedianLine", controls.canvas, CT_TEXTURE)
+  median_line:SetHeight(1)
+  median_line:SetColor(C_SUM.MEDIAN.r, C_SUM.MEDIAN.g, C_SUM.MEDIAN.b, 0.6)
+  median_line:SetDrawLevel(14)
+  median_line:SetHidden(true)
+  controls.median_line = median_line
 
   Vermilion.FilmOverview.attach(controls.viewport, controls.canvas, function()
     hide_hover_ui()
