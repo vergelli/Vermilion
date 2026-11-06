@@ -282,6 +282,8 @@ local MOCKC = {
     elseif k == "SetCenterTexture" then fn = function(s, path, interval, mode) s._center_tex, s._center_interval, s._center_mode = path, interval, mode end
     elseif k == "HasFocus" then fn = function(s) return s._has_focus == true end
     elseif k == "SetMaxLineCount" then fn = function(s, n) s._max_lines = n end
+    elseif k == "SetWrapMode" then fn = function(s, m) s._wrap = m end
+    elseif k == "SetDimensionConstraints" then fn = function(s, a, b, c, d) s._min_x, s._min_y, s._max_x, s._max_y = a, b, c, d end
     elseif k == "StartFixedCooldown" then
       fn = function(s, pct, ctype, ttype, edge)
         s._cd_pct, s._cd_type, s._cd_time_type, s._cd_edge = pct, ctype, ttype, edge

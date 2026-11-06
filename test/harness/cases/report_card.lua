@@ -115,7 +115,27 @@ return function(H)
   G.on_title_double_click()
   local w1, h1 = VermilionGraphWindow:GetDimensions()
   ok(w1 == Vermilion.Constants.GRAPH_DEFAULT_W and h1 == Vermilion.Constants.GRAPH_DEFAULT_H, "a double click on the title restores the default size")
+  ok(w1 == 755 and h1 == 441, "and that size is a comfortable one, not the minimum, got " .. tostring(w1) .. "x" .. tostring(h1))
+
+  local status = VermilionGraphWindowStatusLabel
+  local left = tonumber(xml:match('StatusLabel".-offsetX="(%d+)"'))
+  local export_off, export_w = xml:match('ExportBtn".-offsetX="%-(%d+)".-Dimensions x="(%d+)"')
+  local export_room = tonumber(export_off) + tonumber(export_w)
+  ok(status._wrap == TEXT_WRAP_MODE_ELLIPSIS and status._max_lines == 1, "a long status is cut on one line")
+  ok(left + status._max_x <= w1 - export_room, "after the double click it stops before the export button, got " .. tostring(status._max_x))
+  for _, width in ipairs({ 440, 600, 1000 }) do
+    VermilionGraphWindow:SetDimensions(width, 312)
+    G.on_resize_stop()
+    ok(status._max_x > 0 and left + status._max_x <= width - export_room, "at " .. width .. " wide the status stays inside the row, got " .. tostring(status._max_x))
+  end
+  VermilionGraphWindow:SetDimensions(600, 312)
+  G.on_resize_start()
+  VermilionGraphWindow:SetDimensions(500, 312)
+  VermilionGraphWindow._onOnUpdate(VermilionGraphWindow)
+  ok(left + status._max_x <= 500 - export_room, "the cut follows the window during the drag, got " .. tostring(status._max_x))
+  G.on_resize_stop()
   VermilionGraphWindow:SetDimensions(w0, h0)
+  G.on_resize_stop()
   H.state.mouse_x, H.state.mouse_y = 400, 300
 
   Vermilion.Visibility.set("graph", false)

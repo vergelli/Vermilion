@@ -49,6 +49,7 @@ local LINE_THICKNESS = 2
 local N_HGRID      = 3
 local N_VGRID      = 3
 local TIME_STRIP_H = 18
+local STATUS_ROW   = { LEFT = 350, RIGHT = 60 }
 local VIS = {
   ult       = { PAD = 4, ROW_H = 5, GAP = 9, ICON = 14, AREA = 28 },
   ready     = { r = 1.00, g = 0.90, b = 0.30 },
@@ -1736,6 +1737,7 @@ function M.fit_chrome()
   local w, h = controls.window:GetDimensions()
   Vermilion.Skin.fit_chrome(VermilionGraphWindowChromeTop, VermilionGraphWindowChromeBottom,
     VermilionGraphWindowChromeLeft, VermilionGraphWindowChromeRight, w, h)
+  controls.status:SetDimensionConstraints(0, 0, w - STATUS_ROW.LEFT - STATUS_ROW.RIGHT, 0)
 end
 
 function M.on_resize_start()
@@ -2278,6 +2280,8 @@ function M.init()
   controls.rec_panel:ClearAnchors()
   controls.rec_panel:SetAnchor(TOPLEFT, controls.btn_record_menu, BOTTOMLEFT, -72, 4)
   controls.rec_panel:SetHidden(true)
+  controls.status:SetMaxLineCount(1)
+  controls.status:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS)
   controls.rec_mode:SetColor(0.62, 0.62, 0.62, 1)
   if controls.rec_mode.SetWrapMode and TEXT_WRAP_MODE_ELLIPSIS then controls.rec_mode:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS) end
   controls.btn_stop:SetText("|t9:9:Vermilion/assets/stop.dds|t " .. GetString(VERMILION_GRAPH_STOP))
