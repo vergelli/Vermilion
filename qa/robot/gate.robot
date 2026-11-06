@@ -53,6 +53,21 @@ Differences With The Reference Are Explained
     ${msg}=    Differences With The Reference Are Explained
     Log    ${msg}
 
+Random Sessions Hold The Rules
+    [Documentation]    Random sequences of what a player does, with a fixed seed: record, stop, hits after Stop,
+    ...                save, reopen, zoom, hover. After each step the addon must agree with what was really
+    ...                fired, and a fight must read the same whatever happened in between.
+    [Tags]    random    numeric
+    ${msg}=    Random Sessions Hold The Rules
+    Log    ${msg}
+
+Random Sessions Catch The Known Bugs
+    [Documentation]    Each bug found so far is put back in a copy of the code, one at a time, and the random
+    ...                sessions must find it. A rule that stops catching its bug fails here.
+    [Tags]    random    slow
+    ${msg}=    Random Sessions Catch The Known Bugs
+    Log    ${msg}
+
 Saved Sessions Match The Game Log
     [Documentation]    Each replayed fight is saved to a library file and read back the way a tester's
     ...                SavedVariables are, then compared with the same log without any trace.
