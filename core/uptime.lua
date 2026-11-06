@@ -62,7 +62,7 @@ local function scan_slotted()
       local id = api.GetSlotBoundId(slot, cat)
       if id and id > 0 then
         local name = api.GetAbilityName(id)
-        if name and name ~= "" then slotted_names[name] = true end
+        if name and name ~= "" then slotted_names[name] = id end
       end
     end
   end
@@ -88,8 +88,8 @@ local function key_for(name, abilityId)
   nk = nk + 1
   key_of[name] = nk
   key_name[nk] = name
-  key_slot[nk] = slotted_names[name] == true
-  key_id[nk] = abilityId or 0
+  key_slot[nk] = slotted_names[name] ~= nil
+  key_id[nk] = slotted_names[name] or abilityId or 0
   return nk
 end
 

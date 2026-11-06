@@ -212,6 +212,23 @@ return function(H)
   U.load_session(span, {}, { names = { "Scorch" }, slotted = { 1 }, ids = { 880001 } })
   G.rerender()
   ok(shown_rows[1].icon == "crab.dds", "going back shows the first icon again, got " .. tostring(shown_rows[1].icon))
+  H.ability_names[880003], H.ability_names[880004] = "Blazing Spear", "Blazing Spear"
+  H.ability_icons[880003], H.ability_icons[880004] = "thrust.dds", "mage.dds"
+  local C = Vermilion.Casts
+  local real_records = C.records
+  C.records = function() return {}, { 880003 }, {}, {}, 1, {} end
+  U.load_session(span, {}, { names = { "Blazing Spear" }, slotted = { 1 }, ids = { 880004 } })
+  G.rerender()
+  C.records = real_records
+  ok(shown_rows[1].id == 880003 and shown_rows[1].icon == "thrust.dds", "an old session that stored an effect id finds the skill among its own casts, got " .. tostring(shown_rows[1].icon))
+  C.records = function() return {}, {}, {}, {}, 0, {} end
+  U.load_session(span, {}, { names = { "Scorch" }, slotted = { 1 }, ids = { 880001 } })
+  G.rerender()
+  U.load_session(span, {}, { names = { "Blazing Spear" }, slotted = { 1 }, ids = { 880004 } })
+  G.rerender()
+  C.records = real_records
+  ok(shown_rows[1].id == 880004, "with no such cast it keeps the id it stored")
+  H.ability_names[880003], H.ability_names[880004], H.ability_icons[880003], H.ability_icons[880004] = nil, nil, nil, nil
   H.ability_icons[880001], H.ability_icons[880002] = nil, nil
   U.reset()
 

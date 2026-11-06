@@ -76,6 +76,7 @@ local CASES = {
   "background",
   "unknown_recovery",
   "window_hierarchy",
+  "own_skill_ids",
   "basic_attacks",
   "devtools",
   "trace_cap",

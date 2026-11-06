@@ -661,7 +661,7 @@ function GetSpecificSkillAbilityKeysByAbilityId(id)
   if k then return k[1], k[2], k[3] end
   return 0, 0, 0
 end
-function GetSkillLineId() return 0 end
+function GetSkillLineId() return H.skill_line_id or 0 end
 function DoesUnitExist(tag) return H.state.bosses[tag] ~= nil end
 function IsUnitInCombat(tag)
   if tag == "player" then return H.state.in_combat end

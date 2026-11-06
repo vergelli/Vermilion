@@ -43,6 +43,7 @@ All notable changes to Vermilion are documented here. This project follows
 - The library now keeps 100 sessions instead of 24. When it is full the oldest unlocked one makes room, as before
 - Unknown Contributions has a new bucket, larger and easier to find in Settings, and its label lights up when there is something to assign
 - New view tabs: the active tab is crimson lacquer that rises out of the viewport border, the others keep a quiet silhouette and light up on hover. The viewport has a fine gold line of its own
+- Skills that use several ability ids, such as Blazing Spear, now always show the skill's own icon and colour and no longer ask for a category when they are on your bars
 - Unknown Contributions no longer asks for a category for effects that only give resources back, such as a set proc from a group member. They are still measured in RECOVERED BY
 - The film strip has a handle on each end of its window: hover it and the cursor offers to stretch, drag it to choose exactly what the chart shows, without a mouse wheel
 - Windows: Settings, the Library and Unknown Contributions always stay in front of the main window. Settings and the Library still open stuck to it, and can now be dragged away and left anywhere; dropped back next to its edge they stick again
