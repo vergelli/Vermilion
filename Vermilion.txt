@@ -41,6 +41,7 @@ lib/viz/ring.lua
 lib/viz/heat.lua
 observability/copybox.lua
 observability/encounter_log.lua
+observability/background_cost.lua
 observability/devtools.lua
 observability/log.lua
 observability/profiler.lua
@@ -86,6 +87,7 @@ ui/widgets/hover_card.lua
 ui/widgets/slider.lua
 ui/widgets/radio.lua
 ui/widgets/meter.lua
+ui/widgets/dropdown.lua
 ui/record_panel.lua
 ui/film/columns.lua
 ui/film/overview.lua

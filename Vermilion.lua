@@ -53,6 +53,9 @@ local function on_slash(input)
       Vermilion.Graph.set_pixel_grid(on)
       d("[Vm] pixel grid: " .. (on and "on" or "off"))
       return
+    elseif cmd == "bgcost" then
+      Vermilion.BackgroundCost.run()
+      return
     elseif cmd == "sessions" then
       for _, line in ipairs(Vermilion.SessionStore.report_lines()) do d("[Vm] " .. line) end
       return
@@ -210,6 +213,7 @@ local function on_addon_loaded()
 
 
   Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)
+  Vermilion.Skin.load_background(Vermilion.SavedVars.settings.background)
 
   Log:info("savedvars opened: world=", world, "version=", C.SV_VERSION)
 

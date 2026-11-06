@@ -1,7 +1,7 @@
 return function(H)
   local function ok(cond, msg) if not cond then error(msg, 2) end end
   local Skin = Vermilion.Skin
-  local paths = { Skin.CHROME, Skin.TAB_ON, Skin.RADIO_ON, Skin.RADIO_OFF, Skin.CARET, Skin.FRAME_EDGE,
+  local paths = { Skin.TAB_ON, Skin.RADIO_ON, Skin.RADIO_OFF, Skin.CARET, Skin.FRAME_EDGE,
     "Vermilion/assets/skin/slider_groove.dds", "Vermilion/assets/skin/slider_fill.dds", "Vermilion/assets/skin/slider_thumb.dds", "Vermilion/assets/skin/panel_edge.dds", "Vermilion/assets/skin/panel_center.dds", Skin.SUBTAB }
   for _, set in ipairs({ Skin.PLAIN, Skin.LACQUER, Skin.CLOSE }) do
     for _, p in pairs(set) do paths[#paths + 1] = p end
@@ -11,6 +11,7 @@ return function(H)
     for path in f:read("*a"):gmatch("Vermilion/assets/skin/[%w_]+%.dds") do paths[#paths + 1] = path end
     f:close()
   end
+  for _, b in ipairs(Skin.backgrounds()) do paths[#paths + 1] = Skin.background_path(b.key) end
   local function le32(s, at)
     local a, b, c, d = s:byte(at, at + 3)
     return a + b * 256 + c * 65536 + d * 16777216

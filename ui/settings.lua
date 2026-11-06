@@ -61,6 +61,42 @@ local function refresh_all_sliders()
   sliders.lighta.set(current_lighta)
 end
 
+local function background_label()
+  return string.format(GetString(VERMILION_SETTINGS_BACKGROUND), Vermilion.Skin.background_name())
+end
+
+local background_list
+
+function M.background_list()
+  return background_list
+end
+
+local function close_background_list()
+  if background_list then background_list.close() end
+end
+
+function M.on_background_click()
+  if not background_list then
+    local items = {}
+    for i, b in ipairs(Vermilion.Skin.backgrounds()) do
+      items[i] = { key = b.key, label = GetString(b.name) }
+    end
+    background_list = Vermilion.Dropdown.new({
+      name = "VermilionSettingsPanelBackgroundList",
+      parent = controls.window,
+      button = controls.background_btn,
+      items = items,
+      selected = Vermilion.Skin.background,
+      on_pick = function(key)
+        Vermilion.SavedVars.settings.background = key
+        Vermilion.Skin.set_background(key)
+        controls.background_btn:SetText(background_label())
+      end,
+    })
+  end
+  background_list.toggle()
+end
+
 function M.refresh_unknown_count()
   local SC = Vermilion.SkillColors
   local n = (SC and SC.unknown_count and SC.unknown_count()) or 0
@@ -98,6 +134,7 @@ end
 function M.toggle()
   local win    = controls.window
   local hidden = win:IsHidden()
+  close_background_list()
   if hidden then
     dock_window()
     Scene.show_top_level(win)
@@ -121,6 +158,7 @@ function M.on_move_stop()
 end
 
 function M.on_unknown_click()
+  close_background_list()
   controls.window:SetHidden(true)
   Vermilion.Assign.show()
 end
@@ -251,6 +289,9 @@ function M.on_reset_click()
     controls.kills_btn:SetText(kills_label(true))
     sv.settings.average_line = nil
     controls.avg_btn:SetText(avg_label(false))
+    sv.settings.background = nil
+    Vermilion.Skin.set_background(nil)
+    controls.background_btn:SetText(background_label())
     Vermilion.Graph.set_light_enabled(false)
   end
   current_lighta = LIGHTA_DEFAULT
@@ -283,7 +324,7 @@ function M.init()
   Vermilion.Skin.buttons({
     VermilionSettingsPanelSampleBtn, VermilionSettingsPanelLogoBtn,
     VermilionSettingsPanelSoundsBtn, VermilionSettingsPanelLightBtn, VermilionSettingsPanelKillsBtn,
-    VermilionSettingsPanelAvgBtn, VermilionSettingsPanelResetBtn,
+    VermilionSettingsPanelAvgBtn, VermilionSettingsPanelBackgroundBtn, VermilionSettingsPanelResetBtn,
   })
   Vermilion.Skin.close(VermilionSettingsPanelCloseBtn)
   local sv = Vermilion.SavedVars
@@ -300,7 +341,6 @@ function M.init()
   controls.window         = VermilionSettingsPanel
   controls.window:SetHidden(true)
   Scene.register_top_level(controls.window)
-  VermilionSettingsPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionSettingsPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   controls.sample_btn     = VermilionSettingsPanelSampleBtn
   controls.title_vpalpha  = VermilionSettingsPanelVPAlphaTitle
@@ -317,6 +357,8 @@ function M.init()
   controls.title_lighta   = VermilionSettingsPanelLightAlphaTitle
   controls.label_lighta   = VermilionSettingsPanelLightAlphaLabel
   controls.track_lighta   = VermilionSettingsPanelSliderTrackLightAlpha
+  controls.background_btn = VermilionSettingsPanelBackgroundBtn
+  controls.background_btn:SetText(background_label())
 
   VermilionSettingsPanelVersionLabel:SetText("v" .. Vermilion.Constants.VERSION .. (Vermilion.Constants.DEBUG and ("  " .. GetString(VERMILION_DEBUG_TAG)) or ""))
   VermilionSettingsPanelVersionLabel:SetColor(0.55, 0.46, 0.45, 0.9)

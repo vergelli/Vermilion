@@ -307,9 +307,7 @@ function M.init()
   controls.confirm_yes   = VermilionAssignConfirmYesBtn
   controls.confirm_no    = VermilionAssignConfirmNoBtn
 
-  VermilionAssignPanelBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionAssignPanelBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
-  VermilionAssignConfirmBg:SetCenterColor(1.00, 0.62, 0.58, 1.0)
   VermilionAssignConfirmBg:SetEdgeColor(1.00, 0.45, 0.40, 1.0)
   VermilionAssignPanelFlyoutFill:SetTexture("EsoUI/Art/UnitAttributeVisualizer/attributeBar_dynamic_fill.dds")
   VermilionAssignPanelFlyoutFill:SetTextureCoords(0, 1, 0, 0.05)

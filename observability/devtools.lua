@@ -50,6 +50,7 @@ local ACTIONS = {
   { label = "Diagnostic report",      cmd = "report" },
   { label = "Diagnostic report + GC", cmd = "report gc" },
   { label = "GC probe 1000 frames",   cmd = "gcprobe 1000", tip = "Allocation per frame on the hot path; the zero-alloc tripwire." },
+  { label = "Background cost",        cmd = "bgcost", tip = "Loads every background and reports load time and worst frame. Restart the client first for cold numbers." },
   { label = "Cast cost probe",        cmd = "castprobe", tip = "Ability ids, mechanic flags and costs of the five slotted skills, as the game reports them." },
   { label = "Profiler dump",          cmd = "prof" },
   { label = "Profiler reset",         cmd = "prof reset" },

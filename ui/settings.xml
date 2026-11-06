@@ -187,6 +187,19 @@
           <Dimensions x="272" y="14"/>
         </Control>
 
+        <Button name="$(parent)BackgroundBtn"
+                mouseEnabled="true"
+                font="ZoFontGameSmall"
+                inherits="ZO_DefaultButton">
+          <Anchor point="TOPLEFT" offsetX="314" offsetY="218"/>
+          <Dimensions x="272" y="22"/>
+          <OnClicked>Vermilion.Settings.on_background_click()</OnClicked>
+        </Button>
+        <Texture name="$(parent)BackgroundCaret" textureFile="Vermilion/assets/skin/caret.dds" level="5">
+          <Anchor point="RIGHT" relativeTo="$(parent)BackgroundBtn" relativePoint="RIGHT" offsetX="-6" offsetY="0"/>
+          <Dimensions x="14" y="14"/>
+        </Texture>
+
         <Texture name="$(parent)SepColumns">
           <Anchor point="TOPLEFT" offsetX="300" offsetY="46"/>
           <Dimensions x="1" y="214"/>

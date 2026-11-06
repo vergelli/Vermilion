@@ -33,6 +33,8 @@ COMBAT_MECHANIC_FLAGS_STAMINA    = 4
 STAT_MAGICKA_REGEN_COMBAT        = 25
 STAT_STAMINA_REGEN_COMBAT        = 30
 STAT_BONUS_OPTION_APPLY_BONUS    = 1
+TEX_MODE_CLAMP = 0 TEX_MODE_WRAP = 1
+GetFrameDeltaMilliseconds = function() return 7 end
 VERTEX_POINTS_TOPLEFT = 1 VERTEX_POINTS_TOPRIGHT = 2 VERTEX_POINTS_BOTTOMLEFT = 4 VERTEX_POINTS_BOTTOMRIGHT = 8
 REGISTER_FILTER_POWER_TYPE       = 107
 NUMBER_ABBREVIATION_PRECISION_TENTHS = 1
@@ -277,6 +279,7 @@ local MOCKC = {
     elseif k == "SetAlpha" then fn = function(s, a) s._alpha = a end
     elseif k == "SetTexture" then fn = function(s, path) s._tex = path end
     elseif k == "SetNormalTexture" then fn = function(s, path) s._normal = path end
+    elseif k == "SetCenterTexture" then fn = function(s, path, interval, mode) s._center_tex, s._center_interval, s._center_mode = path, interval, mode end
     elseif k == "HasFocus" then fn = function(s) return s._has_focus == true end
     elseif k == "SetMaxLineCount" then fn = function(s, n) s._max_lines = n end
     elseif k == "StartFixedCooldown" then

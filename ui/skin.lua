@@ -2,6 +2,8 @@ Vermilion = Vermilion or {}
 Vermilion.Skin = {}
 local M = Vermilion.Skin
 
+local GetString = Vermilion.zenimax.api.GetString
+
 local BASE = "Vermilion/assets/skin/"
 local END_CAP = 9
 local EDGE_SIZE = 8
@@ -10,8 +12,28 @@ local TONE = 0.76
 local INSET = 2
 local CHROME_TOP = 100
 local CHROME_SIDE = 14
+local ALPHA = 0.97
+local GAIN = 3
+local LEVEL = TONE / GAIN
+local LIT = 1 / GAIN
+local DEFAULT_BACKGROUND = "piano"
+local BACKGROUNDS = {
+  { key = "piano", name = VERMILION_BACKGROUND_PIANO },
+  { key = "polished", name = VERMILION_BACKGROUND_POLISHED },
+  { key = "smoked", name = VERMILION_BACKGROUND_SMOKED },
+  { key = "frosted", name = VERMILION_BACKGROUND_FROSTED },
+  { key = "garnet", name = VERMILION_BACKGROUND_GARNET },
+  { key = "crystal", name = VERMILION_BACKGROUND_CRYSTAL },
+  { key = "goldstone", name = VERMILION_BACKGROUND_GOLDSTONE },
+  { key = "flake", name = VERMILION_BACKGROUND_FLAKE },
+  { key = "ruby", name = VERMILION_BACKGROUND_RUBY },
+  { key = "crackle", name = VERMILION_BACKGROUND_CRACKLE },
+  { key = "veins", name = VERMILION_BACKGROUND_VEINS },
+}
+local background = DEFAULT_BACKGROUND
+local strips, panels = {}, {}
+local lit
 
-M.CHROME = BASE .. "chrome.dds"
 M.TAB_ON = BASE .. "tab_on.dds"
 M.RADIO_ON = BASE .. "radio_on.dds"
 M.RADIO_OFF = BASE .. "radio_off.dds"
@@ -65,6 +87,56 @@ function M.buttons(list, lacquer)
   for i = 1, #list do M.button(list[i], lacquer) end
 end
 
+function M.background_path(key)
+  return BASE .. "bg_" .. key .. ".dds"
+end
+
+function M.backgrounds()
+  return BACKGROUNDS
+end
+
+function M.background()
+  return background
+end
+
+function M.background_name(key)
+  key = key or background
+  for i = 1, #BACKGROUNDS do
+    if BACKGROUNDS[i].key == key then return GetString(BACKGROUNDS[i].name) end
+  end
+  return key
+end
+
+function M.load_background(key)
+  background = DEFAULT_BACKGROUND
+  for i = 1, #BACKGROUNDS do
+    if BACKGROUNDS[i].key == key then background = key end
+  end
+end
+
+local function paint_strip(tex)
+  tex:SetTexture(M.background_path(background))
+  tex:SetColor(LEVEL, LEVEL, LEVEL, ALPHA)
+end
+
+local function paint_light()
+  lit:SetVertexColors(VERTEX_POINTS_TOPLEFT, LIT, LIT, LIT, ALPHA)
+  lit:SetVertexColors(VERTEX_POINTS_TOPRIGHT, LIT, LIT, LIT, ALPHA)
+end
+
+local function paint_panel(backdrop)
+  if backdrop.SetCenterTexture then backdrop:SetCenterTexture(M.background_path(background), SURFACE_PX, TEX_MODE_WRAP) end
+  if backdrop.SetCenterColor then backdrop:SetCenterColor(LEVEL, LEVEL, LEVEL, ALPHA) end
+end
+
+function M.set_background(key)
+  M.load_background(key)
+  for i = 1, #strips do paint_strip(strips[i]) end
+  if lit then paint_light() end
+  for i = 1, #panels do paint_panel(panels[i]) end
+  if Vermilion.Graph and Vermilion.Graph.fit_chrome then Vermilion.Graph.fit_chrome() end
+end
+
 function M.frame(backdrop)
   if not backdrop or not backdrop.SetEdgeTexture then return end
   backdrop:SetEdgeTexture(M.FRAME_EDGE, 128, 16, EDGE_SIZE)
@@ -74,8 +146,8 @@ end
 function M.panel(backdrop)
   if not backdrop then return end
   M.frame(backdrop)
-  if backdrop.SetCenterTexture then backdrop:SetCenterTexture(M.CHROME) end
-  if backdrop.SetCenterColor then backdrop:SetCenterColor(TONE, TONE, TONE, 0.97) end
+  panels[#panels + 1] = backdrop
+  paint_panel(backdrop)
   if backdrop.SetInsets then backdrop:SetInsets(INSET, INSET, -INSET, -INSET) end
 end
 
@@ -90,13 +162,13 @@ end
 
 function M.chrome(tex)
   if not tex then return end
-  tex:SetTexture(M.CHROME)
-  tex:SetColor(TONE, TONE, TONE, 0.97)
+  strips[#strips + 1] = tex
+  paint_strip(tex)
 end
 
 function M.chrome_light(tex)
-  tex:SetVertexColors(VERTEX_POINTS_TOPLEFT, 1, 1, 1, 0.97)
-  tex:SetVertexColors(VERTEX_POINTS_TOPRIGHT, 1, 1, 1, 0.97)
+  lit = tex
+  paint_light()
 end
 
 local function slice(tex, x0, x1, y0, y1)
