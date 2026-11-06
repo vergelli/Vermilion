@@ -158,6 +158,7 @@ end
 local function lab_step(key, size, value)
   local n = tonumber(value)
   if n and n >= 1 and n <= size then lab[key] = n
+  elseif value == "prev" then lab[key] = (lab[key] - 2) % size + 1
   else lab[key] = lab[key] % size + 1 end
   local s = lab_store()
   if s then s[key] = lab[key] end
@@ -182,6 +183,12 @@ function M.lab_light()
   if s then s.light = lab.light end
   apply_surface()
   return "top light " .. (lab.light and "on" or "off")
+end
+
+function M.lab_current(kind)
+  if kind == "surface" then return lab.surface .. " " .. SURFACES[lab.surface] end
+  if kind == "bucket" then return lab.bucket .. " " .. BUCKETS[lab.bucket]:gsub("vermilion_", "") end
+  return lab.light and "on" or "off"
 end
 
 function M.lab_paths()

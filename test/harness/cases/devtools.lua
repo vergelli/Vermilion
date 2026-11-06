@@ -60,6 +60,10 @@ return function(H)
   end
   ok(hints["trace start"] == "trace start", "a plain row shows the command it runs")
   ok(hints["elog"] == "OFF", "the encounter log row shows the engine state, got " .. tostring(hints["elog"]))
+  ok(hints["surface"] == Vermilion.Skin.lab_current("surface"), "the surface row shows the one in use, got " .. tostring(hints["surface"]))
+  ok(hints["bucket"] == Vermilion.Skin.lab_current("bucket"), "the bucket row shows the one in use")
+  ok(hints["light"] == "on" or hints["light"] == "off", "the light row shows its state")
+  ok(DT.actions[1].section == "Surface pack", "the pack is the first thing in the window")
 
   H.clear_chat()
   local seen_error

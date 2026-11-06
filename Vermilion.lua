@@ -54,7 +54,7 @@ local function on_slash(input)
       d("[Vm] pixel grid: " .. (on and "on" or "off"))
       return
     elseif cmd == "surface" or cmd == "bucket" or cmd == "light" then
-      local value = string_match(input, "^%s*%S+%s+(%d+)")
+      local value = string_match(input, "^%s*%S+%s+(%S+)")
       d("[Vm] " .. Vermilion.Skin["lab_" .. cmd](value))
       return
     elseif cmd == "sessions" then

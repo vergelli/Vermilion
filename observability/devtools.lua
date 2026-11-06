@@ -26,6 +26,13 @@ local TEXT_ALIGN_LEFT, TEXT_ALIGN_RIGHT = zc.TEXT_ALIGN_LEFT, zc.TEXT_ALIGN_RIGH
 local GuiRoot = zc.GuiRoot
 
 local ACTIONS = {
+  { section = "Surface pack" },
+  { label = "Next surface",     cmd = "surface", status = "surface" },
+  { label = "Previous surface", cmd = "surface prev" },
+  { label = "Next bucket",      cmd = "bucket", status = "bucket" },
+  { label = "Previous bucket",  cmd = "bucket prev" },
+  { label = "Top light on/off", cmd = "light", status = "light" },
+
   { section = "Encounter log (engine file)" },
   { label = "Encounter log on/off", cmd = "elog", status = "elog",
     tip = "Toggles the game's own combat log. While ON the client appends every event around you to\n" .. Vermilion.EncounterLog.file_hint() .. "\nIt switches itself off at logout." },
@@ -81,6 +88,9 @@ local rows = {}
 local function status_text(kind)
   if kind == "elog" then
     return Vermilion.EncounterLog.is_enabled() and "ON" or "OFF"
+  end
+  if kind == "surface" or kind == "bucket" or kind == "light" then
+    return Vermilion.Skin.lab_current(kind)
   end
   return ""
 end
