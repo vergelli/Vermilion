@@ -13,6 +13,8 @@ local PEND_CAP = 8
 local PRESS_WINDOW_MS = 1500
 local TICK_WINDOW_MS = 1500
 local COST_TOLERANCE = 0.15
+local BATCH_SLACK = 800
+local MIN_SHARE = 0.4
 
 local recording = false
 local n = 0
@@ -142,8 +144,11 @@ function M.on_drop(pool, amount, t)
   end
   local best, best_gap = nil, 0
   for i = 1, q.n do
-    local gap = math.abs(amount - q.cost[i])
-    if gap <= q.cost[i] * COST_TOLERANCE and (not best or gap < best_gap) then
+    local cost = q.cost[i]
+    local gap = math.abs(amount - cost)
+    local room = cost * COST_TOLERANCE
+    if room < BATCH_SLACK then room = BATCH_SLACK end
+    if gap <= room and amount >= cost * MIN_SHARE and (not best or gap < best_gap) then
       best, best_gap = i, gap
     end
   end
