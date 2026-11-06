@@ -85,6 +85,7 @@ local ex_live = {
 local ex_loaded = nil
 
 function M.session_mark()
+  if Vermilion.Pipeline and Vermilion.Pipeline.drop_pending then Vermilion.Pipeline.drop_pending() end
   for _, t in pairs(ex_live) do
     for k in pairs(t) do t[k] = nil end
   end
