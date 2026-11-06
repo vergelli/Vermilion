@@ -190,7 +190,7 @@ function M.casts()
 end
 
 function M.abilities()  return abil_t, abil_bar, abil_id, abil_cost, n_abil end
-function M.has_data()   return saw_power and n_steps > 0 end
+function M.has_data()   return saw_power and n_steps > 1 end
 function M.cost(b)      return bar_cost[b or active_bar()] end
 function M.bar_id(b)    return bar_id[b or active_bar()] end
 function M.active_bar() return active_bar() end

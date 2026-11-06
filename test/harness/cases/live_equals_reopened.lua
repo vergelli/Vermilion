@@ -47,6 +47,22 @@ return function(H)
 
   G.on_flush_click()
   G.on_record_click()
+  H.advance(100)
+  H.ult_power(200)
+  for _ = 1, 8 do
+    H.damage_out({ hit = 1000, ability_id = 31, target_unit_id = 900 })
+    H.advance(1000)
+  end
+  G.on_stop_click()
+  ok(U.has_data() == false, "one change right after Record merges with the starting value and is no data")
+  local early = report()
+  G.on_save_click()
+  H.advance(400)
+  ok(G.load_session(SS.get(SS.count())), "the saved fight opens")
+  ok(report() == early, "and that fight reads the same reopened, got\n" .. report() .. "\nwas\n" .. early)
+
+  G.on_flush_click()
+  G.on_record_click()
   H.ult_power(120)
   for _ = 1, 8 do
     H.ult_power(120 + _ * 10)
