@@ -49,7 +49,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the values in the hover of a bar and in the damage report kept the colours of the last card you opened, so a skill could read as magicka or stamina. Damage now reads in the damage colour and shields in theirs
 - New median line for the bar views, off by default, in Settings next to the average line. It shows once the fight is stopped and is the same median as the damage report. Far from the average it says the fight had bursts or dead stretches
 - Fixed: in TYPE the average line left shields out while the bars counted them, so with shields in the fight it read low
-- New Zoom scale switch in Settings: while zoomed, the top of the chart can stay at the peak of the whole fight or follow the part in view, so a quiet stretch next to a big burst can be read
+- While zoomed, the top of the chart now follows the part in view, so a quiet stretch next to a big burst can be read. The Zoom scale switch in Settings keeps it at the peak of the whole fight if you prefer
 - The session name in the top row is cut with dots when it does not fit, instead of spilling out of the window
 - A double click on the title bar now sets a comfortable working size instead of nearly the minimum, and a new install opens at that size. A size you choose is still remembered
 - The window can no longer get quite so narrow, and when it is narrow the view tabs take the width their names need, so RESOURCES and PRESSURE are no longer cut
