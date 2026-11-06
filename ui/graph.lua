@@ -590,8 +590,17 @@ local function session_summary()
   if SUM.total_damage > 0 and SUM.total_crit > 0 then SUM.crit_pct = SUM.total_crit / SUM.total_damage end
   SUM.crit_rate = Vermilion.Metrics.session_crit_rate(SUM)
   SUM.fight_ms = Vermilion.Metrics.fight_ms()
+  SUM.alive_avg, SUM.dead_ms, SUM.deaths = nil, 0, 0
   if SUM.fight_ms > 0 then
     SUM.avg = (SUM.total_damage + SUM.total_shield) / (SUM.fight_ms / 1000)
+    local lo, hi = Vermilion.Metrics.fight_bounds()
+    if lo then
+      local dead, count = Vermilion.Resources.dead_ms(lo, hi)
+      if dead > 0 and dead < SUM.fight_ms then
+        SUM.dead_ms, SUM.deaths = dead, count
+        SUM.alive_avg = (SUM.total_damage + SUM.total_shield) / ((SUM.fight_ms - dead) / 1000)
+      end
+    end
   end
   return SUM
 end
@@ -696,6 +705,12 @@ local function show_report_card()
   add_row(GetString(VERMILION_REPORT_SHIELDED),
     (total > 0) and string_format("%s  ·  %d%%", fmt_val(sm.total_shield), math_floor(sm.total_shield / total * 100 + 0.5)) or "-",
     C_SHDPS)
+  if sm.alive_avg then
+    add_row(GetString(VERMILION_REPORT_AVG_ALIVE), fmt_val(sm.alive_avg), C_LINE_EOS)
+    add_row(GetString(VERMILION_REPORT_AVG_ALL), fmt_val(sm.avg), C_CARD_STAT)
+    add_row(GetString(VERMILION_REPORT_DEAD),
+      string_format("%d  ·  %s  ·  %d%%", sm.deaths, fmt_secs(sm.dead_ms), math_floor(sm.dead_ms / sm.fight_ms * 100 + 0.5)), C_CRIT_BELOW)
+  end
   if Vermilion.Kills and Vermilion.Kills.count() > 0 then
     add_row(GetString(VERMILION_REPORT_KILLS), tostring(Vermilion.Kills.count()), C_CRIT)
   end

@@ -311,6 +311,38 @@ def audit(rows, dump, export, c, window=None, recording=None):
             state.append((int(r[0]), r[8], r[9], r[10], r[7]))
     state.sort(key=lambda s: s[0])
 
+    health = [(s[0], s[4]) for s in state]
+    for r in rows:
+        if len(r) > 17 and r[1] == 'EFFECT_CHANGED':
+            if r[6] in me:
+                health.append((int(r[0]), r[7]))
+            if r[16] in me:
+                health.append((int(r[0]), r[17]))
+        elif len(r) > 4 and r[1] == 'HEALTH_REGEN' and r[3] in me:
+            health.append((int(r[0]), r[4]))
+    health.sort(key=lambda s: s[0])
+    dead_ms, n_dead, began = 0, 0, None
+    for at, hp in health:
+        if '/' not in hp:
+            continue
+        gone = hp.startswith('0/')
+        if gone and began is None:
+            began = at
+        elif not gone and began is not None:
+            a, b = max(began, t0), min(at, t1)
+            if b > a:
+                dead_ms, n_dead = dead_ms + (b - a), n_dead + 1
+            began = None
+    if began is not None and t1 > max(began, t0):
+        dead_ms, n_dead = dead_ms + (t1 - max(began, t0)), n_dead + 1
+    v = cell(sec.get('Summary'), 'Time dead') or 0
+    logged = dead_ms / 1000
+    c.add('time dead s', round(logged, 1), v, logged - 0.7 * n_dead <= v <= logged + 0.3 * n_dead, 'the log only shows a revive at the next row with health, so it reads late')
+    if dead_ms > 0 and v > 0:
+        alive = all_output / (fight - logged)
+        a = cell(sec.get('Summary'), 'Alive average')
+        c.add('alive average', round(alive), a, a is not None and abs(a / alive - 1) <= 0.7 * n_dead / (fight - logged) + 0.001)
+
     def share_of(field, test):
         under = whole = 0
         for k in range(len(state) - 1):
