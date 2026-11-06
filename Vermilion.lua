@@ -159,6 +159,9 @@ local function on_slash(input)
       return
     elseif cmd == "dev" then
       Vermilion.DevTools.toggle() ; return
+    elseif cmd == "castprobe" then
+      Vermilion.CopyBox.show("Vermilion Cast Probe", table.concat(Vermilion.Casts.probe_lines(), "\n"))
+      return
     elseif cmd == "elog" then
       local sub = string_match(string_lower(input), "^%s*%S+%s+(%S+)") or ""
       local EL = Vermilion.EncounterLog
@@ -173,11 +176,6 @@ local function on_slash(input)
       d("[Vm] " .. Vermilion.Trace.mark(label))
       return
     end
-  end
-
-  if cmd == "castprobe" then
-    Vermilion.CopyBox.show("Vermilion Cast Probe", table.concat(Vermilion.Casts.probe_lines(), "\n"))
-    return
   end
 
   if cmd == "graph" then
@@ -205,9 +203,10 @@ local function on_addon_loaded()
 
 
   local world = GetWorldName()
+  local sv_defaults = { graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {}, logo = {} }
+  if C.DEBUG then sv_defaults.probe = {} end
   Vermilion.SavedVars = Vermilion.zenimax.savedvars.new_account_wide(
-    C.SV_TABLE, C.SV_VERSION, world,
-    { probe = {}, graph = {}, temporal = {}, copybox = {}, settings = {}, skill_overrides = {}, logo = {} })
+    C.SV_TABLE, C.SV_VERSION, world, sv_defaults)
 
 
   Vermilion.SkillColors.load_persisted(Vermilion.SavedVars)

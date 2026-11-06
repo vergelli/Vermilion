@@ -4,9 +4,10 @@ return function(H)
 
   ok(type(SLASH_COMMANDS["/vermilion"]) == "function", "the slash command must be registered")
   ok(Vermilion.SavedVars ~= nil, "savedvars must open at load")
-  for _, key in ipairs({ "probe", "graph", "temporal", "copybox", "settings", "skill_overrides", "logo" }) do
+  for _, key in ipairs({ "graph", "temporal", "copybox", "settings", "skill_overrides", "logo" }) do
     ok(type(Vermilion.SavedVars[key]) == "table", "savedvars default section missing: " .. key)
   end
+  ok((Vermilion.SavedVars.probe ~= nil) == (C.DEBUG == true), "only a debug build creates the probe section")
 
   ok(rawget(_G, "VermilionGraphWindow") ~= nil, "the graph window must exist")
   ok(rawget(_G, "VermilionSettingsPanel") ~= nil, "the settings panel must exist")

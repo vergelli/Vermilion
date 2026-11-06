@@ -42,7 +42,7 @@ function M.report()
   local SS = Vermilion.SessionStore
   local TB = Vermilion.TemporalBuffer
   local sessions = (sv.library ~= nil) and size_of(sv.library, 4) or 0
-  local diagnostics = sum(sv, DIAGNOSTICS)
+  local diagnostics = Vermilion.Constants.DEBUG and sum(sv, DIAGNOSTICS) or 0
   local preferences = sum(sv, PREFERENCES)
   return {
     sessions = sessions,
