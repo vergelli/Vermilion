@@ -382,6 +382,7 @@ function M.hover(mx, my)
 end
 
 function M.hovered() return hover_row end
+function M.clear_hover() hover_row = nil end
 
 function M.scroll(dir)
   local next_off = scroll + ((dir or 1) < 0 and -1 or 1)
