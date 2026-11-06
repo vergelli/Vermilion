@@ -114,6 +114,21 @@ return function(H)
   rs = Vermilion.Resources.summary(Vermilion.TemporalBuffer)
   ok(rs.mag_out == 6000, "and the pool counts again, got " .. rs.mag_out)
   Vermilion.zenimax.api.IsUnitDead = real_dead
+
+  Cst.stage(38788, STA, 3305, 940000)
+  Cst.on_drop(STA, 2594, 940100)
+  t, id, _, cost, n = Cst.records()
+  ok(id[n] == 38788 and cost[n] == 2594, "a cast that shares its update with a regen tick still counts, got " .. tostring(id[n]) .. " for " .. tostring(cost[n]))
+  Cst.stage(38788, STA, 3305, 942000)
+  Cst.on_drop(STA, 4021, 942100)
+  local before = n
+  t, id, _, cost, n = Cst.records()
+  ok(n == before + 1 and cost[n] == 4021, "so does one that shares it with a drain, got " .. tostring(cost[n]))
+  before = n
+  Cst.stage(99001, STA, 700, 944000)
+  Cst.on_drop(STA, 13, 944010)
+  t, id, _, cost, n = Cst.records()
+  ok(n == before, "a sprint tick does not confirm the press of a cheap skill, got " .. n - before)
   G.on_stop_click()
 
   G.on_flush_click()

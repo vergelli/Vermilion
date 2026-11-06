@@ -36,7 +36,8 @@ return function(H)
   local mag, sta = 30000, 20000
   for i = 1, 20 do
     H.skill_used(3)
-    mag = math.max(mag - 2500, 0); H.res_power(POWERTYPE_MAGICKA, mag, 30000)
+    if mag >= 2500 then mag = mag - 2500 end
+    H.res_power(POWERTYPE_MAGICKA, mag, 30000)
     if i % 2 == 0 then
       H.skill_used(4)
       sta = sta - 2200; H.res_power(POWERTYPE_STAMINA, sta, 20000)
@@ -45,7 +46,8 @@ return function(H)
       H.energize({ ability_id = 701, amount = 3240, pool = MAGF })
       mag = mag + 3240; H.res_power(POWERTYPE_MAGICKA, mag, 30000)
       H.skill_used(3)
-      mag = math.max(mag - 2500, 0); H.res_power(POWERTYPE_MAGICKA, mag, 30000)
+      if mag >= 2500 then mag = mag - 2500 end
+      H.res_power(POWERTYPE_MAGICKA, mag, 30000)
     end
     mag = mag + 500; H.res_power(POWERTYPE_MAGICKA, mag, 30000)
     sta = sta + 900; H.res_power(POWERTYPE_STAMINA, sta, 20000)
@@ -132,7 +134,7 @@ return function(H)
   ok(r.icons >= 3, "rows wear their ability icons, got " .. r.icons)
   local order, n = RV.rows()
   ok(n == 2 and order[1].id == 501 and order[2].id == 502, "the spend list ranks the skills by what they spent, got " .. n)
-  ok(order[1].total == 22 * 2500 and order[1].n == 22, "a skill's total is what the pool really lost, presses on an empty pool do not count, got " .. tostring(order[1].total) .. " over " .. tostring(order[1].n))
+  ok(order[1].total == 23 * 2500 and order[1].n == 23, "a skill's total is what the pool really lost, presses on an empty pool do not count, got " .. tostring(order[1].total) .. " over " .. tostring(order[1].n))
   ok(order[1].mag > 0 and order[1].sta == 0 and order[2].sta > 0 and order[2].mag == 0, "a magicka skill is magicka and a stamina skill is stamina")
   ok(has(r.labels, "Crushing Shock") and has(r.labels, "Rending Slashes") and has(r.labels, "Heavy Attack") and has(r.labels, "Recovery"), "rows name the skills, the restorer and the recovery")
   local rec, nr = RV.recovered()
@@ -293,7 +295,7 @@ return function(H)
   while view_label._text ~= "RESOURCES" do G.next_view() end
   local order3, n3 = RV.rows()
   local rec3, nr3 = RV.recovered()
-  ok(n3 == 1 and order3[1].id == 501 and order3[1].n == 22 and nr3 == 2 and rec3[1].n == 6, "both lists are rebuilt from the saved streams, got " .. n3 .. " and " .. nr3)
+  ok(n3 == 1 and order3[1].id == 501 and order3[1].n == 23 and nr3 == 2 and rec3[1].n == 6, "both lists are rebuilt from the saved streams, got " .. n3 .. " and " .. nr3)
   r = scan()
   ok(r.mag > 0, "a loaded session draws the pool")
   ok(r.skulls == 1, "the death comes back with the session, got " .. r.skulls)
