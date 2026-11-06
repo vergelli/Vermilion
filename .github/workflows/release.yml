@@ -88,7 +88,15 @@ jobs:
             echo "::error::DEBUG is not false in core/constants.lua — never ship a dev build"
             exit 1
           fi
-          echo "DEBUG key verified off."
+          if ! grep -qE '^\s*DEV\s*=\s*false' core/constants.lua; then
+            echo "::error::DEV is not false in core/constants.lua — never ship a dev build"
+            exit 1
+          fi
+          if ! grep -qE '^\s*MODE\s*=\s*""' core/constants.lua; then
+            echo "::error::MODE is not empty in core/constants.lua — never ship a dev build"
+            exit 1
+          fi
+          echo "DEBUG, DEV and MODE keys verified off."
 
       - name: Stage release files
         # ALLOWLIST. Manifest-loaded code PLUS assets/ (textures referenced by

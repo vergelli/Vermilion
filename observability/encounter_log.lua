@@ -4,6 +4,8 @@ local Vermilion = Vermilion
 Vermilion.EncounterLog = {}
 local M = Vermilion.EncounterLog
 
+if not Vermilion.Constants.DEBUG then return end
+
 local api = Vermilion.zenimax.api
 
 function M.file_hint()

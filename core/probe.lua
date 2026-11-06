@@ -3,6 +3,8 @@ local Vermilion = Vermilion
 
 Vermilion.Probe = {}
 
+if not Vermilion.Constants.DEBUG then return end
+
 local d                          = d
 local string_format              = string.format
 local table_remove               = table.remove

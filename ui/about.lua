@@ -64,8 +64,10 @@ local function build()
   y = y + 20
   meters.sessions = Meter.new("VermilionAboutSessions", window, PAD, y, W)
   y = y + Meter.HEIGHT
-  meters.diagnostics = Meter.new("VermilionAboutDiagnostics", window, PAD, y, W)
-  y = y + Meter.HEIGHT
+  if Vermilion.Constants.DEBUG then
+    meters.diagnostics = Meter.new("VermilionAboutDiagnostics", window, PAD, y, W)
+    y = y + Meter.HEIGHT
+  end
   meters.preferences = Meter.new("VermilionAboutPreferences", window, PAD, y, W)
   y = y + Meter.HEIGHT + 8
   heading("VermilionAboutMemory", GetString(VERMILION_ABOUT_MEMORY), y)
@@ -82,7 +84,9 @@ function M.refresh()
   local total = (r.total > 0) and r.total or 1
   meters.sessions.set(GetString(VERMILION_ABOUT_SESSIONS),
     string.format("%s  ·  %d/%d", fmt(r.sessions), r.session_count, r.session_cap), r.sessions / total)
-  meters.diagnostics.set(GetString(VERMILION_ABOUT_DIAGNOSTICS), fmt(r.diagnostics), r.diagnostics / total)
+  if meters.diagnostics then
+    meters.diagnostics.set(GetString(VERMILION_ABOUT_DIAGNOSTICS), fmt(r.diagnostics), r.diagnostics / total)
+  end
   meters.preferences.set(GetString(VERMILION_ABOUT_PREFERENCES), fmt(r.preferences), r.preferences / total)
   local heap = (r.heap > 0) and r.heap or 1
   meters.film.set(GetString(VERMILION_ABOUT_FILM),

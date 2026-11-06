@@ -15,7 +15,11 @@ return function(H)
   sv.probe = { log = string.rep("b", 1000) }
   local r = R.report()
   ok(r.sessions > 4000 and r.sessions < 5000, "sessions count their packed data, got " .. r.sessions)
-  ok(r.diagnostics > 1000 and r.diagnostics < 1200, "diagnostics count the probe, got " .. r.diagnostics)
+  if HARNESS_DEBUG then
+    ok(r.diagnostics > 1000 and r.diagnostics < 1200, "diagnostics count the probe, got " .. r.diagnostics)
+  else
+    ok(r.diagnostics == 0, "a release has no diagnostics to report, got " .. r.diagnostics)
+  end
   ok(r.total == r.sessions + r.diagnostics + r.preferences, "the total adds the three")
   ok(r.film >= TB.capacity() * 1990, "the film counts its empty slots")
   ok(r.heap > 0, "the heap is read")
@@ -50,7 +54,11 @@ return function(H)
   ok(VermilionAboutCredit1._text ~= nil and VermilionAboutCredit1._text ~= "", "it lists the credits")
   ok(VermilionAboutSessionsValue._text:find("/24", 1, true), "it shows the library use, got " .. tostring(VermilionAboutSessionsValue._text))
   ok(VermilionAboutSessionsFill._hidden == false, "a used section draws its bar")
-  ok(VermilionAboutDiagnosticsFill._w > 0, "diagnostics draw too")
+  if HARNESS_DEBUG then
+    ok(VermilionAboutDiagnosticsFill._w > 0, "diagnostics draw too")
+  else
+    ok(rawget(_G, "VermilionAboutDiagnosticsFill") == nil, "a release has no diagnostics bar")
+  end
   local panel = H.layout(VermilionAbout)
   for _, c in ipairs({ VermilionAboutName, VermilionAboutSessionsGroove, VermilionAboutFilmGroove }) do
     local rect = H.layout(c)

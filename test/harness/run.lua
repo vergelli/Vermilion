@@ -37,6 +37,7 @@ local CASES = {
   "session_names",
   "summary_after_load",
   "effects_fight_window",
+  "release_keys",
   "session_store",
   "content_kind",
   "auto_record",

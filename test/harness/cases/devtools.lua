@@ -5,8 +5,6 @@ return function(H)
   local slash = SLASH_COMMANDS["/vermilion"]
 
   ok(type(Vermilion.slash) == "function", "the slash handler is exposed for the panel to reuse")
-  ok(EL.available(), "the encounter log wrappers are detected on this client")
-  ok(EL.status_line():find("Encounter.log", 1, true), "the status line names the engine file")
 
   if not Vermilion.Constants.DEBUG then
     ok(rawget(_G, "VermilionDevPanel") == nil, "a release build never builds the developer panel")
@@ -23,6 +21,9 @@ return function(H)
     ok(Vermilion.Trace.mark("x"):find("disabled"), "the trace stub answers mark with disabled")
     return
   end
+
+  ok(EL.available(), "the encounter log wrappers are detected on this client")
+  ok(EL.status_line():find("Encounter.log", 1, true), "the status line names the engine file")
 
   Vermilion.Visibility.set("graph", true)
   Vermilion.Settings.toggle()
