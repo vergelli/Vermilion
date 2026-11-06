@@ -160,6 +160,7 @@ local function build()
 
   win:SetDimensions(PAD_X * 2 + COL_W * cols, TOP_Y + body_h + FOOT_H + 8)
   win:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, 240, 140)
+  win:SetDrawTier(DT_HIGH)
   win:SetClampedToScreen(true)
   win:SetMovable(true)
   win:SetMouseEnabled(true)

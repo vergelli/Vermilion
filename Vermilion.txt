@@ -88,6 +88,7 @@ ui/widgets/slider.lua
 ui/widgets/radio.lua
 ui/widgets/meter.lua
 ui/widgets/dropdown.lua
+ui/widgets/dock.lua
 ui/record_panel.lua
 ui/film/columns.lua
 ui/film/overview.lua

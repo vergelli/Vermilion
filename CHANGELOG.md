@@ -44,6 +44,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Unknown Contributions has a new bucket, larger and easier to find in Settings, and its label lights up when there is something to assign
 - New view tabs: the active tab is crimson lacquer that rises out of the viewport border, the others keep a quiet silhouette and light up on hover. The viewport has a fine gold line of its own
 - Unknown Contributions no longer asks for a category for effects that only give resources back, such as a set proc from a group member. They are still measured in RECOVERED BY
+- Windows: Settings, the Library and Unknown Contributions always stay in front of the main window. Settings and the Library still open stuck to it, and can now be dragged away and left anywhere; dropped back next to its edge they stick again
 - Fixed: UPTIME could show the icon of another skill after opening a different session. The saved data was right, old sessions are fine
 - Backgrounds: eleven window backgrounds to choose from in Settings, from calm dark glass to lacquer with copper flecks or fine veins. Piano is the default. They are all kept subtle so the eyes stay on the graph
 - New window surface: the four strips around the graph now read as one piece, with no jump of tone between them, and the surface reaches the gold frame instead of leaving a gap the game shows through. It keeps its scale while the window is being resized and in every other window
