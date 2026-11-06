@@ -166,6 +166,7 @@ local function build(TB, t_hi)
     local r = row_for(k)
     r.n, r.mn, r.pn, r.covered, r.early, r.late, r.mean_e, r.n_err, r.first, r.apps, r.dur = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     r.iv_n, r.iv_sum, r.iv_sq, r.steady, r.sd, r.ult = 0, 0, 0, 0, 0, false
+    if r.name ~= names[k] then r.id, r.icon, r.col = 0, nil, C_OTHER end
     r.name, r.slot, r.gen = names[k], slots[k] == true, gen
   end
   local sk, _, st0, st1, sn = U.spans()

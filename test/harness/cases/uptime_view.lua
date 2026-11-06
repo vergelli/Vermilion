@@ -194,6 +194,27 @@ return function(H)
     ok(line_marks() == 0, "the " .. want .. " view draws bars with no line over them, got " .. line_marks())
   end
 
+  while view_label._text ~= "UPTIME" do G.next_view() end
+  H.slotted = nil
+  H.ability_icons = H.ability_icons or {}
+  H.ability_icons[880001], H.ability_icons[880002] = "crab.dds", "stampede.dds"
+  local U = Vermilion.Uptime
+  local t0 = TB.at(1).t
+  local span = { { key = 1, unit = 1, t0 = t0, t1 = t0 + 5000 } }
+  U.load_session(span, {}, { names = { "Scorch" }, slotted = { 1 }, ids = { 880001 } })
+  G.rerender()
+  local _, _, shown_rows = UV.rows()
+  ok(shown_rows[1].name == "Scorch" and shown_rows[1].icon == "crab.dds", "the first session shows its own icon, got " .. tostring(shown_rows[1].icon))
+  U.load_session(span, {}, { names = { "Stampede" }, slotted = { 1 }, ids = { 880002 } })
+  G.rerender()
+  ok(shown_rows[1].name == "Stampede" and shown_rows[1].id == 880002, "the next session brings its own ability, got " .. tostring(shown_rows[1].id))
+  ok(shown_rows[1].icon == "stampede.dds", "and its own icon instead of the one left in that row, got " .. tostring(shown_rows[1].icon))
+  U.load_session(span, {}, { names = { "Scorch" }, slotted = { 1 }, ids = { 880001 } })
+  G.rerender()
+  ok(shown_rows[1].icon == "crab.dds", "going back shows the first icon again, got " .. tostring(shown_rows[1].icon))
+  H.ability_icons[880001], H.ability_icons[880002] = nil, nil
+  U.reset()
+
   G.on_flush_click()
   H.slotted, H.state.active_bar = nil, nil
   sv.settings.session_autosave = before_auto
