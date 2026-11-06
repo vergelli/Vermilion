@@ -2,6 +2,7 @@
   <Controls>
 
     <TopLevelControl name="VermilionLibrary"
+                     tier="MEDIUM"
                      hidden="true"
                      clampedToScreen="true"
                      movable="true"
@@ -10,6 +11,7 @@
       <Dimensions x="440" y="470"/>
       <Anchor point="CENTER" relativeTo="GuiRoot" relativePoint="CENTER" offsetX="120" offsetY="0"/>
 
+      <OnMoveStop>Vermilion.Library.on_move_stop()</OnMoveStop>
       <OnMouseWheel>Vermilion.Library.on_scroll(delta)</OnMouseWheel>
 
       <Controls>

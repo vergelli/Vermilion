@@ -110,19 +110,10 @@ function M.refresh_unknown_count()
   end
 end
 
-local function dock_window()
-  local win = controls.window
-  local host = VermilionGraphWindow
-  if not host or host:IsHidden() then return end
-  local screen_w = GuiRoot:GetWidth()
-  local panel_w  = win:GetWidth()
-  win:ClearAnchors()
-  if host:GetRight() + panel_w + 16 <= screen_w then
-    win:SetAnchor(TOPLEFT, host, TOPRIGHT, 8, 0)
-  else
-    win:SetAnchor(TOPRIGHT, host, TOPLEFT, -8, 0)
-  end
-end
+local dock
+
+function M.is_detached() return Vermilion.Dock.is_detached(dock) end
+function M.forget_dock() Vermilion.Dock.forget(dock) end
 
 function M.refresh_dev_button()
   local b = VermilionSettingsPanelDevBtn
@@ -136,8 +127,9 @@ function M.toggle()
   local hidden = win:IsHidden()
   close_background_list()
   if hidden then
-    dock_window()
+    Vermilion.Dock.open(dock)
     Scene.show_top_level(win)
+    win:BringWindowToTop()
     refresh_all_sliders()
     M.refresh_unknown_count()
     M.refresh_dev_button()
@@ -150,11 +142,7 @@ function M.toggle()
 end
 
 function M.on_move_stop()
-  local sv = Vermilion.SavedVars
-  if not sv or not controls.window then return end
-  sv.settings = sv.settings or {}
-  sv.settings.x = controls.window:GetLeft()
-  sv.settings.y = controls.window:GetTop()
+  if dock then Vermilion.Dock.released(dock) end
 end
 
 function M.on_unknown_click()
@@ -289,6 +277,8 @@ function M.on_reset_click()
     controls.kills_btn:SetText(kills_label(true))
     sv.settings.average_line = nil
     controls.avg_btn:SetText(avg_label(false))
+    M.forget_dock()
+    Vermilion.Library.forget_dock()
     sv.settings.background = nil
     Vermilion.Skin.set_background(nil)
     controls.background_btn:SetText(background_label())
@@ -418,13 +408,13 @@ function M.init()
     end,
   })
 
-  if sv.settings.x and sv.settings.y then
-    controls.window:ClearAnchors()
+  controls.window:ClearAnchors()
+  if sv.settings.detached and sv.settings.x and sv.settings.y then
     controls.window:SetAnchor(TOPLEFT, GuiRoot, TOPLEFT, sv.settings.x, sv.settings.y)
   else
-    controls.window:ClearAnchors()
     controls.window:SetAnchor(zc.CENTER, GuiRoot, zc.CENTER, 0, 0)
   end
+  dock = Vermilion.Dock.new(controls.window, VermilionGraphWindow, sv.settings, { "right", "left" })
 
   for _, line in ipairs(M.report_lines()) do log:info(line) end
 end

@@ -75,6 +75,7 @@ local CASES = {
   "assign_flyout",
   "background",
   "unknown_recovery",
+  "window_hierarchy",
   "basic_attacks",
   "devtools",
   "trace_cap",

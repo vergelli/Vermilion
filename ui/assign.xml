@@ -10,6 +10,7 @@
       ui/assign.lua; the Flyout is declared LAST so it draws over the rows.
     -->
     <TopLevelControl name="VermilionAssignPanel"
+                     tier="MEDIUM"
                      hidden="true"
                      clampedToScreen="true"
                      movable="true"
@@ -107,6 +108,7 @@
       review before committing.
     -->
     <TopLevelControl name="VermilionAssignConfirm"
+                     tier="HIGH"
                      hidden="true"
                      clampedToScreen="true"
                      mouseEnabled="true">

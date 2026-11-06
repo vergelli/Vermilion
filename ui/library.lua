@@ -425,18 +425,21 @@ function M.on_delete_click()
   M.refresh()
 end
 
-local function dock_window()
-  local win = controls.window
-  local host = VermilionGraphWindow
-  if not host or host:IsHidden() then return end
-  local screen_h = GuiRoot:GetHeight()
-  win:ClearAnchors()
-  if host:GetBottom() + win:GetHeight() + 16 <= screen_h then
-    win:SetAnchor(TOPLEFT, host, BOTTOMLEFT, 0, 8)
-  else
-    win:SetAnchor(BOTTOMLEFT, host, TOPLEFT, 0, -8)
+local dock
+
+local function dock_of()
+  if not dock then
+    local sv = Vermilion.SavedVars
+    sv.settings = sv.settings or {}
+    sv.settings.library_dock = sv.settings.library_dock or {}
+    dock = Vermilion.Dock.new(controls.window, VermilionGraphWindow, sv.settings.library_dock, { "bottom", "top" })
   end
+  return dock
 end
+
+function M.on_move_stop() Vermilion.Dock.released(dock_of()) end
+function M.is_detached() return Vermilion.Dock.is_detached(dock_of()) end
+function M.forget_dock() Vermilion.Dock.forget(dock_of()) end
 
 local function select_pending()
   if not pending_idx then return end
@@ -453,11 +456,12 @@ function M.show()
   selected = nil
   disarm_delete()
   scroll_off = 0
-  dock_window()
+  Vermilion.Dock.open(dock_of())
   M.refresh()
   select_pending()
   sync_label_box()
   Scene.show_top_level(controls.window)
+  controls.window:BringWindowToTop()
   Sound.play("open")
 end
 
