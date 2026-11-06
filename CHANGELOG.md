@@ -45,6 +45,7 @@ All notable changes to Vermilion are documented here. This project follows
 - New view tabs: the active tab is crimson lacquer that rises out of the viewport border, the others keep a quiet silhouette and light up on hover. The viewport has a fine gold line of its own
 - Skills that use several ability ids, such as Blazing Spear, now always show the skill's own icon and colour and no longer ask for a category when they are on your bars
 - Unknown Contributions no longer asks for a category for effects that only give resources back, such as a set proc from a group member. They are still measured in RECOVERED BY
+- Fixed: damage landing after Stop, such as a bleed still ticking, kept adding to the session. The chart ended at Stop, but the totals, the average and the fight length kept growing until you saved, so a late save could store a much lower average
 - The session name in the top row is cut with dots when it does not fit, instead of spilling out of the window
 - A double click on the title bar now sets a comfortable working size instead of nearly the minimum
 - The session name box in the library has the gold frame, brighter while you type
