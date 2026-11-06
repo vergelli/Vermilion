@@ -111,8 +111,10 @@ function M.on_power(value, powerMax, effectiveMax)
   elseif powerMax and powerMax > 0 then
     cur_max = powerMax
   end
-  saw_power = true
-  if recording then push_step(now_ms()) end
+  if recording then
+    saw_power = true
+    push_step(now_ms())
+  end
 end
 
 function M.on_used()
