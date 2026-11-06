@@ -38,6 +38,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the skill, damage type and target tables were worked out from samples of the rolling window and could miss the total by a percent or two. They now add every hit, and also stay whole in a fight longer than the sample buffer. Saved sessions from before this keep the old way
 - Fixed: after a reload, opening a session did not list its grey skills in Unknown Contributions, so they could not be assigned until the skill was recorded again
 - Fixed: Gained and Spent kept counting after the last hit, and Gained before the first one, so a recording stopped late looked better sustained than the fight was. A cast pressed before the first hit stays in Spent. Saved sessions from before this keep the old way
+- The damage report shows how your fight was spread: P90 for your good stretches, the median and P10 for your low stretches, over 5 second windows while alive
 - The damage report shows your average while alive next to the average with deaths, plus how many times and how long you were dead. A death by accident no longer hides what you were doing
 - The About window no longer shows a Diagnostics bar, and the last development command left in the release is gone
 - Fixed: a cast could go missing from Resources when the game sent its cost in one update together with a regen tick or a drain

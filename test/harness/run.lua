@@ -39,6 +39,7 @@ local CASES = {
   "effects_fight_window",
   "release_keys",
   "alive_average",
+  "fight_stats",
   "session_store",
   "content_kind",
   "auto_record",

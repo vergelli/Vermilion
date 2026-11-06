@@ -63,6 +63,7 @@ core/session_store.lua
 core/debuff_tracker.lua
 core/ultimate.lua
 core/resources.lua
+core/fight_stats.lua
 core/casts.lua
 core/restores.lua
 core/uptime.lua
