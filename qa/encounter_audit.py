@@ -13,6 +13,7 @@ CRIT = {'CRITICAL_DAMAGE', 'DOT_TICK_CRITICAL'}
 KILL = {'DIED', 'DIED_XP', 'KILLING_BLOW'}
 FLAG_MAG, FLAG_STA = '1', '4'
 LOW = 0.15
+SAVE_DELAY_MS = 30 * 60 * 1000
 STRETCH_ROOM = 0.06
 
 
@@ -537,7 +538,7 @@ def run(log_path, trace_path, slice_to=None, quiet=False):
 
 
 def locate(hits, end, span, total):
-    near = [h for h in hits if h[0] <= end + 15000]
+    near = [h for h in hits if end - SAVE_DELAY_MS - span <= h[0] <= end + 15000]
     best = None
     i, acc = 0, 0
     for j, h in enumerate(near):
@@ -632,7 +633,11 @@ def self_check(log_path, trace_path):
             text = f.read()
         with open(sv, 'w', encoding='utf-8', errors='surrogateescape', newline='') as f:
             f.write(text.replace('"@TS@"', str(ts)))
-        return run_saved(log_path, sv)
+        status = run_saved(log_path, sv)
+    if locate([(0, 100), (1000, 100)], 2 * SAVE_DELAY_MS, 2000, 200) is not None:
+        print('AUDIT: FAIL a fight long before the session matched it')
+        return 1
+    return status
 
 
 if __name__ == '__main__':
