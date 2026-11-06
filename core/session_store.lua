@@ -509,6 +509,18 @@ function M.save_now()
   return true
 end
 
+function M.live_duration()
+  local TB = Vermilion.TemporalBuffer
+  local n = TB.count()
+  if n == 0 then return 0 end
+  local first_t, last_t = TB.at(1).t, TB.at(n).t
+  local t0 = start_ms or first_t
+  if first_t < t0 then t0 = first_t end
+  local t_end = end_ms or api.GetGameTimeMilliseconds()
+  if t_end < last_t then t_end = last_t end
+  return t_end - t0
+end
+
 function M.autosave_pending()
   return autosave_co ~= nil
 end
