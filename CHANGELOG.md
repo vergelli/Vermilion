@@ -42,6 +42,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Best Return, Cost of Gaps and damage lost to gaps now say they are estimated, and the hover of a bar says its rate is over 5 seconds
 - The library now keeps 100 sessions instead of 24. When it is full the oldest unlocked one makes room, as before
 - Unknown Contributions has a new bucket, larger and easier to find in Settings, and its label lights up when there is something to assign
+- New view tabs: the active tab is crimson lacquer that rises out of the viewport border, the others keep a quiet silhouette and light up on hover. The viewport has a fine gold line of its own
 - Backgrounds: eleven window backgrounds to choose from in Settings, from calm dark glass to lacquer with copper flecks or fine veins. Piano is the default. They are all kept subtle so the eyes stay on the graph
 - New window surface: the four strips around the graph now read as one piece, with no jump of tone between them, and the surface reaches the gold frame instead of leaving a gap the game shows through. It keeps its scale while the window is being resized and in every other window
 - Skill, Type and Crit paint a grey band over the time you were dead

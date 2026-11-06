@@ -259,9 +259,9 @@
 
         <!-- ── Inner viewport: single canvas for both views ─────────────── -->
         <Control name="$(parent)Tabs" mouseEnabled="false">
-          <Anchor point="TOPLEFT"  offsetX="14"  offsetY="66"/>
-          <Anchor point="TOPRIGHT" offsetX="-14" offsetY="66"/>
-          <Dimensions y="20"/>
+          <Anchor point="TOPLEFT"  offsetX="20"  offsetY="76"/>
+          <Anchor point="TOPRIGHT" offsetX="-20" offsetY="76"/>
+          <Dimensions y="24"/>
         </Control>
 
         <Control name="$(parent)Viewport" mouseEnabled="false">
