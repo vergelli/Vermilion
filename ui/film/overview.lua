@@ -7,19 +7,27 @@ local zui = Vermilion.zenimax.ui
 local zc  = Vermilion.zenimax.constants
 local zev = Vermilion.zenimax.events
 local math_floor = math.floor
+local math_abs = math.abs
 
 local STRIP_H = 20
 local GAP = 3
 local PITCH = 3
 local INSET = 6
+local GRAB = 6
+local GRIP_W, GRIP_H, GRIP_TOP = 3, 10, 5
 local DRAG_UPDATE = "VermilionFilmStripDrag"
+local HOVER_UPDATE = "VermilionFilmStripHover"
 local RIGHT_BUTTON = MOUSE_BUTTON_INDEX_RIGHT or 2
 local C_BAR = { r = 0.80, g = 0.68, b = 0.40, a = 0.75 }
 local C_FRAME = { r = 0.86, g = 0.28, b = 0.18, a = 0.95 }
+local C_GRIP = { r = 0.93, g = 0.76, b = 0.38 }
 
 local strip, viewport, canvas, on_change
 local shade_l, shade_r
 local frame = {}
+local grips = {}
+local edge_x0, edge_x1 = 0, 0
+local drag_edge, hot_edge, hovering = nil, nil, false
 local bars = {}
 local peaks = {}
 local showing = false
@@ -76,6 +84,16 @@ local function draw_bars(n, w)
   for i = count + 1, #bars do bars[i]:SetHidden(true) end
 end
 
+local function place_grip(i, x, hot)
+  place(grips[i], x, hot and 0 or GRIP_TOP, GRIP_W, hot and STRIP_H or GRIP_H)
+  grips[i]:SetColor(C_GRIP.r, C_GRIP.g, C_GRIP.b, hot and 1 or 0.75)
+end
+
+local function place_grips()
+  place_grip(1, edge_x0, hot_edge == -1)
+  place_grip(2, edge_x1 - GRIP_W, hot_edge == 1)
+end
+
 local function draw_window(n, w)
   local cols = Vermilion.FilmColumns.cols
   local x0 = math_floor((cols.first - 1) / n * w)
@@ -87,6 +105,8 @@ local function draw_window(n, w)
   place(frame[2], x0, STRIP_H - 1, x1 - x0, 1)
   place(frame[3], x0, 0, 1, STRIP_H)
   place(frame[4], x1 - 1, 0, 1, STRIP_H)
+  edge_x0, edge_x1 = x0, x1
+  place_grips()
 end
 
 function M.draw()
@@ -104,8 +124,44 @@ function M.draw()
   draw_window(n, w)
 end
 
+local function set_hot(edge)
+  if edge == hot_edge then return end
+  hot_edge = edge
+  zui.WINDOW_MANAGER:SetMouseCursor(edge and zc.MOUSE_CURSOR_RESIZE_EW or zc.MOUSE_CURSOR_DO_NOT_CARE)
+  if showing then place_grips() end
+end
+
+local function edge_at()
+  local x = api.GetUIMousePosition() - strip:GetLeft()
+  local left, right = math_abs(x - edge_x0), math_abs(x - edge_x1)
+  if left <= GRAB and left <= right then return -1 end
+  if right <= GRAB then return 1 end
+  return nil
+end
+
+local function hover_tick()
+  if not drag_edge then set_hot(edge_at()) end
+end
+
+local function stop_hover()
+  if hovering then
+    hovering = false
+    zev.unregister_update(HOVER_UPDATE)
+  end
+  if not drag_edge then set_hot(nil) end
+end
+
+local function start_hover()
+  if not hovering then
+    hovering = true
+    zev.register_update(HOVER_UPDATE, 33, hover_tick)
+  end
+  hover_tick()
+end
+
 function M.sync(on)
   if on == showing or not strip then return end
+  if not on then stop_hover() end
   showing = on
   strip:SetHidden(not on)
   canvas:ClearAnchors()
@@ -125,14 +181,22 @@ end
 local function follow_mouse()
   local w = strip:GetWidth()
   if w <= 0 then return end
-  local mx = api.GetUIMousePosition()
-  M.drag_to((mx - strip:GetLeft()) / w)
+  local frac = (api.GetUIMousePosition() - strip:GetLeft()) / w
+  if drag_edge then
+    if frac < 0 then frac = 0 elseif frac > 1 then frac = 1 end
+    local n = Vermilion.TemporalBuffer.count()
+    if Vermilion.FilmWindow.drag_edge(drag_edge, frac, n) and on_change then on_change() end
+  else
+    M.drag_to(frac)
+  end
 end
 
 local function stop_drag()
   if not dragging then return end
   dragging = false
+  drag_edge = nil
   zev.unregister_update(DRAG_UPDATE)
+  if hovering then hover_tick() else set_hot(nil) end
 end
 
 function M.mouse_down(button)
@@ -140,7 +204,9 @@ function M.mouse_down(button)
     if Vermilion.FilmWindow.reset() and on_change then on_change() end
     return
   end
-  follow_mouse()
+  drag_edge = edge_at()
+  set_hot(drag_edge)
+  if not drag_edge then follow_mouse() end
   if not dragging then
     dragging = true
     zev.register_update(DRAG_UPDATE, 16, follow_mouse)
@@ -175,7 +241,10 @@ function M.attach(view, canv, changed)
   for i = 1, 4 do
     frame[i] = texture("VermilionFilmStripFrame" .. i, 5, C_FRAME.r, C_FRAME.g, C_FRAME.b, C_FRAME.a)
   end
-  zui.tooltip(strip, VERMILION_TIP_FILM_STRIP, TOP)
+  for i = 1, 2 do
+    grips[i] = texture("VermilionFilmStripGrip" .. i, 6, C_GRIP.r, C_GRIP.g, C_GRIP.b, 0.75)
+  end
+  zui.tooltip(strip, VERMILION_TIP_FILM_STRIP, TOP, start_hover, stop_hover)
   strip:SetHandler("OnMouseDown", function(_, button) M.mouse_down(button) end)
   strip:SetHandler("OnMouseUp", function() M.mouse_up() end)
   strip:SetHandler("OnMouseWheel", function(_, delta) M.wheel(delta) end)

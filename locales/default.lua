@@ -116,7 +116,7 @@ ZO_CreateStringId("VERMILION_SETTINGS_SOUNDS_ON",  "Sounds: On")
 ZO_CreateStringId("VERMILION_SETTINGS_SOUNDS_OFF", "Sounds: Off")
 ZO_CreateStringId("VERMILION_SETTINGS_KILLS_ON",  "Kill markers: On")
 ZO_CreateStringId("VERMILION_SETTINGS_KILLS_OFF", "Kill markers: Off")
-ZO_CreateStringId("VERMILION_TIP_FILM_STRIP",    "The whole fight. Drag to move, wheel to zoom, right click to see it all")
+ZO_CreateStringId("VERMILION_TIP_FILM_STRIP",    "The whole fight. Drag to move, drag an edge to stretch, wheel to zoom, right click to see it all")
 ZO_CreateStringId("VERMILION_SETTINGS_AVG_ON",   "Average line: On")
 ZO_CreateStringId("VERMILION_SETTINGS_AVG_OFF",  "Average line: Off")
 

@@ -353,7 +353,9 @@ setmetatable(_G, {
   end,
 })
 
+MOUSE_CURSOR_DO_NOT_CARE = 0 MOUSE_CURSOR_RESIZE_EW = 12
 WINDOW_MANAGER = {
+  SetMouseCursor = function(_, cursor) H.cursor = cursor end,
   CreateControl = function(_, name, parent, ctype)
     local c = mock_control(name)
     c._parent = parent

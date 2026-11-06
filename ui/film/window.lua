@@ -69,6 +69,28 @@ function M.pan(dir, n)
   return true
 end
 
+function M.drag_edge(edge, frac, n)
+  if n <= MIN_SPAN then return false end
+  local zoomed = view_len and view_len < n
+  local first = zoomed and view_first or 1
+  local last = zoomed and (view_first + view_len - 1) or n
+  local at = math_floor(frac * n + 0.5)
+  if edge < 0 then
+    first = at + 1
+    if first > last - MIN_SPAN + 1 then first = last - MIN_SPAN + 1 end
+    if first < 1 then first = 1 end
+  else
+    last = at
+    if last < first + MIN_SPAN - 1 then last = first + MIN_SPAN - 1 end
+    if last > n then last = n end
+  end
+  local len = last - first + 1
+  if len >= n then return M.reset() end
+  if zoomed and first == view_first and len == view_len then return false end
+  view_first, view_len = first, len
+  return true
+end
+
 function M.center_on(frac, n)
   if not view_len or view_len >= n then return false end
   local first = clamp_first(math_floor(frac * n - view_len / 2 + 0.5) + 1, view_len, n)

@@ -94,6 +94,76 @@ return function(H)
   O.drag_to(1)
   ok(cols.last == n, "dragging the strip to the end shows the end, got " .. cols.last)
 
+  local strip = VermilionFilmStrip
+  local function strip_at(frac)
+    local L = H.layout(strip)
+    H.state.mouse_x = L.x + frac * L.w
+    H.state.mouse_y = L.y + 5
+  end
+  W.reset()
+  G.rerender()
+  ok(cols.first == 1 and cols.last == n, "back to the whole film")
+  local grip_l, grip_r = VermilionFilmStripGrip1, VermilionFilmStripGrip2
+  ok(grip_l._hidden == false and grip_r._hidden == false, "both ends of the window show a handle")
+  local rest_h = grip_l._h
+
+  strip_at(0.5)
+  strip._onOnMouseEnter(strip)
+  H.advance(40)
+  ok(H.cursor ~= MOUSE_CURSOR_RESIZE_EW and grip_l._h == rest_h, "in the middle nothing offers to stretch")
+  strip_at(0.001)
+  H.advance(40)
+  ok(H.cursor == MOUSE_CURSOR_RESIZE_EW, "over an end the cursor offers to stretch")
+  ok(grip_l._h > rest_h and grip_r._h == rest_h, "and only that handle lights up")
+
+  strip._onOnMouseDown(strip, 1)
+  strip_at(0.3)
+  H.advance(40)
+  ok(W.is_zoomed() and cols.first > 1 and cols.last == n, "dragging the left end moves only that end, " .. cols.first .. " to " .. cols.last)
+  local stretched_first = cols.first
+  strip._onOnMouseUp(strip)
+  strip_at(0.3)
+  H.advance(40)
+  ok(cols.first == stretched_first, "letting go stops the stretch")
+
+  strip_at(0.999)
+  H.advance(40)
+  ok(H.cursor == MOUSE_CURSOR_RESIZE_EW and grip_r._h > rest_h, "the right end offers too")
+  strip._onOnMouseDown(strip, 1)
+  strip_at(0.7)
+  H.advance(40)
+  strip._onOnMouseUp(strip)
+  ok(cols.first == stretched_first and cols.last < n, "dragging the right end moves only that end, " .. cols.first .. " to " .. cols.last)
+
+  local L = H.layout(strip)
+  H.state.mouse_x = L.x + (cols.first - 1) / n * L.w
+  H.advance(40)
+  strip._onOnMouseDown(strip, 1)
+  strip_at(0.95)
+  H.advance(40)
+  strip._onOnMouseUp(strip)
+  ok(cols.last - cols.first + 1 >= 15, "the two ends never cross, got " .. (cols.last - cols.first + 1))
+
+  W.reset()
+  G.rerender()
+  strip_at(0.001)
+  H.advance(40)
+  strip._onOnMouseDown(strip, 1)
+  strip_at(0.4)
+  H.advance(40)
+  strip_at(0)
+  H.advance(40)
+  strip._onOnMouseUp(strip)
+  ok(not W.is_zoomed() and cols.first == 1 and cols.last == n, "stretched all the way back it shows the whole film")
+
+  strip_at(0.5)
+  H.advance(40)
+  strip._onOnMouseExit(strip)
+  ok(H.cursor == MOUSE_CURSOR_DO_NOT_CARE or H.cursor == nil, "leaving the strip gives the cursor back")
+
+  mouse_at(0.5)
+  for _ = 1, 4 do wheel(1) end
+
   local signature = {}
   local visible = 0
   for i = 1, 400 do
