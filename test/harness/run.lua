@@ -78,6 +78,7 @@ local CASES = {
   "window_hierarchy",
   "own_skill_ids",
   "stop_closes_session",
+  "hover_value_colors",
   "basic_attacks",
   "devtools",
   "trace_cap",

@@ -149,6 +149,7 @@ function M.clear_rows(card)
   for i = 1, CARD_MAX_ROWS do
     local r = rows[i]
     r.icon:SetHidden(true); r.name:SetHidden(true); r.val:SetHidden(true)
+    r.val:SetColor(C_CARD_TIME.r, C_CARD_TIME.g, C_CARD_TIME.b, 1.0)
   end
   if card.desc then card.desc:SetHidden(true) end
 end
