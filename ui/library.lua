@@ -277,10 +277,10 @@ function M.on_label_focus(on)
   local box = controls.label_box
   if not box then return end
   if on then
-    box:SetEdgeColor(1.00, 0.62, 0.58, 0.80)
+    box:SetEdgeColor(1, 1, 1, 1)
     if controls.label_edit.SelectAll then controls.label_edit:SelectAll() end
   else
-    box:SetEdgeColor(1.00, 0.45, 0.40, 0.30)
+    box:SetEdgeColor(1, 1, 1, 0.75)
   end
 end
 
@@ -523,6 +523,7 @@ function M.init()
   VermilionLibraryListBg:SetCenterColor(0, 0, 0, 0)
   VermilionLibraryListFill:SetTextureCoords(0, 1, 0, 0.05)
   VermilionLibraryListFill:SetColor(0.055, 0.046, 0.046, 0.92)
+  Vermilion.Skin.frame(controls.label_box)
   controls.label_box:SetCenterColor(0, 0, 0, 0)
   controls.label_edit:SetDefaultTextColor(0.70, 0.62, 0.62, 0.45)
   Vermilion.Skin.icons({ VermilionLibraryScrollUp, VermilionLibraryScrollDown })

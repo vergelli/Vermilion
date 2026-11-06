@@ -300,6 +300,7 @@ local MOCKC = {
     elseif k == "SetFont" then fn = function(s, f) s._font = f end
     elseif k == "SetCenterColor" then fn = function(s, r, g, b, a) s._cr, s._cg, s._cb, s._ca = r, g, b, a end
     elseif k == "SetEdgeColor" then fn = function(s, r, g, b, a) s._er, s._eg, s._eb, s._ea = r, g, b, a end
+    elseif k == "SetEdgeTexture" then fn = function(s, path) s._edge_tex = path end
     elseif k == "SetHorizontalAlignment" then fn = function(s, a) s._halign = a end
     elseif k == "SetVerticalAlignment" then fn = function(s, a) s._valign = a end
     elseif k == "GetAlpha" then fn = function(s) return s._alpha or 1 end

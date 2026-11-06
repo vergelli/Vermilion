@@ -47,6 +47,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Unknown Contributions no longer asks for a category for effects that only give resources back, such as a set proc from a group member. They are still measured in RECOVERED BY
 - The session name in the top row is cut with dots when it does not fit, instead of spilling out of the window
 - A double click on the title bar now sets a comfortable working size instead of nearly the minimum
+- The session name box in the library has the gold frame, brighter while you type
 - The film strip has a handle on each end of its window: hover it and the cursor offers to stretch, drag it to choose exactly what the chart shows, without a mouse wheel
 - Windows: Settings, the Library and Unknown Contributions always stay in front of the main window. Settings and the Library still open stuck to it, and can now be dragged away and left anywhere; dropped back next to its edge they stick again
 - Fixed: UPTIME could show the icon of another skill after opening a different session. The saved data was right, old sessions are fine
