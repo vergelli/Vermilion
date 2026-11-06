@@ -171,6 +171,7 @@ function M.sync(on)
 end
 
 function M.is_showing() return showing end
+function M.forget() sig_n = -1 end
 
 function M.drag_to(frac)
   local n = Vermilion.TemporalBuffer.count()

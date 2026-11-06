@@ -53,6 +53,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: the first bars of a recording counted hits from up to 5 s before pressing Record
 - Fixed: the export read a negative peak time for a recording too short to have a sample with damage
 - Fixed: a hit on an enemy shield landing while not recording could wait and enter the next recording with its old time, stretching the start of the fight and lowering the average. Mostly in battlegrounds
+- Fixed: opening a saved session could keep the film strip of the previous one when both had the same length
 - Fixed: a row in PRESSURE, CONTRIB, DEBUFFS, RESOURCES or UPTIME could stay lit after the mouse left the chart
 - Fixed: ultimate power changing after Stop, or while looking at a saved session, could add an ultimate lane and rows to a fight that had none
 - Fixed: a fight read differently before saving and after reopening. The export showed a shorter duration until it was saved, and a fight with no ultimate changes showed an ultimate lane and rows only once reopened
