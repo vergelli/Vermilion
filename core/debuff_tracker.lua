@@ -376,20 +376,22 @@ end
 
 local function finalize_rec(rec, t)
   close_interval(rec, t)
-  local uptime = 0
-  for i = 1, rec.n_iv do
-    uptime = uptime + (rec.iv_t1[i] - rec.iv_t0[i])
-  end
-  rec.uptime_ms = uptime
-  local longest = 0
   local lo, hi = Vermilion.Metrics.fight_bounds()
   if not lo then lo, hi = t_start, t end
+  local uptime = 0
+  local longest = 0
   local prev_end = lo
   for i = 1, rec.n_iv do
-    local gap = rec.iv_t0[i] - prev_end
+    local a, b = rec.iv_t0[i], rec.iv_t1[i]
+    if a > hi then a = hi end
+    if b > hi then b = hi end
+    local gap = a - prev_end
     if gap > longest then longest = gap end
-    if rec.iv_t1[i] > prev_end then prev_end = rec.iv_t1[i] end
+    if b > prev_end then prev_end = b end
+    if a < lo then a = lo end
+    if b > a then uptime = uptime + (b - a) end
   end
+  rec.uptime_ms = uptime
   local tail = hi - prev_end
   if tail > longest then longest = tail end
   rec.longest_gap_ms = longest

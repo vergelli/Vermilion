@@ -9,6 +9,7 @@ return function(out_path, sess, hits)
   local sum = sess.head.sum
   line(w, "HEAD", sess.head.ts or 0, sess.head.dur_ms or 0, sum.total_damage or 0, sum.hits or 0, sum.crit_hits or -1, sum.fight_ms or 0, sess.head.zone or "", sess.head.build or "", sum.fight_t0 or -1, sum.exact and 1 or 0, sum.exact and sum.exact.pool and 1 or 0)
   for _, h in ipairs(hits or {}) do line(w, "HIT", h[1], h[2], h[3], h[4]) end
+  if hits and hits.start then line(w, "REC", hits.start) end
 
   local first_t, last_t
   if Vermilion.Resources.exact_flow() then first_t, last_t = Vermilion.Metrics.fight_bounds() end
@@ -57,6 +58,11 @@ return function(out_path, sess, hits)
   local names = Vermilion.Uptime.keys()
   local sk, _, st0, st1, sn = Vermilion.Uptime.spans()
   for i = 1, sn do line(w, "SPAN", names[sk[i]] or "", st0[i], st1[i]) end
+  local uorder, un, urows = Vermilion.UptimeView.compute()
+  for i = 1, un do
+    local r = urows[uorder[i]]
+    line(w, "COVER", r.name or "", r.covered or 0, r.apps or 0)
+  end
 
   local _, _, cn = Vermilion.Ultimate.casts()
   line(w, "ULT", cn)

@@ -149,8 +149,17 @@ end
 
 local function by_cost(a, b) return rows[a].cost > rows[b].cost end
 
+local function overlap(a, b, lo, hi)
+  if lo then
+    if a < lo then a = lo end
+    if b > hi then b = hi end
+  end
+  return (b > a) and (b - a) or 0
+end
+
 local function build(TB, t_hi)
   gen = gen + 1
+  local lo, hi = Vermilion.Metrics.fight_bounds()
   local U = Vermilion.Uptime
   local names, slots, nk, ids = U.keys()
   for k = 1, nk do
@@ -197,7 +206,10 @@ local function build(TB, t_hi)
   for k = 1, nk do
     local r = rows[k]
     if r.id == 0 and ids and (ids[k] or 0) > 0 then r.id = ids[k] end
-    r.apps = r.n
+    r.apps = 0
+    for i = 1, r.n do
+      if not lo or overlap(r.t0[i], r.t1[i], lo, hi) > 0 then r.apps = r.apps + 1 end
+    end
     if r.n > 0 then r.dur = r.dur / r.n end
     for i = 1, r.n do r.idx[i] = i end
     for i = r.n + 1, #r.idx do r.idx[i] = nil end
@@ -211,13 +223,14 @@ local function build(TB, t_hi)
       if ma and a <= mb then
         if b > mb then mb = b end
       else
-        if ma then r.mn = r.mn + 1; r.mt0[r.mn], r.mt1[r.mn] = ma, mb; r.covered = r.covered + (mb - ma) end
+        if ma then r.mn = r.mn + 1; r.mt0[r.mn], r.mt1[r.mn] = ma, mb; r.covered = r.covered + overlap(ma, mb, lo, hi) end
         ma, mb = a, b
       end
     end
-    if ma then r.mn = r.mn + 1; r.mt0[r.mn], r.mt1[r.mn] = ma, mb; r.covered = r.covered + (mb - ma) end
+    if ma then r.mn = r.mn + 1; r.mt0[r.mn], r.mt1[r.mn] = ma, mb; r.covered = r.covered + overlap(ma, mb, lo, hi) end
     r.first = (r.mn > 0) and r.mt0[1] or t_hi
     local window = t_hi - r.first
+    if lo then window = hi - math_max(lo, r.first) end
     local fight = Vermilion.Metrics.fight_ms()
     local over = (fight > 0) and fight or window
     r.uptime = (over > 0) and math_min(1, r.covered / over) or 0
