@@ -32,6 +32,14 @@ return function(H)
   end
   G.on_stop_click()
 
+  local xml = assert(io.open(HARNESS_ROOT .. "/ui/settings.xml")):read("*a")
+  local function y_of(name)
+    return tonumber(xml:match('name="%$%(parent%)' .. name .. '".-offsetY="(%-?%d+)"'))
+  end
+  local sample_y, zoom_y, bucket_y, reset_y = y_of("SampleBtn"), y_of("ZoomScaleBtn"), y_of("UnknownBtn"), 300 - 8 - 22
+  ok(zoom_y >= sample_y + 24 and zoom_y + 22 <= bucket_y, "the switch sits in GRAPH, under the sample rate and above the bucket, got " .. tostring(zoom_y) .. " and " .. tostring(bucket_y))
+  ok(bucket_y + 64 <= reset_y, "and the bucket still clears Reset, got " .. tostring(bucket_y))
+
   local btn, label = VermilionSettingsPanelZoomScaleBtn, VermilionGridYMax
   local n = TB.count()
   local whole = label._text
