@@ -50,7 +50,8 @@ All notable changes to Vermilion are documented here. This project follows
 - New median line for the bar views, off by default, in Settings next to the average line. It shows once the fight is stopped and is the same median as the damage report. Far from the average it says the fight had bursts or dead stretches
 - Fixed: in TYPE the average line left shields out while the bars counted them, so with shields in the fight it read low
 - While zoomed, the top of the chart now follows the part in view, so a quiet stretch next to a big burst can be read. The Zoom scale switch in Settings keeps it at the peak of the whole fight if you prefer
-- Fixed: the first bars of a recording counted hits from up to 5 s before pressing Record, so the peak could fall before the fight and read a negative time
+- Fixed: the first bars of a recording counted hits from up to 5 s before pressing Record
+- Fixed: the export read a negative peak time for a recording too short to have a sample with damage
 - Fixed: a hit on an enemy shield landing while not recording could wait and enter the next recording with its old time, stretching the start of the fight and lowering the average. Mostly in battlegrounds
 - Fixed: a row in PRESSURE, CONTRIB, DEBUFFS, RESOURCES or UPTIME could stay lit after the mouse left the chart
 - Fixed: ultimate power changing after Stop, or while looking at a saved session, could add an ultimate lane and rows to a fight that had none
