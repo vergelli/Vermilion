@@ -1740,7 +1740,13 @@ function M.fit_chrome()
     VermilionGraphWindowChromeLeft, VermilionGraphWindowChromeRight, w, h)
 end
 
+function M.on_resize_start()
+  M.on_move_start()
+  controls.window:SetHandler("OnUpdate", M.fit_chrome)
+end
+
 function M.on_resize_stop()
+  controls.window:SetHandler("OnUpdate", nil)
   M.fit_chrome()
   local sv = Vermilion.SavedVars
   if sv then

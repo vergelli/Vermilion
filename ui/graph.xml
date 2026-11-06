@@ -27,7 +27,7 @@
       <OnMouseDoubleClick>Vermilion.Graph.on_title_double_click()</OnMouseDoubleClick>
       <OnMoveStart>Vermilion.Graph.on_move_start()</OnMoveStart>
       <OnMoveStop>Vermilion.Graph.on_move_stop()</OnMoveStop>
-      <OnResizeStart>Vermilion.Graph.on_move_start()</OnResizeStart>
+      <OnResizeStart>Vermilion.Graph.on_resize_start()</OnResizeStart>
       <OnResizeStop>Vermilion.Graph.on_resize_stop()</OnResizeStop>
 
       <Controls>

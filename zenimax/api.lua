@@ -13,6 +13,7 @@ Vermilion.zenimax.api = {}
 local M = Vermilion.zenimax.api
 
 M.GetGameTimeMilliseconds = GetGameTimeMilliseconds
+M.GetFrameDeltaMilliseconds = GetFrameDeltaMilliseconds
 M.GetAPIVersion           = GetAPIVersion
 M.GetWorldName            = GetWorldName
 

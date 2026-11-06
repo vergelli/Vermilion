@@ -73,6 +73,7 @@ local CASES = {
   "kills",
   "self_damage",
   "assign_flyout",
+  "background",
   "basic_attacks",
   "devtools",
   "trace_cap",

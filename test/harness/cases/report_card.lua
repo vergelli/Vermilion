@@ -71,7 +71,7 @@ return function(H)
   ok(not H.update_registered("VermilionCardGuard"), "the watch stops once the card is gone")
   local xml = assert(io.open(HARNESS_ROOT .. "/ui/graph.xml")):read("*a")
   ok(xml:find("<OnMoveStart>Vermilion.Graph.on_move_start()", 1, true) ~= nil, "the window wires OnMoveStart")
-  ok(xml:find("<OnResizeStart>Vermilion.Graph.on_move_start()", 1, true) ~= nil, "the window wires OnResizeStart")
+  ok(xml:find("<OnResizeStart>Vermilion.Graph.on_resize_start()", 1, true) ~= nil, "the window wires OnResizeStart")
   ok(xml:find("<OnMouseDoubleClick>Vermilion.Graph.on_title_double_click()", 1, true) ~= nil, "the title bar resets the size on double click")
 
   hit._onOnMouseEnter(hit)

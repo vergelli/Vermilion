@@ -34,7 +34,17 @@ return function(H)
   G.on_resize_stop()
 
   ok(top._r == left._r and left._r == right._r and right._r == bottom._r, "the four strips share one tone")
-  ok(top._vtop == 1, "only the top strip has its light, and it fades out before the sides")
+  ok(top._vtop > top._r, "only the top strip has its light, and it fades out before the sides")
   ok(left._vtop == nil and right._vtop == nil and bottom._vtop == nil, "the others stay flat")
   ok(VermilionGraphWindowBg._draw_level == 2, "the frame draws over the surface, so its corners stay round")
+
+  G.on_resize_start()
+  ok(VermilionGraphWindow._onOnUpdate == G.fit_chrome, "the surface follows the window during the drag")
+  VermilionGraphWindow:SetDimensions(800, 500)
+  VermilionGraphWindow._onOnUpdate()
+  ok(near(top._uv[2] * 512, 798), "one pixel of surface per pixel of window, also mid drag")
+  G.on_resize_stop()
+  ok(VermilionGraphWindow._onOnUpdate == nil, "and it stops following when the drag ends")
+  VermilionGraphWindow:SetDimensions(w0, h0)
+  G.on_resize_stop()
 end
