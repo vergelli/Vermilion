@@ -217,7 +217,7 @@ function M.load_session(steps, used, abilities)
     abil_cost[i] = r.cost or 0
   end
   n_abil = #abilities
-  saw_power = n_steps > 0
+  saw_power = n_steps > 1
   log:info("session loaded: steps=", n_steps, "used=", n_used, "abilities=", n_abil)
 end
 

@@ -677,7 +677,10 @@ end
 function M.export_head()
   if controls.loaded_head then return controls.loaded_head end
   local zone, group = Vermilion.SessionStore.start_meta()
-  return { zone = zone, group_size = math.max(group or 0, api.GetGroupSize() or 0), ts = api.GetTimeStamp() }
+  return {
+    zone = zone, group_size = math.max(group or 0, api.GetGroupSize() or 0), ts = api.GetTimeStamp(),
+    dur_ms = Vermilion.SessionStore.live_duration(),
+  }
 end
 
 local function show_report_card()

@@ -81,6 +81,7 @@ local CASES = {
   "hover_value_colors",
   "median_line",
   "zoom_local_scale",
+  "live_equals_reopened",
   "basic_attacks",
   "devtools",
   "trace_cap",

@@ -51,6 +51,7 @@ All notable changes to Vermilion are documented here. This project follows
 - Fixed: in TYPE the average line left shields out while the bars counted them, so with shields in the fight it read low
 - While zoomed, the top of the chart now follows the part in view, so a quiet stretch next to a big burst can be read. The Zoom scale switch in Settings keeps it at the peak of the whole fight if you prefer
 - Fixed: a hit on an enemy shield landing while not recording could wait and enter the next recording with its old time, stretching the start of the fight and lowering the average. Mostly in battlegrounds
+- Fixed: a fight read differently before saving and after reopening. The export showed a shorter duration until it was saved, and a fight with no ultimate changes showed an ultimate lane and rows only once reopened
 - The session name in the top row is cut with dots when it does not fit, instead of spilling out of the window
 - A double click on the title bar now sets a comfortable working size instead of nearly the minimum, and a new install opens at that size. A size you choose is still remembered
 - The window can no longer get quite so narrow, and when it is narrow the view tabs take the width their names need, so RESOURCES and PRESSURE are no longer cut
